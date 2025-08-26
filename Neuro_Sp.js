@@ -4,19 +4,19 @@ const path = require("path");
 
 (async () => {
   const url =
-    "https://ensino.einstein.br/pos_nutrologia_p1258/p?sku=9758&cidade=sp";
-  const outputFolder = path.join(__dirname, "Nutrologia");
+    "https://ensino.einstein.br/pos_neuropsicologia_p0451/p?sku=10499&cidade=sp";
+  const outputFolder = path.join(__dirname, "Neuro_Sp");
   if (!fs.existsSync(outputFolder)) {
     fs.mkdirSync(outputFolder);
   }
   const browser = await puppeteer.launch({ headless: "new" });
   const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "networkidle2" });
+  await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 }); // 60 segundos
   await page.setViewport({ width: 1280, height: 800 });
 
   // Remove pop-up de cookies antes dos prints
   try {
-    await page.waitForSelector("button", { timeout: 10000 });
+    await page.waitForSelector("button", { timeout: 60000 });
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll("button"));
       const aceitar = btns.find((btn) =>
@@ -36,20 +36,7 @@ const path = require("path");
   });
 
   // Lista de abas
-  const abas = [
-    "",
-    "curso",
-    "Programa e Metodologia",
-    "Objetivos e Qualificações",
-    "Corpo Docente",
-    "Cronograma de Aulas",
-    "Local e Horário",
-    "Valor do Curso",
-    "Perfil do Aluno",
-    "Processo Seletivo",
-    "Perguntas frequentes (FAQ)",
-    "curso",
-  ];
+  const abas = ["", "curso", "curso", "Valor do Curso", "Valor do Curso"];
 
   for (let i = 0; i < abas.length; i++) {
     const aba = abas[i];

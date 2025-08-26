@@ -4,19 +4,19 @@ const path = require("path");
 
 (async () => {
   const url =
-    "https://ensino.einstein.br/pos_ead_gt_gestao_em_saude_p1333/p?sku=10441&cidade=ead";
-  const outputFolder = path.join(__dirname, "Gestao_Saude");
+    "https://ensino.einstein.br/pos_neuropsicologia_p0451/p?sku=10001&cidade=rj";
+  const outputFolder = path.join(__dirname, "Neuro_Rj");
   if (!fs.existsSync(outputFolder)) {
     fs.mkdirSync(outputFolder);
   }
   const browser = await puppeteer.launch({ headless: "new" });
   const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "networkidle2" });
+  await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 }); // 60 segundos
   await page.setViewport({ width: 1280, height: 800 });
 
   // Remove pop-up de cookies antes dos prints
   try {
-    await page.waitForSelector("button", { timeout: 10000 });
+    await page.waitForSelector("button", { timeout: 60000 });
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll("button"));
       const aceitar = btns.find((btn) =>
@@ -36,15 +36,7 @@ const path = require("path");
   });
 
   // Lista de abas
-  const abas = [
-    "",
-    "curso",
-    "curso",
-    "Valor do Curso",
-    "Valor do Curso",
-    "Programa e Metodologia",
-    "Programa e Metodologia",
-  ];
+  const abas = ["", "curso", "curso", "Valor do Curso", "Valor do Curso"];
 
   for (let i = 0; i < abas.length; i++) {
     const aba = abas[i];
@@ -53,13 +45,18 @@ const path = require("path");
       continue;
     } else {
       // Demais abas: clica e espera atualizar
-      await page.evaluate((text) => {
-        const btns = Array.from(document.querySelectorAll("button"));
-        const target = btns.find((btn) =>
-          btn.textContent.trim().includes(text)
-        );
-        if (target) target.click();
-      }, aba);
+      const [navigation] = await Promise.all([
+        page
+          .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
+          .catch(() => null),
+        page.evaluate((text) => {
+          const btns = Array.from(document.querySelectorAll("button"));
+          const target = btns.find((btn) =>
+            btn.textContent.trim().includes(text)
+          );
+          if (target) target.click();
+        }, aba),
+      ]);
 
       await page.waitForSelector(".turma-wrapper-content", {
         visible: true,
