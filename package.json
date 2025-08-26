@@ -4,14 +4,16 @@
   "description": "Automação para capturar prints de tela de elementos específicos usando Puppeteer.",
   "main": "nutrologia.js",
   "scripts": {
-    "start": "node nutrologia.js",
-    "gestao": "node gestao_saude.js",
-    "all": "node nutrologia.js && node gestao_saude.js",
-    "test": "test"
+    "start": "node Neuro_Sp.js",
+    "gestao": "node Neuro_Rj.js",
+    "all": "node Neuro_Sp.js && node Neuro_Rj.js",
+    "test": "test",
+    "server": "node server.js"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "express": "^5.1.0",
     "puppeteer": "^24.17.0"
   }
 }
