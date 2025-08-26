@@ -5,4 +5,5 @@ Gestao_Saude/
 *.png
 package-lock.json
 .env
+.history/
 .history
