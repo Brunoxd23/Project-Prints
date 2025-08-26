@@ -1,0 +1,7 @@
+# Diretórios e arquivos a serem ignorados pelo Git
+node_modules/
+Nutrologia/
+Gestao_Saude/
+*.png
+package-lock.json
+.env

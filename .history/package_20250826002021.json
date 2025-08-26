@@ -1,0 +1,16 @@
+{
+  "name": "print-telas",
+  "version": "1.0.0",
+  "description": "Automação para capturar prints de tela de elementos específicos usando Puppeteer.",
+  "main": "nutrologia.js",
+  "scripts": {
+    "start": "node nutrologia.js",
+    "gestao": "node gestao_saude.js",
+    "test": "test"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^24.17.0"
+  }
+}
