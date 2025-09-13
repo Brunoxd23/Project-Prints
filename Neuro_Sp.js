@@ -5,7 +5,9 @@ const path = require("path");
 (async () => {
   const url =
     "https://ensino.einstein.br/pos_neuropsicologia_p0451/p?sku=10499&cidade=sp";
-  const outputFolder = path.join(__dirname, "Neuro_Sp");
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0, 10); // YYYY-MM-DD
+  const outputFolder = path.join(__dirname, `Neuro_Sp_${dateStr}`);
   if (!fs.existsSync(outputFolder)) {
     fs.mkdirSync(outputFolder);
   }
