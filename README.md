@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# Project-Prints
-=======
 # PrintTelas
 
 Automação para capturar prints de tela de elementos específicos de páginas de cursos Einstein usando Puppeteer.
@@ -41,4 +38,3 @@ Automação para capturar prints de tela de elementos específicos de páginas d
 ## Autor
 
 Seu nome aqui
->>>>>>> 7fd566f (feat: criação automação de prints)
