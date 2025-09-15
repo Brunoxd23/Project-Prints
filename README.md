@@ -1,39 +1,3 @@
-## Diagrama de Arquitetura
-
-```mermaid
-flowchart TD
-  Usuario[Usuário]
-  Frontend[Frontend]
-  API[API]
-  ComponentesUI[Componentes UI]
-  Toast[Toast]
-  MongoDB[MongoDB]
-  NextAuth[NextAuth]
-  Cloudinary[Cloudinary]
-  Permissoes[Permissões]
-  Papeis[Papéis]
-  Admin[Admin]
-  Secretaria[Secretaria]
-  Coordenador[Coordenador]
-  Docente[Docente]
-  Financeiro[Financeiro]
-
-  Usuario -->|Acessa| Frontend
-  Frontend -->|Chama| API
-  Frontend -->|Renderiza| ComponentesUI
-  Frontend -->|Notifica| Toast
-  API -->|Consulta| MongoDB
-  API -->|Autentica| NextAuth
-  API -->|Upload/Busca| Cloudinary
-  API -->|Valida| Permissoes
-  Permissoes -->|Define| Papeis
-  Papeis --> Admin
-  Papeis --> Secretaria
-  Papeis --> Coordenador
-  Papeis --> Docente
-  Papeis --> Financeiro
-```
-
 # Projeto Prints Einstein
 
 Automação de prints das páginas de cursos Einstein, com backend Node.js/Express, automação Puppeteer e frontend dinâmico para visualização e download dos prints.
@@ -91,6 +55,40 @@ Project-Prints/
 ## Fluxograma
 
 O fluxograma do projeto está disponível em `fluxograma_profissional_drawio.xml` e pode ser importado no [draw.io](https://draw.io) para visualização e edição.
+
+### Fluxograma Visual (Mermaid)
+
+```mermaid
+flowchart TD
+  subgraph USUÁRIO
+    A[Usuário executa script]
+    B[Usuário clica em pasta]
+  end
+  subgraph FRONTEND
+    C[Início]
+    D[Frontend carrega pastas]
+    E[Frontend mostra toast (mensagem de sucesso)]
+    F[Frontend mostra prints da pasta]
+    G[Zoom/Download/Voltar]
+    H[Fim]
+  end
+  subgraph BACKEND
+    I[Backend gera prints]
+    J[Erro ao gerar prints]
+  end
+  C --> D
+  A --> I
+  I -- Sucesso --> E
+  I -- Erro --> J
+  E --> B
+  B --> F
+  F --> G
+  G --> H
+  J -.-> H
+  %% Legenda
+  classDef legenda fill:#f5f5f5,stroke:#333,font-size:12px;
+  class H legenda;
+```
 
 ## Tecnologias Utilizadas
 
