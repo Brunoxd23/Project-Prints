@@ -5,33 +5,74 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <header class="logo-header">
+      <span class="logo-icon">
+        <svg
+          width="44"
+          height="44"
+          viewBox="0 0 44 44"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            x="6"
+            y="10"
+            width="32"
+            height="24"
+            rx="5"
+            stroke="#0072ff"
+            stroke-width="2.5"
+            fill="#f5faff"
+          />
+          <rect
+            x="16"
+            y="18"
+            width="12"
+            height="8"
+            rx="3"
+            stroke="#00c6ff"
+            stroke-width="2.2"
+            fill="#fff"
+          />
+        </svg>
+      </span>
+      <span class="logo-title">Prints Pós-graduação</span>
+    </header>
+
     <div
+      id="home-view"
       style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap"
     >
-      <div class="card">
+      <div class="card clickable" onclick="openFolderView('rj')">
         <h2>Neuro RJ</h2>
-        <button onclick="runScript('rj')">Executar Script</button>
-        <div style="margin: 10px 0">
-          <label>Pastas:</label>
-          <div
-            id="list-rj"
-            style="display: flex; flex-direction: column; gap: 4px"
-          ></div>
-        </div>
-        <div class="output-section" id="output-rj"></div>
+        <span style="color: #888; font-size: 15px">Ver pastas e prints</span>
       </div>
-      <div class="card">
+      <div class="card clickable" onclick="openFolderView('sp')">
         <h2>Neuro SP</h2>
-        <button onclick="runScript('sp')">Executar Script</button>
-        <div style="margin: 10px 0">
-          <label>Pastas:</label>
-          <div
-            id="list-sp"
-            style="display: flex; flex-direction: column; gap: 4px"
-          ></div>
-        </div>
-        <div class="output-section" id="output-sp"></div>
+        <span style="color: #888; font-size: 15px">Ver pastas e prints</span>
       </div>
+    </div>
+
+    <div
+      id="folder-view"
+      style="display: none; flex-direction: column; align-items: center"
+    >
+      <button
+        onclick="goHome()"
+        style="align-self: flex-start; margin-bottom: 20px"
+      >
+        &larr; Voltar
+      </button>
+      <h2 id="folder-title"></h2>
+      <button id="run-script-btn" style="margin-bottom: 20px"></button>
+      <div style="margin: 10px 0">
+        <label>Pastas:</label>
+        <div
+          id="folder-list"
+          style="display: flex; flex-direction: column; gap: 4px"
+        ></div>
+      </div>
+      <div class="output-section" id="folder-output"></div>
     </div>
     <div
       id="zoom-modal"
