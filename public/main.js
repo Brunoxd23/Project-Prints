@@ -64,7 +64,6 @@ async function showPrints(pasta) {
     );
     const prints = await res.json();
     let html = "";
-    html += `<button onclick="backToPastas()" style="margin-bottom:18px">&larr; Voltar para pastas</button>`;
     if (!Array.isArray(prints) || prints.length === 0) {
       html += "<span>Nenhum print encontrado.</span>";
       folderOutput.innerHTML = html;
@@ -73,10 +72,10 @@ async function showPrints(pasta) {
     html += prints
       .map(
         (img) => `
-      <div style="margin-bottom: 18px;">
-        <img src="${img}" class="print-img" onclick="zoomImg('${img}')" style="cursor:zoom-in;" />
+      <div style=\"margin-bottom: 18px;\">
+        <img src=\"${img}\" class=\"print-img\" onclick=\"zoomImg('${img}')\" style=\"cursor:zoom-in;\" />
         <br />
-        <a href="${img}" download style="color:#0072ff;">Download</a>
+        <a href=\"${img}\" download style=\"color:#0072ff;\">Download</a>
       </div>
     `
       )
@@ -91,6 +90,22 @@ function backToPastas() {
   folderOutput.innerHTML = "";
   folderList.style.display = "flex";
 }
+
+// Garante que ao voltar para a view de pastas, a lista sempre aparece
+function ensurePastasVisible() {
+  folderList.style.display = "flex";
+  folderOutput.innerHTML = "";
+}
+
+// Garante que ao abrir a view de pastas, a lista sempre aparece
+goHome = function () {
+  homeView.style.display = "flex";
+  folderView.style.display = "none";
+  folderList.innerHTML = "";
+  folderOutput.innerHTML = "";
+  runScriptBtn.onclick = null;
+  ensurePastasVisible();
+};
 
 // Zoom modal logic (reutiliza o existente)
 window.zoomImg = function (img) {
