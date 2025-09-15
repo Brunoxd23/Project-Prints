@@ -1,40 +1,107 @@
-# PrintTelas
+## Diagrama de Arquitetura
 
-Automação para capturar prints de tela de elementos específicos de páginas de cursos Einstein usando Puppeteer.
+```mermaid
+flowchart TD
+  Usuario[Usuário]
+  Frontend[Frontend]
+  API[API]
+  ComponentesUI[Componentes UI]
+  Toast[Toast]
+  MongoDB[MongoDB]
+  NextAuth[NextAuth]
+  Cloudinary[Cloudinary]
+  Permissoes[Permissões]
+  Papeis[Papéis]
+  Admin[Admin]
+  Secretaria[Secretaria]
+  Coordenador[Coordenador]
+  Docente[Docente]
+  Financeiro[Financeiro]
 
-## Pré-requisitos
+  Usuario -->|Acessa| Frontend
+  Frontend -->|Chama| API
+  Frontend -->|Renderiza| ComponentesUI
+  Frontend -->|Notifica| Toast
+  API -->|Consulta| MongoDB
+  API -->|Autentica| NextAuth
+  API -->|Upload/Busca| Cloudinary
+  API -->|Valida| Permissoes
+  Permissoes -->|Define| Papeis
+  Papeis --> Admin
+  Papeis --> Secretaria
+  Papeis --> Coordenador
+  Papeis --> Docente
+  Papeis --> Financeiro
+```
 
-- Node.js instalado
-- Instalar dependências com:
-  ```bash
-  npm install
-  ```
+# Projeto Prints Einstein
 
-## Scripts disponíveis
+Automação de prints das páginas de cursos Einstein, com backend Node.js/Express, automação Puppeteer e frontend dinâmico para visualização e download dos prints.
 
-- `npm start` — Executa o script de Nutrologia (`nutrologia.js`)
-- `npm run gestao` — Executa o script de Gestão em Saúde (`gestao_saude.js`)
-- `npm run all` — Executa ambos os scripts em sequência
-- `npm test` — (Configuração de teste)
+## Funcionalidades
 
-## Como usar
+- **Automação de Prints**: Gera prints das páginas de cursos Einstein,usando Puppeteer.
+- **Organização por Data**: Prints são salvos em pastas nomeadas por data e local (ex: `Neuro_Rj_2025-09-15`).
+- **Backend Centralizado**: Servidor Express com rotas para gerar prints, listar pastas e imagens, e servir arquivos estáticos.
+- **Frontend Dinâmico**:
+  - Lista todas as pastas de prints disponíveis (por data e local).
+  - Permite navegar entre pastas e visualizar os prints.
+  - Opção de zoom e download individual de cada print.
+  - Toast de sucesso ao gerar prints.
+  - Navegação intuitiva entre pastas e imagens.
+  - Persistência: prints e pastas permanecem visíveis mesmo após recarregar a página.
+- **Organização de Código**:
+  - CSS separado em `public/style.css`.
+  - JS separado em `public/main.js`.
+  - HTML limpo em `public/index.html`.
+- **Material de Apresentação**:
+  - Fluxograma profissional do projeto em `fluxograma_profissional_drawio.xml` (importável no draw.io).
+
+## Estrutura de Pastas
+
+```
+Project-Prints/
+├── Neuro_Rj.js
+├── Neuro_Sp.js
+├── server.js
+├── package.json
+├── public/
+│   ├── index.html
+│   ├── style.css
+│   ├── main.js
+│   ├── Neuro_Rj_2025-09-15/
+│   └── Neuro_Sp_2025-09-15/
+├── fluxograma_profissional_drawio.xml
+└── README.md
+```
+
+## Como Usar
 
 1. Instale as dependências:
    ```bash
    npm install
    ```
-2. Execute o script desejado:
+2. Inicie o servidor:
    ```bash
-   npm start         # Nutrologia
-   npm run gestao    # Gestão em Saúde
-   npm run all       # Ambos
+   node server.js
    ```
+3. Acesse o frontend em [http://localhost:3000](http://localhost:3000)
+4. Use os botões para gerar prints RJ/SP, navegar pelas pastas, visualizar, dar zoom e baixar prints.
 
-## Estrutura dos scripts
+## Fluxograma
 
-- Os scripts acessam páginas específicas, fecham pop-ups de cookies e capturam prints de elementos principais.
-- As imagens são salvas nas pastas `Nutrologia` e `Gestao_Saude`.
+O fluxograma do projeto está disponível em `fluxograma_profissional_drawio.xml` e pode ser importado no [draw.io](https://draw.io) para visualização e edição.
 
-## Autor
+## Tecnologias Utilizadas
 
-Seu nome aqui
+- Node.js
+- Express
+- Puppeteer
+- HTML, CSS, JavaScript (frontend dinâmico)
+- draw.io (fluxograma)
+
+## Créditos
+
+Desenvolvido por Bruno Monteiro
+
+---
