@@ -53,6 +53,9 @@ async function loadPastas(local) {
 function selectPasta(pasta) {
   // Esconde lista de pastas e mostra prints da pasta selecionada
   folderList.style.display = "none";
+  // Troca label para 'Prints:'
+  const folderLabel = document.getElementById("folder-label");
+  if (folderLabel) folderLabel.textContent = "Prints:";
   showPrints(pasta);
 }
 
@@ -69,17 +72,19 @@ async function showPrints(pasta) {
       folderOutput.innerHTML = html;
       return;
     }
+    html += `<div class='prints-grid'>`;
     html += prints
       .map(
         (img) => `
-      <div style=\"margin-bottom: 18px;\">
-        <img src=\"${img}\" class=\"print-img\" onclick=\"zoomImg('${img}')\" style=\"cursor:zoom-in;\" />
+      <div class='print-item'>
+        <img src="${img}" class="print-img" onclick="zoomImg('${img}')" style="cursor:zoom-in;" />
         <br />
-        <a href=\"${img}\" download style=\"color:#0072ff;\">Download</a>
+        <a href="${img}" download style="color:#0072ff;">Download</a>
       </div>
     `
       )
       .join("");
+    html += `</div>`;
     folderOutput.innerHTML = html;
   } catch (e) {
     folderOutput.innerHTML = "<span>Erro ao carregar prints.</span>";
@@ -89,12 +94,18 @@ async function showPrints(pasta) {
 function backToPastas() {
   folderOutput.innerHTML = "";
   folderList.style.display = "flex";
+  // Troca label de volta para 'Pastas:'
+  const folderLabel = document.getElementById("folder-label");
+  if (folderLabel) folderLabel.textContent = "Pastas:";
 }
 
 // Garante que ao voltar para a view de pastas, a lista sempre aparece
 function ensurePastasVisible() {
   folderList.style.display = "flex";
   folderOutput.innerHTML = "";
+  // Troca label de volta para 'Pastas:'
+  const folderLabel = document.getElementById("folder-label");
+  if (folderLabel) folderLabel.textContent = "Pastas:";
 }
 
 // Garante que ao abrir a view de pastas, a lista sempre aparece
