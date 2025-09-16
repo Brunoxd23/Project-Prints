@@ -1,4 +1,3 @@
-// Card rendering logic
 export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
   cursosContainer.innerHTML = "";
   const wrapper = document.createElement("div");
