@@ -6,37 +6,39 @@
   </head>
   <body>
     <header class="logo-header">
-      <span class="logo-icon">
-        <svg
-          width="44"
-          height="44"
-          viewBox="0 0 44 44"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <rect
-            x="6"
-            y="10"
-            width="32"
-            height="24"
-            rx="5"
-            stroke="#0072ff"
-            stroke-width="2.5"
-            fill="#f5faff"
-          />
-          <rect
-            x="16"
-            y="18"
-            width="12"
-            height="8"
-            rx="3"
-            stroke="#00c6ff"
-            stroke-width="2.2"
-            fill="#fff"
-          />
-        </svg>
-      </span>
-      <span class="logo-title">Prints Pós-graduação</span>
+      <div class="logo-header-inner">
+        <span class="logo-icon">
+          <svg
+            width="44"
+            height="44"
+            viewBox="0 0 44 44"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              x="6"
+              y="10"
+              width="32"
+              height="24"
+              rx="5"
+              stroke="#0072ff"
+              stroke-width="2.5"
+              fill="#f5faff"
+            />
+            <rect
+              x="16"
+              y="18"
+              width="12"
+              height="8"
+              rx="3"
+              stroke="#00c6ff"
+              stroke-width="2.2"
+              fill="#fff"
+            />
+          </svg>
+        </span>
+        <span class="logo-title">Prints Pós-graduação</span>
+      </div>
     </header>
 
     <div
@@ -48,9 +50,6 @@
         flex-wrap: wrap;
       "
     >
-      <span style="font-size: 1em; color: #e0f7fa"
-        >Clique para ver os cursos</span
-      >
       <div id="cards-container" class="cards-container" style="display: flex">
         <!-- Card Especialização Híbrida -->
         <div class="card" id="card-hibrida">
@@ -121,6 +120,6 @@
       <img id="zoom-img" src="" style="max-width: 90vw; max-height: 90vh" />
     </div>
     <div id="toast" class="toast"></div>
-    <script src="main.js"></script>
+    <script type="module" src="index.js"></script>
   </body>
 </html>

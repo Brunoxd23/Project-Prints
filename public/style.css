@@ -242,26 +242,38 @@
   transform: scale(1.03);
 }
 /* Logo header styles */
+/* Header melhorado: ícone à esquerda, título centralizado */
 .logo-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 14px;
-  padding-left: 40px;
-  margin: 0 0 36px 0;
+  width: 100vw;
   background: #fff;
   border-radius: 0 0 18px 18px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-  padding: 10px 24px 10px 24px;
-  max-width: 100vw;
-  min-height: 54px;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
+  min-height: 54px;
+  padding: 0;
+  margin: 0 0 36px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.logo-header-inner {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 10px 24px;
 }
 .logo-icon {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -271,7 +283,8 @@
   box-shadow: 0 2px 8px rgba(0, 114, 255, 0.07);
 }
 .logo-title {
-  font-size: 2.1rem;
+  margin: 0 auto;
+  font-size: 1.8rem;
   font-weight: 700;
   color: #0072ff;
   letter-spacing: 1px;
@@ -280,6 +293,8 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  display: block;
+  text-align: center;
 }
 body {
   font-family: Arial, sans-serif;
