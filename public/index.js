@@ -1,8 +1,8 @@
 // Entry point: import and initialize modules
-import { goHome, voltarParaHome, ensurePastasVisible } from "./spa.js";
-import { renderCursos } from "./cards.js";
-import { runScript, showPrints } from "./scripts.js";
-import { showToast, zoomImg } from "./utils.js";
+import { goHome, voltarParaHome, ensurePastasVisible } from "./modules/spa.js";
+import { renderCursos } from "./modules/cards.js";
+import { runScript, showPrints } from "./modules/scripts.js";
+import { showToast, zoomImg } from "./modules/utils.js";
 
 // Elementos principais
 const homeView = document.getElementById("home-view");

@@ -1,4 +1,3 @@
-// Script execution and prints logic
 export async function runScript(
   endpoint,
   runScriptBtn,
