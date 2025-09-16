@@ -27,28 +27,112 @@ flowchart TD
 
 # Projeto Prints Einstein
 
-Automação de prints das páginas de cursos Einstein, com backend Node.js/Express, automação Puppeteer e frontend dinâmico para visualização e download dos prints.
+Automação de prints das páginas de cursos Einstein, com backend Node.js/Express, automação Puppeteer e frontend SPA modularizado para visualização, execução e download dos prints.
 
-## Funcionalidades
+## O que é SPA?
 
-- **Automação de Prints**: Gera prints das páginas de cursos Einstein,usando Puppeteer.
-- **Organização por Data**: Prints são salvos em pastas nomeadas por data e local (ex: `Neuro_Rj_2025-09-15`).
-- **Backend Centralizado**: Servidor Express com rotas para gerar prints, listar pastas e imagens, e servir arquivos estáticos.
-- **Frontend Dinâmico**:
-  - Lista todas as pastas de prints disponíveis (por data e local).
-  - Permite navegar entre pastas e visualizar os prints.
-  - Opção de zoom e download individual de cada print.
-  - Toast de sucesso ao gerar prints.
-  - Navegação intuitiva entre pastas e imagens.
-  - Persistência: prints e pastas permanecem visíveis mesmo após recarregar a página.
-- **Organização de Código**:
-  - CSS separado em `public/style.css`.
-  - JS separado em `public/main.js`.
-  - HTML limpo em `public/index.html`.
-- **Material de Apresentação**:
-  - Fluxograma profissional do projeto em `fluxograma_profissional_drawio.xml` (importável no draw.io).
+SPA (Single Page Application) é uma aplicação web que carrega uma única página HTML e atualiza dinamicamente o conteúdo conforme o usuário navega, sem recarregar a página inteira. Isso garante navegação rápida, fluida e experiência moderna para o usuário.
 
-## Estrutura de Pastas
+## Arquitetura do Projeto
+
+### Frontend SPA Modularizado
+
+- **index.js**: ponto de entrada, importa e inicializa todos os módulos, controla o fluxo SPA.
+- **spa.js**: gerencia navegação SPA, alternância de views (home, cursos, subcursos, prints).
+- **cards.js**: renderiza os cards dos cursos e subcursos, controla cliques e navegação entre níveis.
+- **scripts.js**: executa scripts de automação (prints) e exibe os prints gerados.
+- **utils.js**: funções utilitárias globais (toast de sucesso/erro, zoom nas imagens, helpers).
+
+#### Fluxo SPA
+
+1. **Home SPA**: exibe o card "Especialização Híbrida" centralizado.
+2. **Cards dos Cursos**: ao clicar, mostra os seis cursos disponíveis. Cursos com subcursos (ex: Cuidados Paliativos) exibem cards dos subcursos.
+3. **Execução de Scripts**: cada card de subcurso tem botão para executar o script de automação de prints (via backend). O resultado aparece na pasta correspondente.
+4. **Visualização de Prints**: ao acessar uma pasta, os prints gerados são exibidos em grid horizontal responsivo, com opção de zoom e download.
+5. **Toast**: toda ação relevante exibe toast de sucesso ou erro, global e sem duplicidade.
+
+#### Estrutura de Pastas
+
+- **public/**: arquivos estáticos do frontend (HTML, CSS, JS, imagens)
+- **routes/**: rotas separadas por curso no backend (Node.js)
+- **Cuidados_Paliativos_Quinzenal_Pratica_YYYY-MM-DD/**: pasta gerada automaticamente com prints do subcurso específico
+- **Cuidados_Paliativos_Quinzenal_YYYY-MM-DD/**: prints da turma quinzenal
+- **Cuidados_Paliativos_Semanal_YYYY-MM-DD/**: prints da turma semanal
+- (Demais cursos seguem padrão de nomeação)
+
+### Backend Modularizado
+
+- **server.js**: ponto de entrada do backend, importa rotas de cada curso.
+- **routes/**: cada curso tem seu próprio arquivo de rota, facilitando manutenção e expansão.
+- **Automação Puppeteer**: scripts de automação para gerar prints das páginas dos cursos.
+
+#### Como expandir
+
+- Para adicionar novos cursos: crie um novo arquivo de rota em `routes/` e adicione o curso no array global do frontend.
+- Para novos subcursos: adicione no array `subcursos` do curso correspondente no frontend.
+- O frontend e backend estão preparados para receber novos cards, rotas e scripts sem duplicidade ou bagunça visual.
+
+### Boas Práticas e Organização
+
+- Separação clara entre frontend e backend.
+- Modularização dos arquivos JS no frontend para facilitar manutenção e expansão.
+- SPA garante navegação fluida, visual moderno e experiência consistente.
+- Toast global, sem duplicidade, para feedback ao usuário.
+- Estrutura de pastas organizada para fácil localização de prints e scripts.
+
+### Exemplo de Estrutura
+
+```
+Project-Prints/
+├── server.js
+├── package.json
+├── public/
+│   ├── index.html
+│   ├── style.css
+│   ├── main.js
+│   ├── spa.js
+│   ├── cards.js
+│   ├── scripts.js
+│   ├── utils.js
+│   ├── index.js
+│   └── Cuidados_Paliativos_Quinzenal_2025-09-15/
+├── routes/
+│   ├── cuidadosPaliativos.js
+│   └── ...
+├── fluxograma_profissional_drawio.xml
+└── README.md
+```
+
+## Como Usar
+
+1. Instale as dependências:
+   ```bash
+   npm install
+   ```
+2. Inicie o servidor:
+   ```bash
+   node server.js
+   ```
+3. Acesse o frontend em [http://localhost:3000](http://localhost:3000)
+4. Use os botões para gerar prints, navegar pelas pastas, visualizar, dar zoom e baixar prints.
+
+## Fluxograma
+
+O fluxograma do projeto está disponível em `fluxograma_profissional_drawio.xml` e pode ser importado no [draw.io](https://draw.io) para visualização e edição.
+
+## Tecnologias Utilizadas
+
+- Node.js
+- Express
+- Puppeteer
+- HTML, CSS, JavaScript (SPA modularizado)
+- draw.io (fluxograma)
+
+## Créditos
+
+Desenvolvido por Bruno Monteiro
+
+---
 
 ```
 Project-Prints/
