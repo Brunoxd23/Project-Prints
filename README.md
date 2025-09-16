@@ -175,6 +175,30 @@ O fluxograma do projeto está disponível em `fluxograma_profissional_drawio.xml
 - HTML, CSS, JavaScript (frontend dinâmico)
 - draw.io (fluxograma)
 
+URL's Prints
+
+cuiodados_paliativos
+https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10690&cidade=sp unidade paulista | Quinzenal Pratica estendida
+
+https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10691&cidade=sp - unidade paulista | Quinzenal
+
+https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10693&cidade=sp - unidade paulista | Semanal
+
+dependencia_quimica
+https://ensino.einstein.br/pos_dependencia_quimica_p5174/p?sku=10697&cidade=sp - Unidade CEP | Mensal
+
+sustentabilidade*lider_inovacao*
+https://ensino.einstein.br/pos_gt_sustentabilidade_lider_inovacao_esg_p14832/p?sku=10118&cidade=sp - Unidade Paulista II | Mensal
+
+infraestrutura_facilities_saude
+https://ensino.einstein.br/pos_gt_infraestrutura_facilities_saude_p14827/p?sku=9305&cidade=sp - Unidade Paulista II | Mensal
+
+psiquiatria_multiprofissional
+https://ensino.einstein.br/pos_psiquiatria_multiprofissional_p4542/p?sku=10771&cidade=sp - Unidade Paulista | Mensal
+
+bases_saude_integrativa_bem_estar
+https://ensino.einstein.br/pos_bases_saude_integrativa_bem_estar_p0078/p?sku=10685&cidade=sp - Unidade Paulista | Mensal
+
 ## Créditos
 
 Desenvolvido por Bruno Monteiro
