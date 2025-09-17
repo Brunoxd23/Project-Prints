@@ -49,4 +49,6 @@ app.get("/listar-pastas", (req, res) => {
 // Importa rotas de Cuidados Paliativos
 const cuidadosPaliativosRoutes = require("./routes/cuidadosPaliativos");
 app.use(cuidadosPaliativosRoutes);
-console.log(`Servidor rodando em http://localhost:${PORT}`);
+app.listen(PORT, () =>
+  console.log(`Servidor rodando em http://localhost:${PORT}`)
+);
