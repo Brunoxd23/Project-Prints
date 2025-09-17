@@ -10,12 +10,36 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
   try {
     const url =
       "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10690&cidade=sp";
+    // Get current semester (2025-2)
     const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10);
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 0-11 to 1-12
+    const semester = month <= 6 ? "1" : "2";
+    let semesterFolder = `${year}-${semester}`;
+
+    // Verificar se já existe a pasta do semestre atual
+    const currentSemesterFolder = path.join(
+      __dirname,
+      "../public",
+      `Pratica_Estendida_${semesterFolder}`
+    );
+
+    // Se a pasta do semestre atual já existir, criar a pasta do próximo semestre
+    if (fs.existsSync(currentSemesterFolder)) {
+      if (semester === "1") {
+        semesterFolder = `${year}-2`;
+      } else {
+        semesterFolder = `${parseInt(year) + 1}-1`;
+      }
+      console.log(
+        `Pasta do semestre atual já existe. Criando pasta para o semestre ${semesterFolder}`
+      );
+    }
+
     const outputFolder = path.join(
       __dirname,
       "../public",
-      `Cuidados_Paliativos_Quinzenal_Pratica_${dateStr}`
+      `Pratica_Estendida_${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
@@ -93,7 +117,7 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
     const files = fs
       .readdirSync(outputFolder)
       .filter((f) => f.endsWith(".png"))
-      .map((f) => `/Cuidados_Paliativos_Quinzenal_Pratica_${dateStr}/${f}`);
+      .map((f) => `/Pratica_Estendida_${semesterFolder}/${f}`);
     return res.json(files);
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -105,12 +129,36 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
   try {
     const url =
       "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10691&cidade=sp";
+    // Get current semester (2025-2)
     const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10);
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 0-11 to 1-12
+    const semester = month <= 6 ? "1" : "2";
+    let semesterFolder = `${year}-${semester}`;
+
+    // Verificar se já existe a pasta do semestre atual
+    const currentSemesterFolder = path.join(
+      __dirname,
+      "../public",
+      `Paliativos_Quinzenal_${semesterFolder}`
+    );
+
+    // Se a pasta do semestre atual já existir, criar a pasta do próximo semestre
+    if (fs.existsSync(currentSemesterFolder)) {
+      if (semester === "1") {
+        semesterFolder = `${year}-2`;
+      } else {
+        semesterFolder = `${parseInt(year) + 1}-1`;
+      }
+      console.log(
+        `Pasta do semestre atual já existe. Criando pasta para o semestre ${semesterFolder}`
+      );
+    }
+
     const outputFolder = path.join(
       __dirname,
       "../public",
-      `Cuidados_Paliativos_Quinzenal_${dateStr}`
+      `Paliativos_Quinzenal_${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
@@ -188,7 +236,7 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
     const files = fs
       .readdirSync(outputFolder)
       .filter((f) => f.endsWith(".png"))
-      .map((f) => `/Cuidados_Paliativos_Quinzenal_${dateStr}/${f}`);
+      .map((f) => `/Paliativos_Quinzenal_${semesterFolder}/${f}`);
     return res.json(files);
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -200,12 +248,36 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
   try {
     const url =
       "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10693&cidade=sp";
+    // Get current semester (2025-2)
     const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10);
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 0-11 to 1-12
+    const semester = month <= 6 ? "1" : "2";
+    let semesterFolder = `${year}-${semester}`;
+
+    // Verificar se já existe a pasta do semestre atual
+    const currentSemesterFolder = path.join(
+      __dirname,
+      "../public",
+      `Paliativos_Semanal_${semesterFolder}`
+    );
+
+    // Se a pasta do semestre atual já existir, criar a pasta do próximo semestre
+    if (fs.existsSync(currentSemesterFolder)) {
+      if (semester === "1") {
+        semesterFolder = `${year}-2`;
+      } else {
+        semesterFolder = `${parseInt(year) + 1}-1`;
+      }
+      console.log(
+        `Pasta do semestre atual já existe. Criando pasta para o semestre ${semesterFolder}`
+      );
+    }
+
     const outputFolder = path.join(
       __dirname,
       "../public",
-      `Cuidados_Paliativos_Semanal_${dateStr}`
+      `Paliativos_Semanal_${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
@@ -283,7 +355,7 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
     const files = fs
       .readdirSync(outputFolder)
       .filter((f) => f.endsWith(".png"))
-      .map((f) => `/Cuidados_Paliativos_Semanal_${dateStr}/${f}`);
+      .map((f) => `/Paliativos_Semanal_${semesterFolder}/${f}`);
     return res.json(files);
   } catch (error) {
     return res.status(500).json({ error: error.message });

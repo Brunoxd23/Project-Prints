@@ -3,6 +3,8 @@ import { goHome, voltarParaHome, ensurePastasVisible } from "./modules/spa.js";
 import { renderCursos } from "./modules/cards.js";
 import { runScript, showPrints } from "./modules/scripts.js";
 import { showToast, zoomImg } from "./modules/utils.js";
+import { createSemesterView } from "./modules/semesterView.js";
+import { getCurrentSemester } from "./modules/semester.js";
 
 // Elementos principais
 const homeView = document.getElementById("home-view");
@@ -24,17 +26,17 @@ window.cursosHibrida = [
       {
         nome: "Unidade Paulista | Quinzenal Prática Estendida",
         rota: "/run-script-cuidados-quinzenal-pratica",
-        pasta: "Cuidados_Paliativos_Quinzenal_Pratica",
+        pasta: "Pratica_Estendida",
       },
       {
         nome: "Unidade Paulista | Quinzenal",
         rota: "/run-script-cuidados-quinzenal",
-        pasta: "Cuidados_Paliativos_Quinzenal",
+        pasta: "Paliativos_Quinzenal",
       },
       {
         nome: "Unidade Paulista | Semanal",
         rota: "/run-script-cuidados-semanal",
-        pasta: "Cuidados_Paliativos_Semanal",
+        pasta: "Paliativos_Semanal",
       },
     ],
   },
@@ -86,6 +88,114 @@ if (cardHibrida) {
     renderCursos(window.cursosHibrida, cursosContainer, cardsContainer);
   };
 }
+
+// Abre a view de prints do curso selecionado
+window.abrirViewCurso = function (curso, semester) {
+  const folderView = document.getElementById("folder-view");
+  const folderTitle = document.getElementById("folder-title");
+  const folderOutput = document.getElementById("folder-output");
+
+  // Esconder todas as outras views
+  document.getElementById("cursos-hibrida-container").style.display = "none";
+  document.getElementById("cards-container").style.display = "none";
+
+  // Remover quaisquer visualizações de semestre que existam
+  const semesterViews = document.querySelectorAll(".semester-view");
+  semesterViews.forEach((view) => {
+    document.body.removeChild(view);
+  });
+
+  folderView.style.display = "flex";
+
+  // Se não tiver semestre, usar o semestre atual
+  const semesterStr = semester || getCurrentSemester();
+  folderTitle.textContent = `${curso.nome} (${semesterStr})`;
+
+  // Formatar nome da pasta conforme padrão do servidor (pasta_semestre)
+  let pastaCompleta;
+
+  pastaCompleta = `${curso.pasta}_${semesterStr}`;
+  folderOutput.innerHTML = "<span>Carregando prints...</span>";
+
+  // Buscar prints da pasta
+  console.log("Buscando prints em:", pastaCompleta);
+  fetch(`/listar-prints?pasta=${encodeURIComponent(pastaCompleta)}`)
+    .then((res) => res.json())
+    .then((prints) => {
+      let html = "";
+      if (!Array.isArray(prints) || prints.length === 0) {
+        html += "<span>Nenhum print encontrado nesta pasta.</span>";
+        folderOutput.innerHTML = html;
+        return;
+      }
+
+      html += `<div class='prints-grid'>`;
+      html += prints
+        .map(
+          (img) => `
+        <div class='print-item'>
+          <div class="print-title">${img
+            .split("/")
+            .pop()
+            .replace(".png", "")
+            .replace(/_/g, " ")}</div>
+          <img src="${img}" class="print-img" onclick="zoomImg('${img}')" style="cursor:zoom-in;" />
+          <a href="${img}" download class="download-link" title="Download">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0072ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span class="download-text">Download</span>
+          </a>
+        </div>
+      `
+        )
+        .join("");
+      html += `</div>`;
+
+      // Sempre retornar para a tela de subcursos
+      const voltar = document.createElement("button");
+      voltar.className = "back-btn back-btn-inside";
+      voltar.innerHTML = "&larr; Voltar para Semestres";
+      voltar.onclick = function () {
+        // Ocultar a visualização de prints
+        document.getElementById("folder-view").style.display = "none";
+
+        // Limpar a área de visualização
+        folderOutput.innerHTML = "";
+
+        // Recriar a visualização de semestres
+        createSemesterView(curso);
+      };
+
+      folderOutput.innerHTML = "";
+      folderOutput.appendChild(voltar);
+      const htmlContainer = document.createElement("div");
+      htmlContainer.innerHTML = html;
+      folderOutput.appendChild(htmlContainer);
+    })
+    .catch((err) => {
+      folderOutput.innerHTML = "<span>Erro ao carregar prints.</span>";
+      console.error("Erro:", err);
+    });
+};
+
+// Função para atualizar prints do semestre
+window.updateSemesterPrints = function (curso) {
+  // Obter semestre atual
+  const currentSemester = getCurrentSemester();
+  // Executar o script correspondente
+  fetch(curso.rota, { method: "POST" })
+    .then((res) => {
+      if (!res.ok) throw new Error("Erro ao atualizar prints");
+      showToast("Prints atualizados com sucesso!");
+      // Recarregar a visualização
+      setTimeout(() => {
+        createSemesterView(curso);
+      }, 1500);
+    })
+    .catch((err) => {
+      console.error("Erro:", err);
+      showToast("Erro ao atualizar prints", "error");
+    });
+};
 
 // Inicializa home
 window.goHome();

@@ -164,7 +164,7 @@
 }
 .folder-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 90%; /* Aumentar a largura máxima para ocupar mais espaço */
   margin: 40px auto 0 auto;
   align-items: stretch;
   box-sizing: border-box;
@@ -275,20 +275,7 @@
   padding: 8px;
   box-shadow: 0 2px 8px rgba(0, 114, 255, 0.07);
 }
-.logo-title {
-  margin: 0 auto;
-  font-size: 1.8rem;
-  font-weight: 900;
-  color: #588bc9 !important;
-  letter-spacing: 1px;
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: #fff !important;
-  border-radius: 12px;
-  padding: 4px 18px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: block;
-  text-align: center;
-}
+
 body {
   font-family: Arial, sans-serif;
   background: #f5f5f5;
@@ -339,7 +326,7 @@ button:hover {
   padding: 32px 24px 24px 24px;
   max-width: 559px;
   min-width: 320px;
-  margin: 20px 0;
+  margin: 60px 0;
   display: flex;
   flex-direction: column;
   align-items: center;

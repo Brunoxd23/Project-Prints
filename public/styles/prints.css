@@ -1,0 +1,110 @@
+/* Estilo para visualização de prints */
+.prints-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 24px;
+  margin-bottom: 24px;
+  width: 100%;
+  padding-bottom: 24px;
+  max-width: none; /* Remove a limitação de largura */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.print-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%; /* Usar largura total */
+  max-width: 90%; /* Usar 90% da largura disponível */
+}
+
+.print-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.print-img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 5px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+  max-width: none; /* Remove qualquer limitação de largura máxima */
+}
+
+.print-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0072ff;
+  margin: 0 0 16px 0;
+  text-align: center;
+  text-transform: capitalize;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+  width: 100%;
+}
+
+/* Estilo para o modal de zoom */
+#zoom-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+#zoom-modal img {
+  max-width: 90%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 5px;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
+}
+
+#zoom-close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  color: white;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.download-link {
+  display: flex;
+  align-items: center;
+  background: #f0f8ff;
+  padding: 8px 16px;
+  border-radius: 50px;
+  text-decoration: none;
+  color: #0072ff;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  margin-top: 12px;
+  box-shadow: 0 2px 5px rgba(0, 114, 255, 0.15);
+}
+
+.download-link:hover {
+  background: #e6f3ff;
+  box-shadow: 0 4px 8px rgba(0, 114, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.download-text {
+  margin-left: 8px;
+}

@@ -1,3 +1,6 @@
+import { getCurrentSemester } from "./semester.js";
+import { createSemesterView } from "./semesterView.js";
+
 export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
   cursosContainer.innerHTML = "";
   const wrapper = document.createElement("div");
@@ -5,6 +8,7 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
   wrapper.style.flexDirection = "column";
   wrapper.style.alignItems = "center";
   wrapper.style.width = "100%";
+
   const btnVoltar = document.createElement("button");
   btnVoltar.className = "back-btn";
   btnVoltar.innerHTML = "&larr; Voltar";
@@ -14,12 +18,27 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
     cardsContainer.style.display = "flex";
   };
   wrapper.appendChild(btnVoltar);
+
   const grid = document.createElement("div");
   grid.className = "cursos-grid";
+
   cursosHibrida.forEach((curso) => {
     const card = document.createElement("div");
     card.className = "curso-card";
-    card.onclick = function () {
+
+    // Criar conteúdo do card
+    const cardContent = document.createElement("div");
+    cardContent.className = "card-content";
+    cardContent.innerHTML = `
+      <img src="${curso.img}" alt="${curso.nome}" class="curso-img" />
+      <h2 class="curso-titulo">${curso.nome}</h2>
+      <div class="curso-descricao">${curso.descricao}</div>
+    `;
+
+    card.appendChild(cardContent);
+
+    // Adicionar evento de clique
+    cardContent.onclick = function () {
       // Se o curso tem subcursos, renderiza os cards de subcursos
       if (curso.subcursos && curso.subcursos.length > 0) {
         renderSubcursos(curso, cursosContainer);
@@ -27,11 +46,6 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
         window.abrirViewCurso(curso);
       }
     };
-    card.innerHTML = `
-      <img src="${curso.img}" alt="${curso.nome}" class="curso-img" />
-      <h2 class="curso-titulo">${curso.nome}</h2>
-      <div class="curso-descricao">${curso.descricao}</div>
-    `;
     grid.appendChild(card);
   });
   wrapper.appendChild(grid);
@@ -73,22 +87,40 @@ function renderSubcursos(curso, cursosContainer) {
   curso.subcursos.forEach((sub) => {
     const card = document.createElement("div");
     card.className = "curso-card";
-    card.style.width = "340px";
-    card.style.height = "220px";
-    card.style.display = "flex";
-    card.style.flexDirection = "column";
-    card.style.justifyContent = "center";
-    card.style.alignItems = "center";
-    card.style.cursor = "pointer";
-    card.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)";
-    card.style.background = "#fff";
-    card.style.borderRadius = "16px";
-    card.style.padding = "18px";
-    card.innerHTML = `<h3 style='margin-bottom:12px;'>${sub.nome}</h3>`;
+    // Removendo estilos inline para usar CSS
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "card-title";
+    titleDiv.innerHTML = `<h3>${sub.nome}</h3>`;
+    card.appendChild(titleDiv);
+
+    // Botão Ver Prints no canto superior
+    const btnVerPrints = document.createElement("button");
+    btnVerPrints.className = "ver-prints-btn";
+    btnVerPrints.textContent = "Ver Prints";
+    btnVerPrints.onclick = (e) => {
+      e.stopPropagation();
+      // Abrir visualização de semestres
+      createSemesterView(sub);
+    };
+    card.appendChild(btnVerPrints);
+
+    // Botão Atualizar
+    const btnAtualizar = document.createElement("button");
+    btnAtualizar.className = "atualizar-btn";
+    btnAtualizar.textContent = "Atualizar";
+    btnAtualizar.onclick = (e) => {
+      e.stopPropagation();
+      updateSemesterPrints(sub);
+    };
+    card.appendChild(btnAtualizar);
+
     // Botão para executar script
     const btn = document.createElement("button");
     btn.className = "run-script-btn";
     btn.textContent = "Executar Script";
+    card.appendChild(btn);
+
     btn.onclick = async function (e) {
       e.stopPropagation();
       btn.disabled = true;

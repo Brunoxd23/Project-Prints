@@ -1,0 +1,77 @@
+#folder-view {
+  width: 100%;
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.folder-card {
+  width: 95%;
+  max-width: 1800px;
+  padding: 30px;
+  box-shadow: 0 4px 24px rgba(0, 114, 255, 0.1);
+  border-radius: 16px;
+}
+
+.output-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#folder-title {
+  color: #0072ff;
+  font-size: 2rem;
+  margin-bottom: 30px;
+  text-align: center;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 15px;
+}
+
+/* Ajuste para fazer os prints ocuparem toda a largura disponível */
+.prints-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+}
+
+/* Cada print em uma linha separada */
+.print-item {
+  width: 100%;
+  max-width: 1700px;
+  margin: 0 auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Imagem ocupando toda a largura do container */
+.print-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Botão voltar bem posicionado */
+.back-btn-inside {
+  align-self: flex-start;
+  margin: 0 0 30px 0;
+  padding: 10px 20px;
+  font-size: 1.1rem;
+}
+
+/* Título do print mais visível */
+.print-title {
+  width: 100%;
+  background-color: #f0f8ff;
+  color: #0072ff;
+  font-size: 1.4rem;
+  font-weight: 600;
+  padding: 15px;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: center;
+  margin-bottom: 20px;
+}

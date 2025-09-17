@@ -1,0 +1,29 @@
+.back-btn {
+  background: #f0f8ff;
+  border: 1px solid #0072ff;
+  color: #0072ff;
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 40px 0;
+  box-shadow: 0 2px 5px rgba(0, 114, 255, 0.15);
+  margin-left: 6em;
+}
+
+.back-btn:hover {
+  background: #e6f3ff;
+  box-shadow: 0 4px 8px rgba(0, 114, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.back-btn-inside {
+  margin-top: 0;
+  margin-bottom: 32px;
+  align-self: flex-start;
+}

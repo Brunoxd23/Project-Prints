@@ -1,0 +1,161 @@
+/* Botão Ver Prints no card */
+.ver-prints-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.2s, background 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 114, 255, 0.1);
+}
+
+.ver-prints-btn:hover {
+  background: linear-gradient(90deg, #0096c7 0%, #005fa3 100%);
+  transform: translateY(-2px);
+}
+
+/* View de semestres */
+.semester-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #fff;
+  z-index: 1000;
+  padding: 32px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.semester-header {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.semester-title {
+  flex: 1;
+  text-align: center;
+  color: #0072ff;
+  font-size: 2rem;
+  margin: 0;
+}
+
+.semester-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  width: 100%;
+  max-width: 1200px;
+  margin-top: 24px;
+}
+
+.semester-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 114, 255, 0.1);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+.semester-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 114, 255, 0.2);
+}
+
+.semester-card h3 {
+  color: #0072ff;
+  margin: 0 0 16px 0;
+  font-size: 1.4rem;
+}
+
+.semester-info {
+  color: #666;
+  margin: 0 0 16px 0;
+  font-size: 0.9rem;
+  background-color: #f0f9ff;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.semester-section-title {
+  color: #0072ff;
+  margin: 0 0 24px 0;
+  font-size: 1.6rem;
+  text-align: center;
+  width: 100%;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.no-data {
+  color: #666;
+  background-color: #f5f5f5;
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 1.1rem;
+  width: 100%;
+}
+
+.empty-semester {
+  opacity: 0.7;
+  background-color: #f5f5f5;
+}
+
+.semester-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.update-prints-btn {
+  background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.update-prints-btn:hover {
+  background: linear-gradient(90deg, #0096c7 0%, #005fa3 100%);
+  transform: translateY(-2px);
+}
+
+/* Animações */
+.semester-view {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
