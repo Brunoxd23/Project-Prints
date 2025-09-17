@@ -3,6 +3,13 @@
   <head>
     <title>Executar Script</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="styles/semester.css" />
+    <link rel="stylesheet" href="styles/buttons.css" />
+    <link rel="stylesheet" href="styles/subcursos.css" />
+    <link rel="stylesheet" href="styles/subcursos_fix.css" />
+    <link rel="stylesheet" href="styles/prints.css" />
+    <link rel="stylesheet" href="styles/back-button.css" />
+    <link rel="stylesheet" href="styles/folder-view.css" />
   </head>
   <body>
     <header
@@ -73,13 +80,13 @@
             color: #000 !important;
             font-size: 2rem;
             font-weight: 900;
-            letter-spacing: 1px;
+            /* letter-spacing: 1px;
             cursor: pointer;
             background: #fff;
             border-radius: 12px;
             padding: 4px 18px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            z-index: 100;
+            z-index: 100; */
           "
           >Prints Pós-graduação</span
         >
@@ -109,24 +116,14 @@
       ></div>
     </div>
 
-    <div
-      id="folder-view"
-      style="
-        display: none;
-        justify-content: center;
-        align-items: flex-start;
-        width: 100vw;
-      "
-    >
+    <div id="folder-view" style="display: none">
       <div class="card folder-card">
-        <button class="back-btn" onclick="goHome()">&larr; Voltar</button>
-        <h2 id="folder-title" style="margin-top: 0"></h2>
+        <h2 id="folder-title"></h2>
         <button
           id="run-script-btn"
           style="margin-bottom: 20px; display: none"
         ></button>
         <div style="margin: 10px 0">
-          <label id="folder-label">Pastas:</label>
           <div id="folder-list" class="folder-list"></div>
         </div>
         <div class="output-section" id="folder-output"></div>

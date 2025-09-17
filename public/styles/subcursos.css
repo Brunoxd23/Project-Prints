@@ -1,0 +1,104 @@
+/* Estilo para o card do subcurso */
+#subcursos-wrapper .curso-card {
+  position: relative !important;
+  min-height: 180px !important;
+  padding: 15px !important;
+  padding-bottom: 70px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 320px !important;
+  margin: 10px !important;
+}
+
+/* Override para evitar que o card do subcurso mude de tamanho no hover */
+#subcursos-wrapper .curso-card:hover {
+  transform: translateY(-6px) !important;
+  border: 2px solid #00c6ff !important;
+}
+
+/* Título do subcurso */
+#subcursos-wrapper .card-title {
+  text-align: center !important;
+  width: 85% !important;
+  margin: 15px auto !important;
+  z-index: 1 !important;
+}
+
+#subcursos-wrapper .card-title h3 {
+  font-size: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #333 !important;
+}
+
+/* Container dos botões inferiores */
+#subcursos-wrapper .buttons-container {
+  display: flex !important;
+  gap: 12px !important;
+  justify-content: center !important;
+  align-items: center !important;
+  position: absolute !important;
+  bottom: 15px !important;
+  left: 0 !important;
+  right: 0 !important;
+  padding: 0 15px !important;
+}
+
+/* Botões inferiores */
+#subcursos-wrapper .atualizar-btn,
+#subcursos-wrapper .run-script-btn {
+  flex: 1 !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  min-width: 100px !important;
+  max-width: 130px !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+  transition: transform 0.2s, background 0.2s !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+#subcursos-wrapper .atualizar-btn {
+  background: linear-gradient(90deg, #28a745 0%, #218838 100%) !important;
+  color: white !important;
+}
+
+#subcursos-wrapper .run-script-btn {
+  background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%) !important;
+  color: white !important;
+}
+
+/* Botão Ver Prints no canto superior */
+#subcursos-wrapper .ver-prints-btn {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%) !important;
+  color: white !important;
+  padding: 5px 10px !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  z-index: 10 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Título do subcurso */
+.card-title {
+  text-align: center;
+  width: 85%;
+  margin: 15px auto;
+}
+
+.card-title h3 {
+  font-size: 16px;
+  margin: 0;
+  padding: 0;
+}

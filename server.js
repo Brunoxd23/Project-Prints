@@ -6,7 +6,47 @@ const puppeteer = require("puppeteer");
 const app = express();
 const PORT = 3000;
 
+// Importa rotas
+const semestersRouter = require("./routes/semesters");
+
 app.use(express.static(path.join(__dirname, "public")));
+
+// Rotas de gerenciamento de semestres
+app.use("/api/semesters", semestersRouter);
+
+// Endpoint para listar semestres disponíveis para um curso específico
+app.get("/listar-semestres/:pasta", (req, res) => {
+  const { pasta } = req.params;
+  const publicDir = path.join(__dirname, "public");
+
+  try {
+    // Lista todos os diretórios no public
+    const allDirs = fs
+      .readdirSync(publicDir)
+      .filter((f) => fs.statSync(path.join(publicDir, f)).isDirectory());
+
+    // Filtra apenas os diretórios que começam com o nome da pasta e têm o padrão de semestre
+    const semesterDirs = allDirs
+      .filter((dir) => dir.startsWith(`${pasta}_`))
+      .map((dir) => {
+        // Extrai o semestre (YYYY-S) do nome da pasta
+        const match = dir.match(new RegExp(`${pasta}_(\\d{4}-[12])$`));
+        return match ? match[1] : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        // Ordena por ano (decrescente) e depois por semestre (decrescente)
+        const [yearA, semA] = a.split("-").map(Number);
+        const [yearB, semB] = b.split("-").map(Number);
+        return yearB - yearA || semB - semA;
+      });
+
+    res.json({ semesters: semesterDirs });
+  } catch (error) {
+    console.error("Erro ao listar semestres:", error);
+    res.status(500).json({ error: "Erro ao listar semestres" });
+  }
+});
 
 // Endpoint para listar prints de uma pasta específica
 app.get("/listar-prints", (req, res) => {
@@ -30,7 +70,9 @@ app.get("/listar-pastas", (req, res) => {
     .filter((f) => fs.statSync(path.join(publicDir, f)).isDirectory())
     .filter(
       (f) =>
-        f.startsWith("Cuidados_Paliativos_") ||
+        f.startsWith("Pratica_Estendida_") ||
+        f.startsWith("Paliativos_Quinzenal_") ||
+        f.startsWith("Paliativos_Semanal_") ||
         f.startsWith("Dependencia_Quimica_") ||
         f.startsWith("Sustentabilidade_ESG_") ||
         f.startsWith("Gestao_Infraestrutura_") ||
