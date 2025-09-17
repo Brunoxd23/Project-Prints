@@ -20,7 +20,7 @@ const runScriptBtn = document.getElementById("run-script-btn");
 window.cursosHibrida = [
   {
     nome: "Cuidados Paliativos",
-    descricao: "Pós com três opções de turma",
+    descricao: "Pós com opções de Prática Estendida",
     img: "./images/cuidados_paliativos.webp",
     subcursos: [
       {

@@ -105,16 +105,6 @@ function renderSubcursos(curso, cursosContainer) {
     };
     card.appendChild(btnVerPrints);
 
-    // Botão Atualizar
-    const btnAtualizar = document.createElement("button");
-    btnAtualizar.className = "atualizar-btn";
-    btnAtualizar.textContent = "Atualizar";
-    btnAtualizar.onclick = (e) => {
-      e.stopPropagation();
-      updateSemesterPrints(sub);
-    };
-    card.appendChild(btnAtualizar);
-
     // Botão para executar script
     const btn = document.createElement("button");
     btn.className = "run-script-btn";
