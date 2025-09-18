@@ -9,7 +9,6 @@ const router = express.Router();
 async function captureExpandedTextAndModalities(page, outputFolder) {
   // List of all sections we need to capture
   const sections = [
-    "curso",
     "Programa e Metodologia",
     "Objetivos e Qualificações",
     "Corpo Docente",
@@ -152,16 +151,14 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
     }
   }
 
-  // Ensure filenames are generated in the correct sequence
-  screenshots.sort(
-    (a, b) => sections.indexOf(a.section) - sections.indexOf(b.section)
-  );
+  // Ordena as capturas de tela com base no índice da seção (a ordem original do array sections)
+  screenshots.sort((a, b) => a.index - b.index);
 
   // Salva os arquivos na ordem correta
   screenshots.forEach((screenshot, index) => {
     const orderedFilename =
       `${index + 1}_${screenshot.section}`
-        .replace(/[^\\w\s]/gi, "")
+        .replace(/[^\w\s]/gi, "")
         .replace(/\s+/g, "_")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
