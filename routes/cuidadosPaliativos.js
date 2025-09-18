@@ -5,6 +5,184 @@ const puppeteer = require("puppeteer");
 
 const router = express.Router();
 
+// Helper function to capture screenshots of all required sections with expanded text and modalities
+async function captureExpandedTextAndModalities(page, outputFolder) {
+  // List of all sections we need to capture
+  const sections = [
+    "curso",
+    "Programa e Metodologia",
+    "Objetivos e Qualificações",
+    "Corpo Docente",
+    "Cronograma de Aulas",
+    "Local e Horario",
+    "Valor do Curso",
+    "Perfil do Aluno",
+    "Processo Seletivo",
+    "Perguntas frequentes (FAQ)",
+  ];
+
+  // Objeto para armazenar informações sobre as capturas de tela
+  const screenshots = []; // For each section
+  for (const section of sections) {
+    console.log(`📸 Capturando seção: ${section}`);
+
+    try {
+      // Click on the section button
+      const [navigation] = await Promise.all([
+        page
+          .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
+          .catch(() => null),
+        page.evaluate((text) => {
+          const btns = Array.from(document.querySelectorAll("button"));
+          const target = btns.find((btn) =>
+            btn.textContent.trim().includes(text)
+          );
+          if (target) target.click();
+        }, section),
+      ]);
+
+      // Wait for content to load
+      await page
+        .waitForSelector(".turma-wrapper-content", {
+          visible: true,
+          timeout: 10000,
+        })
+        .catch(() => {
+          console.log(
+            `⚠️ Não foi possível encontrar o conteúdo para ${section}, tentando continuar...`
+          );
+        });
+      await new Promise((r) => setTimeout(r, 1000));
+
+      // Try to close cookie notice if it appears
+      try {
+        await page.evaluate(() => {
+          const btns = Array.from(document.querySelectorAll("button"));
+          const aceitar = btns.find((btn) =>
+            btn.textContent.trim().includes("Entendi e Fechar")
+          );
+          if (aceitar) aceitar.click();
+        });
+        await new Promise((r) => setTimeout(r, 500));
+      } catch (e) {}
+
+      // Check for and click any "... mais" buttons to expand text
+      await page.evaluate(() => {
+        const maisButtons = Array.from(
+          document.querySelectorAll("button")
+        ).filter((btn) => btn.textContent.trim().includes("mais"));
+
+        console.log(
+          `Encontrados ${maisButtons.length} botões "mais" para expandir`
+        );
+        for (const btn of maisButtons) {
+          btn.click();
+        }
+      });
+
+      // Wait a moment for text expansion
+      await new Promise((r) => setTimeout(r, 1000));
+
+      // Check for and expand modality sections
+      await page.evaluate(() => {
+        const modalidadesHeaders = Array.from(
+          document.querySelectorAll("h3, h4, h5, div")
+        ).filter(
+          (el) =>
+            el.textContent.trim().includes("Modalidade") ||
+            el.textContent.trim().includes("modalidade")
+        );
+
+        console.log(
+          `Encontradas ${modalidadesHeaders.length} seções de modalidade para expandir`
+        );
+        for (const header of modalidadesHeaders) {
+          if (
+            header.nextElementSibling &&
+            header.nextElementSibling.tagName.toLowerCase() === "div" &&
+            header.nextElementSibling.style.display === "none"
+          ) {
+            header.click();
+          }
+        }
+      });
+
+      // Wait a moment for modality expansion
+      await new Promise((r) => setTimeout(r, 1000));
+
+      // Ensure consistent handling of filenames and screenshots for all sections
+      const filename = `${sections.indexOf(section) + 1}_${section}`
+        .replace(/[^\w\s]/gi, "")
+        .replace(/\s+/g, "_")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/_+/g, "_")
+        .replace(/_$/, "")
+        .trim();
+
+      if (!filename) {
+        throw new Error(`Invalid filename generated for section: ${section}`);
+      }
+
+      const fullFilename = `${filename}.png`;
+
+      // Take screenshot of appropriate content
+      let content;
+      if (section === "curso") {
+        content = await page.$(".sobre-section");
+      } else {
+        content = await page.$(".turma-wrapper-content");
+      }
+
+      if (content) {
+        await content.screenshot({
+          path: path.join(outputFolder, fullFilename),
+        });
+        console.log(`✅ Screenshot saved: ${fullFilename}`);
+        screenshots.push({
+          section: section,
+          filename: fullFilename,
+          index: sections.indexOf(section),
+        });
+      } else {
+        console.error(`❌ Content not found for section: ${section}`);
+      }
+    } catch (error) {
+      console.error(`❌ Error capturing section ${section}:`, error.message);
+    }
+  }
+
+  // Ensure filenames are generated in the correct sequence
+  screenshots.sort(
+    (a, b) => sections.indexOf(a.section) - sections.indexOf(b.section)
+  );
+
+  // Salva os arquivos na ordem correta
+  screenshots.forEach((screenshot, index) => {
+    const orderedFilename =
+      `${index + 1}_${screenshot.section}`
+        .replace(/[^\\w\s]/gi, "")
+        .replace(/\s+/g, "_")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/_+/g, "_")
+        .replace(/_$/, "") + ".png";
+
+    const oldPath = path.join(outputFolder, screenshot.filename);
+    const newPath = path.join(outputFolder, orderedFilename);
+
+    if (fs.existsSync(oldPath)) {
+      fs.renameSync(oldPath, newPath);
+      screenshot.filename = orderedFilename;
+    } else {
+      console.error(`❌ File not found for renaming: ${oldPath}`);
+    }
+  });
+
+  // Retorna apenas os nomes dos arquivos ordenados
+  return screenshots.map((s) => s.filename);
+}
+
 // 1. Unidade Paulista | Quinzenal Prática Estendida
 router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
   try {
@@ -105,6 +283,7 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
     await page.setViewport({ width: 1280, height: 800 });
+
     // Remove pop-up de cookies
     try {
       await page.waitForSelector("button", { timeout: 60000 });
@@ -117,64 +296,25 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
       });
       await new Promise((r) => setTimeout(r, 1500));
     } catch (e) {}
+
+    // Scroll to the button group
     await page.evaluate(() => {
       const btn = document.querySelector("button");
       if (btn) btn.scrollIntoView({ behavior: "smooth", block: "center" });
     });
-    // Abas a serem navegadas para tirar prints
-    const abas = ["", "curso", "curso", "Valor do Curso", "Valor do Curso"];
-    for (let i = 0; i < abas.length; i++) {
-      const aba = abas[i];
-      if (i === 0) continue;
-      const [navigation] = await Promise.all([
-        page
-          .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
-          .catch(() => null),
-        page.evaluate((text) => {
-          const btns = Array.from(document.querySelectorAll("button"));
-          const target = btns.find((btn) =>
-            btn.textContent.trim().includes(text)
-          );
-          if (target) target.click();
-        }, aba),
-      ]);
-      await page.waitForSelector(".turma-wrapper-content", {
-        visible: true,
-        timeout: 10000,
-      });
-      await new Promise((r) => setTimeout(r, 2000));
-      try {
-        await page.evaluate(() => {
-          const btns = Array.from(document.querySelectorAll("button"));
-          const aceitar = btns.find((btn) =>
-            btn.textContent.trim().includes("Entendi e Fechar")
-          );
-          if (aceitar) aceitar.click();
-        });
-        await new Promise((r) => setTimeout(r, 500));
-      } catch (e) {}
-      const filename = aba.replace(/[^\w\s]/gi, "").replace(/\s+/g, "_");
-      let content;
-      if (aba === "curso") {
-        content = await page.$(".sobre-section");
-      } else {
-        content = await page.$(".turma-wrapper-content");
-      }
-      if (content) {
-        await content.screenshot({
-          path: path.join(outputFolder, `${filename}.png`),
-        });
-      } else {
-        await page.screenshot({
-          path: path.join(outputFolder, `${filename}_full.png`),
-        });
-      }
-    }
+
+    // Use the helper function to capture all required sections with expanded text
+    const screenshotFiles = await captureExpandedTextAndModalities(
+      page,
+      outputFolder
+    );
     await browser.close();
-    const files = fs
-      .readdirSync(outputFolder)
-      .filter((f) => f.endsWith(".png"))
-      .map((f) => `/Pratica_Estendida_${semesterFolder}/${f}`);
+
+    // Map the ordered screenshot filenames to their full paths
+    const files = screenshotFiles.map(
+      (filename) => `/Pratica_Estendida_${semesterFolder}/${filename}`
+    );
+
     return res.json(files);
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -281,6 +421,7 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
     await page.setViewport({ width: 1280, height: 800 });
+
     // Remove pop-up de cookies
     try {
       await page.waitForSelector("button", { timeout: 60000 });
@@ -293,64 +434,25 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
       });
       await new Promise((r) => setTimeout(r, 1500));
     } catch (e) {}
+
+    // Scroll to the button group
     await page.evaluate(() => {
       const btn = document.querySelector("button");
       if (btn) btn.scrollIntoView({ behavior: "smooth", block: "center" });
     });
-    // Abas a serem navegadas para tirar prints
-    const abas = ["", "curso", "curso", "Valor do Curso", "Valor do Curso"];
-    for (let i = 0; i < abas.length; i++) {
-      const aba = abas[i];
-      if (i === 0) continue;
-      const [navigation] = await Promise.all([
-        page
-          .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
-          .catch(() => null),
-        page.evaluate((text) => {
-          const btns = Array.from(document.querySelectorAll("button"));
-          const target = btns.find((btn) =>
-            btn.textContent.trim().includes(text)
-          );
-          if (target) target.click();
-        }, aba),
-      ]);
-      await page.waitForSelector(".turma-wrapper-content", {
-        visible: true,
-        timeout: 10000,
-      });
-      await new Promise((r) => setTimeout(r, 2000));
-      try {
-        await page.evaluate(() => {
-          const btns = Array.from(document.querySelectorAll("button"));
-          const aceitar = btns.find((btn) =>
-            btn.textContent.trim().includes("Entendi e Fechar")
-          );
-          if (aceitar) aceitar.click();
-        });
-        await new Promise((r) => setTimeout(r, 500));
-      } catch (e) {}
-      const filename = aba.replace(/[^\w\s]/gi, "").replace(/\s+/g, "_");
-      let content;
-      if (aba === "curso") {
-        content = await page.$(".sobre-section");
-      } else {
-        content = await page.$(".turma-wrapper-content");
-      }
-      if (content) {
-        await content.screenshot({
-          path: path.join(outputFolder, `${filename}.png`),
-        });
-      } else {
-        await page.screenshot({
-          path: path.join(outputFolder, `${filename}_full.png`),
-        });
-      }
-    }
+
+    // Use the helper function to capture all required sections with expanded text
+    const screenshotFiles = await captureExpandedTextAndModalities(
+      page,
+      outputFolder
+    );
     await browser.close();
-    const files = fs
-      .readdirSync(outputFolder)
-      .filter((f) => f.endsWith(".png"))
-      .map((f) => `/Paliativos_Quinzenal_${semesterFolder}/${f}`);
+
+    // Map the ordered screenshot filenames to their full paths
+    const files = screenshotFiles.map(
+      (filename) => `/Paliativos_Quinzenal_${semesterFolder}/${filename}`
+    );
+
     return res.json(files);
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -457,6 +559,7 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
     await page.setViewport({ width: 1280, height: 800 });
+
     // Remove pop-up de cookies
     try {
       await page.waitForSelector("button", { timeout: 60000 });
@@ -469,64 +572,25 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
       });
       await new Promise((r) => setTimeout(r, 1500));
     } catch (e) {}
+
+    // Scroll to the button group
     await page.evaluate(() => {
       const btn = document.querySelector("button");
       if (btn) btn.scrollIntoView({ behavior: "smooth", block: "center" });
     });
-    // Abas a serem navegadas para tirar prints
-    const abas = ["", "curso", "curso", "Valor do Curso", "Valor do Curso"];
-    for (let i = 0; i < abas.length; i++) {
-      const aba = abas[i];
-      if (i === 0) continue;
-      const [navigation] = await Promise.all([
-        page
-          .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
-          .catch(() => null),
-        page.evaluate((text) => {
-          const btns = Array.from(document.querySelectorAll("button"));
-          const target = btns.find((btn) =>
-            btn.textContent.trim().includes(text)
-          );
-          if (target) target.click();
-        }, aba),
-      ]);
-      await page.waitForSelector(".turma-wrapper-content", {
-        visible: true,
-        timeout: 10000,
-      });
-      await new Promise((r) => setTimeout(r, 2000));
-      try {
-        await page.evaluate(() => {
-          const btns = Array.from(document.querySelectorAll("button"));
-          const aceitar = btns.find((btn) =>
-            btn.textContent.trim().includes("Entendi e Fechar")
-          );
-          if (aceitar) aceitar.click();
-        });
-        await new Promise((r) => setTimeout(r, 500));
-      } catch (e) {}
-      const filename = aba.replace(/[^\w\s]/gi, "").replace(/\s+/g, "_");
-      let content;
-      if (aba === "curso") {
-        content = await page.$(".sobre-section");
-      } else {
-        content = await page.$(".turma-wrapper-content");
-      }
-      if (content) {
-        await content.screenshot({
-          path: path.join(outputFolder, `${filename}.png`),
-        });
-      } else {
-        await page.screenshot({
-          path: path.join(outputFolder, `${filename}_full.png`),
-        });
-      }
-    }
+
+    // Use the helper function to capture all required sections with expanded text
+    const screenshotFiles = await captureExpandedTextAndModalities(
+      page,
+      outputFolder
+    );
     await browser.close();
-    const files = fs
-      .readdirSync(outputFolder)
-      .filter((f) => f.endsWith(".png"))
-      .map((f) => `/Paliativos_Semanal_${semesterFolder}/${f}`);
+
+    // Map the ordered screenshot filenames to their full paths
+    const files = screenshotFiles.map(
+      (filename) => `/Paliativos_Semanal_${semesterFolder}/${filename}`
+    );
+
     return res.json(files);
   } catch (error) {
     return res.status(500).json({ error: error.message });

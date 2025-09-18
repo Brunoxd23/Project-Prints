@@ -1,19 +1,29 @@
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  background: #f5f5f5;
+  text-align: center;
+  padding-top: 80px;
+  overflow-x: hidden;
+}
+
 .back-btn {
   background: #f0f8ff;
   border: 1px solid #0072ff;
   color: #0072ff;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 50px;
-  font-size: 16px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 40px 0;
+  margin: 20px 0;
   box-shadow: 0 2px 5px rgba(0, 114, 255, 0.15);
-  margin-left: 6em;
+  margin-left: 8%;
+  margin-top: -5px;
 }
 
 .back-btn:hover {

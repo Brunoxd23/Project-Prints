@@ -10,7 +10,55 @@ export function createSemesterView(curso) {
   const view = document.createElement("div");
   view.className = "semester-view";
 
-  // Header com título e botão voltar
+  // Adicionar o header principal do site (igual ao do index.html)
+  const mainHeader = document.createElement("header");
+  mainHeader.className = "logo-header";
+  mainHeader.style = `
+    background: linear-gradient(90deg, #0072ff 0%, #00c6ff 100%);
+    padding: 0px 3px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    width: 100%;
+    position: relative;
+    z-index: 1100;
+  `;
+
+  const logoHeaderInner = document.createElement("div");
+  logoHeaderInner.className = "logo-header-inner";
+  logoHeaderInner.style = "display: flex; align-items: center; gap: 18px";
+
+  const logoIcon = document.createElement("span");
+  logoIcon.className = "logo-icon";
+  logoIcon.style = `
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    width: 200px;
+    height: 48px;
+  `;
+
+  const logoImg = document.createElement("img");
+  logoImg.src = "./images/Canvas_Einstein_Color_Horizontal.png";
+  logoImg.alt = "Logo Einstein";
+  logoImg.style = "width: 100%; height: auto; filter: brightness(0) invert(1)";
+
+  const logoTitle = document.createElement("span");
+  logoTitle.className = "logo-title";
+  logoTitle.id = "header-title-semester";
+  logoTitle.style = `
+    color: #ffffff !important;
+    font-size: 1.5rem;
+    font-weight: 900;
+  `;
+  logoTitle.textContent = "Prints Pós-graduação";
+
+  logoIcon.appendChild(logoImg);
+  logoHeaderInner.appendChild(logoIcon);
+  logoHeaderInner.appendChild(logoTitle);
+  mainHeader.appendChild(logoHeaderInner);
+  view.appendChild(mainHeader);
+
+  // Header secundário com título e botão voltar
   const header = document.createElement("div");
   header.className = "semester-header";
 
@@ -30,16 +78,12 @@ export function createSemesterView(curso) {
 
   const title = document.createElement("h2");
   title.className = "semester-title";
-  title.textContent = `Prints: ${curso.nome}`;
+  title.textContent = `${curso.nome}`;
 
   // Adicionar um header com título personalizado
   const subHeader = document.createElement("div");
   subHeader.className = "semester-sub-header";
-
-  const sectionTitle = document.createElement("h3");
-  sectionTitle.textContent = "Semestres Disponíveis";
-  sectionTitle.className = "semester-section-title";
-  subHeader.appendChild(sectionTitle);
+  subHeader.style = "margin-top: 0; padding-top: 0;";
 
   header.appendChild(btnVoltar);
   header.appendChild(title);
@@ -55,6 +99,17 @@ export function createSemesterView(curso) {
 
   view.appendChild(grid);
   document.body.appendChild(view);
+
+  // Adicionar efeitos de hover ao título do header
+  const headerTitle = document.getElementById("header-title-semester");
+  if (headerTitle) {
+    headerTitle.addEventListener("mouseenter", () => {
+      headerTitle.style.color = "#fff";
+    });
+    headerTitle.addEventListener("mouseleave", () => {
+      headerTitle.style.color = "#fff"; // Mantém branco por padrão
+    });
+  }
 }
 
 async function loadSemesters(curso, grid) {
