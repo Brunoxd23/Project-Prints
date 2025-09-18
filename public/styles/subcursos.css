@@ -1,3 +1,11 @@
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  background: #f5f5f5;
+  text-align: center;
+  padding-top: 80px;
+  overflow-x: hidden;
+}
 /* Estilo para o card do subcurso */
 #subcursos-wrapper .curso-card {
   position: relative !important;
@@ -9,6 +17,11 @@
   align-items: center !important;
   width: 320px !important;
   margin: 10px !important;
+}
+
+h2 {
+  color: #0072ff;
+  margin-top: -30px;
 }
 
 /* Override para evitar que o card do subcurso mude de tamanho no hover */
