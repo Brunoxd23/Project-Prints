@@ -24,6 +24,27 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Perguntas frequentes (FAQ)",
       display: "Perguntas frequentes FAQ",
     },
+    {
+      internal: "Sobre o Curso",
+      display: "Sobre o Curso",
+      selector: ".sobre-section",
+    },
+    {
+      internal: "Modalidade de Ensino",
+      display: "Modalidade de Ensino",
+      selector: ".modalidade-front",
+      action: async (page) => {
+        await page.click(".modalidade-front");
+        await page.waitForSelector(".modalidade-front-modal", {
+          visible: true,
+        });
+      },
+    },
+    {
+      internal: "Selecionar uma Turma",
+      display: "Selecionar uma Turma",
+      selector: ".seletor-container.turma-selecionada",
+    },
   ];
 
   // Objeto para armazenar informações sobre as capturas de tela
@@ -32,138 +53,26 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
     console.log(`📸 Capturando seção: ${section.internal}`);
 
     try {
-      // Click on the section button
-      const [navigation] = await Promise.all([
-        page
-          .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
-          .catch(() => null),
-        page.evaluate((text) => {
-          const btns = Array.from(document.querySelectorAll("button"));
-          const target = btns.find((btn) =>
-            btn.textContent.trim().includes(text)
-          );
-          if (target) target.click();
-        }, section.internal),
-      ]);
-
-      // Wait for content to load
-      await page
-        .waitForSelector(".turma-wrapper-content", {
-          visible: true,
-          timeout: 10000,
-        })
-        .catch(() => {
-          console.log(
-            `⚠️ Não foi possível encontrar o conteúdo para ${section.internal}, tentando continuar...`
-          );
-        });
-      await new Promise((r) => setTimeout(r, 1000));
-
-      // Try to close cookie notice if it appears
-      try {
-        await page.evaluate(() => {
-          const btns = Array.from(document.querySelectorAll("button"));
-          const aceitar = btns.find((btn) =>
-            btn.textContent.trim().includes("Entendi e Fechar")
-          );
-          if (aceitar) aceitar.click();
-        });
-        await new Promise((r) => setTimeout(r, 500));
-      } catch (e) {}
-
-      // Check for and click any "... mais" buttons to expand text
-      await page.evaluate(() => {
-        const maisButtons = Array.from(
-          document.querySelectorAll("button")
-        ).filter((btn) => btn.textContent.trim().includes("mais"));
-
-        console.log(
-          `Encontrados ${maisButtons.length} botões "mais" para expandir`
-        );
-        for (const btn of maisButtons) {
-          btn.click();
-        }
-      });
-
-      // Wait a moment for text expansion
-      await new Promise((r) => setTimeout(r, 1000));
-
-      // Check for and expand modality sections
-      await page.evaluate(() => {
-        const modalidadesHeaders = Array.from(
-          document.querySelectorAll("h3, h4, h5, div")
-        ).filter(
-          (el) =>
-            el.textContent.trim().includes("Modalidade") ||
-            el.textContent.trim().includes("modalidade")
-        );
-
-        console.log(
-          `Encontradas ${modalidadesHeaders.length} seções de modalidade para expandir`
-        );
-        for (const header of modalidadesHeaders) {
-          if (
-            header.nextElementSibling &&
-            header.nextElementSibling.tagName.toLowerCase() === "div" &&
-            header.nextElementSibling.style.display === "none"
-          ) {
-            header.click();
-          }
-        }
-      });
-
-      // Wait a moment for modality expansion
-      await new Promise((r) => setTimeout(r, 1000));
-
-      // Create screenshot filename from section name
-      const sectionNumber = sections.indexOf(section) + 1;
-      const filename =
-        `${sectionNumber}_${section.display}`
-          .replace(/[^\w\s]/gi, "")
-          .replace(/\s+/g, "_")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/_+/g, "_")
-          .replace(/_$/, "") + ".png";
-
-      if (!filename || filename === ".png") {
-        console.error(
-          `❌ Invalid filename generated for section: ${section.display}`
-        );
-        continue; // Skip this section if filename is invalid
+      if (section.action) {
+        await section.action(page);
       }
 
-      // Take screenshot of appropriate content
-      let content;
-      if (section.internal === "curso") {
-        content = await page.$(".sobre-section");
-      } else {
-        content = await page.$(".turma-wrapper-content");
-      }
+      const content = await page.$(section.selector);
 
       if (content) {
-        await content.screenshot({
-          path: path.join(outputFolder, filename),
-        });
+        const filename =
+          `${sections.indexOf(section) + 1}_${section.display}`
+            .replace(/[^\w\s]/gi, "")
+            .replace(/\s+/g, "_")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/_+/g, "_")
+            .replace(/_$/, "") + ".png";
+
+        await content.screenshot({ path: path.join(outputFolder, filename) });
         console.log(`✅ Screenshot saved: ${filename}`);
-        screenshots.push({
-          section: section,
-          filename: filename,
-          index: sections.indexOf(section), // Armazena o índice da seção para ordenação posterior
-        });
       } else {
-        const fullFilename =
-          section.internal.replace(/[^\w\s]/gi, "").replace(/\s+/g, "_") +
-          "_full.png";
-        await page.screenshot({
-          path: path.join(outputFolder, fullFilename),
-        });
-        console.log(`⚠️ Full page screenshot saved: ${fullFilename}`);
-        screenshots.push({
-          section: section,
-          filename: fullFilename,
-          index: sections.indexOf(section), // Armazena o índice da seção para ordenação posterior
-        });
+        console.error(`❌ Content not found for section: ${section.internal}`);
       }
     } catch (error) {
       console.error(
@@ -318,6 +227,29 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
       await new Promise((r) => setTimeout(r, 1500));
     } catch (e) {}
 
+    // Handle cookie consent banner
+    const cookieBannerSelector = ".mensagem_cookies";
+    const cookieButtonSelector = "button[ng-click='inicia_cookies']";
+
+    if (await page.$(cookieBannerSelector)) {
+      console.log("🔧 Handling cookie consent banner...");
+      try {
+        await page.click(cookieButtonSelector);
+        await page.waitForSelector(cookieBannerSelector, {
+          hidden: true,
+          timeout: 5000,
+        });
+        console.log("✅ Cookie consent banner closed.");
+      } catch (error) {
+        console.error(
+          "❌ Failed to handle cookie consent banner:",
+          error.message
+        );
+      }
+    } else {
+      console.log("ℹ️ No cookie consent banner detected.");
+    }
+
     // Scroll to the button group
     await page.evaluate(() => {
       const btn = document.querySelector("button");
@@ -346,6 +278,27 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
       {
         internal: "Perguntas frequentes (FAQ)",
         display: "Perguntas frequentes FAQ",
+      },
+      {
+        internal: "Sobre o Curso",
+        display: "Sobre o Curso",
+        selector: ".sobre-section",
+      },
+      {
+        internal: "Modalidade de Ensino",
+        display: "Modalidade de Ensino",
+        selector: ".modalidade-front",
+        action: async (page) => {
+          await page.click(".modalidade-front");
+          await page.waitForSelector(".modalidade-front-modal", {
+            visible: true,
+          });
+        },
+      },
+      {
+        internal: "Selecionar uma Turma",
+        display: "Selecionar uma Turma",
+        selector: ".seletor-container.turma-selecionada",
       },
     ];
 
@@ -497,6 +450,29 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
       await new Promise((r) => setTimeout(r, 1500));
     } catch (e) {}
 
+    // Handle cookie consent banner
+    const cookieBannerSelector = ".mensagem_cookies";
+    const cookieButtonSelector = "button[ng-click='inicia_cookies']";
+
+    if (await page.$(cookieBannerSelector)) {
+      console.log("🔧 Handling cookie consent banner...");
+      try {
+        await page.click(cookieButtonSelector);
+        await page.waitForSelector(cookieBannerSelector, {
+          hidden: true,
+          timeout: 5000,
+        });
+        console.log("✅ Cookie consent banner closed.");
+      } catch (error) {
+        console.error(
+          "❌ Failed to handle cookie consent banner:",
+          error.message
+        );
+      }
+    } else {
+      console.log("ℹ️ No cookie consent banner detected.");
+    }
+
     // Scroll to the button group
     await page.evaluate(() => {
       const btn = document.querySelector("button");
@@ -525,6 +501,27 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
       {
         internal: "Perguntas frequentes (FAQ)",
         display: "Perguntas frequentes FAQ",
+      },
+      {
+        internal: "Sobre o Curso",
+        display: "Sobre o Curso",
+        selector: ".sobre-section",
+      },
+      {
+        internal: "Modalidade de Ensino",
+        display: "Modalidade de Ensino",
+        selector: ".modalidade-front",
+        action: async (page) => {
+          await page.click(".modalidade-front");
+          await page.waitForSelector(".modalidade-front-modal", {
+            visible: true,
+          });
+        },
+      },
+      {
+        internal: "Selecionar uma Turma",
+        display: "Selecionar uma Turma",
+        selector: ".seletor-container.turma-selecionada",
       },
     ];
 
@@ -676,6 +673,29 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
       await new Promise((r) => setTimeout(r, 1500));
     } catch (e) {}
 
+    // Handle cookie consent banner
+    const cookieBannerSelector = ".mensagem_cookies";
+    const cookieButtonSelector = "button[ng-click='inicia_cookies']";
+
+    if (await page.$(cookieBannerSelector)) {
+      console.log("🔧 Handling cookie consent banner...");
+      try {
+        await page.click(cookieButtonSelector);
+        await page.waitForSelector(cookieBannerSelector, {
+          hidden: true,
+          timeout: 5000,
+        });
+        console.log("✅ Cookie consent banner closed.");
+      } catch (error) {
+        console.error(
+          "❌ Failed to handle cookie consent banner:",
+          error.message
+        );
+      }
+    } else {
+      console.log("ℹ️ No cookie consent banner detected.");
+    }
+
     // Scroll to the button group
     await page.evaluate(() => {
       const btn = document.querySelector("button");
@@ -704,6 +724,27 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
       {
         internal: "Perguntas frequentes (FAQ)",
         display: "Perguntas frequentes FAQ",
+      },
+      {
+        internal: "Sobre o Curso",
+        display: "Sobre o Curso",
+        selector: ".sobre-section",
+      },
+      {
+        internal: "Modalidade de Ensino",
+        display: "Modalidade de Ensino",
+        selector: ".modalidade-front",
+        action: async (page) => {
+          await page.click(".modalidade-front");
+          await page.waitForSelector(".modalidade-front-modal", {
+            visible: true,
+          });
+        },
+      },
+      {
+        internal: "Selecionar uma Turma",
+        display: "Selecionar uma Turma",
+        selector: ".seletor-container.turma-selecionada",
       },
     ];
 
