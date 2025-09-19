@@ -29,15 +29,9 @@ body {
   background-color: white;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-  width: 100%; /* Usar largura total */
-  max-width: 90%; /* Usar 90% da largura disponível */
-}
-
-.print-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 90%;
+  border: 1px solid #e0e0e0;
 }
 
 .print-img {
@@ -102,17 +96,89 @@ body {
   text-decoration: none;
   color: #0072ff;
   font-weight: 500;
-  transition: all 0.3s ease;
   margin-top: 12px;
   box-shadow: 0 2px 5px rgba(0, 114, 255, 0.15);
 }
 
+/* Remove hover effects from print items */
+.print-item:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Remove hover effects from download link */
 .download-link:hover {
-  background: #e6f3ff;
-  box-shadow: 0 4px 8px rgba(0, 114, 255, 0.2);
-  transform: translateY(-2px);
+  background: none;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Remove transition from buttons */
+.back-btn-inside,
+.outside-btn {
+  transition: none;
+}
+
+.back-btn-inside:hover,
+.outside-btn:hover {
+  background-color: #0072ff;
 }
 
 .download-text {
   margin-left: 8px;
+}
+
+/* Adjust 'Voltar' button styling */
+.back-btn-inside {
+  align-self: flex-start;
+  margin: 0 0 20px 0;
+  padding: 8px 16px;
+  font-size: 1rem;
+  background-color: #0072ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.back-btn-inside:hover {
+  background-color: #005bb5;
+}
+
+/* Style h2 elements to match semester page */
+h2 {
+  font-size: 1.8rem;
+  color: #0072ff;
+  margin-bottom: 20px;
+  text-align: center;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 10px;
+}
+
+/* Style for unit name outside the print grid */
+.unit-name {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #0072ff;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Style for button outside the print grid */
+.outside-btn {
+  display: inline-block;
+  margin: 20px auto;
+  padding: 10px 20px;
+  font-size: 1.2rem;
+  background-color: #0072ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: none;
+}
+
+.outside-btn:hover {
+  background-color: #0072ff;
 }
