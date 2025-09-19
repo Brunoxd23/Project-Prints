@@ -24,12 +24,6 @@ h2 {
   margin-top: -30px;
 }
 
-/* Override para evitar que o card do subcurso mude de tamanho no hover */
-#subcursos-wrapper .curso-card:hover {
-  transform: translateY(-6px) !important;
-  border: 2px solid #00c6ff !important;
-}
-
 /* Título do subcurso */
 #subcursos-wrapper .card-title {
   text-align: center !important;
@@ -72,7 +66,6 @@ h2 {
   max-width: 130px !important;
   margin: 0 !important;
   white-space: nowrap !important;
-  transition: transform 0.2s, background 0.2s !important;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
 }
 

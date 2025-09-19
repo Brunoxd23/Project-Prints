@@ -31,15 +31,25 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 20px;
+}
+
+.header-section {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  margin: 0 auto 20px auto;
+  max-width: 1700px;
 }
 
 #folder-title {
+  font-size: 1.4rem;
+  font-weight: 600;
   color: #0072ff;
-  font-size: 2rem;
-  margin-bottom: 30px;
-  text-align: center;
-  border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 15px;
+  margin: 0;
+  text-align: left;
 }
 
 /* Ajuste para fazer os prints ocuparem toda a largura disponível */
@@ -67,10 +77,22 @@ body {
 
 /* Botão voltar bem posicionado */
 .back-btn-inside {
-  align-self: flex-start;
-  margin: 0 0 30px 0;
-  padding: 10px 20px;
-  font-size: 1.1rem;
+  padding: 8px 16px;
+  font-size: 1rem;
+  background-color: #0072ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 20px;
+  white-space: nowrap;
+  height: fit-content;
+  align-self: center;
+  transition: none;
+}
+
+.back-btn-inside:hover {
+  background-color: #0072ff;
 }
 
 /* Título do print mais visível */
@@ -84,4 +106,17 @@ body {
   border-bottom: 1px solid #e0e0e0;
   text-align: center;
   margin-bottom: 20px;
+}
+
+/* Container específico para os prints */
+.prints-container {
+  width: 100%;
+  max-width: 1700px;
+  margin: 0 auto;
+}
+
+/* Remove hover effects from folder view elements */
+.folder-card:hover {
+  transform: none;
+  box-shadow: none;
 }

@@ -9,21 +9,27 @@ const router = express.Router();
 async function captureExpandedTextAndModalities(page, outputFolder) {
   // List of all sections we need to capture
   const sections = [
-    "Programa e Metodologia",
-    "Objetivos e Qualificações",
-    "Corpo Docente",
-    "Cronograma de Aulas",
-    "Local e Horario",
-    "Valor do Curso",
-    "Perfil do Aluno",
-    "Processo Seletivo",
-    "Perguntas frequentes (FAQ)",
+    { internal: "Programa e Metodologia", display: "Programa e Metodologia" },
+    {
+      internal: "Objetivos e Qualificações",
+      display: "Objetivos e Qualificacoes",
+    },
+    { internal: "Corpo Docente", display: "Corpo Docente" },
+    { internal: "Cronograma de Aulas", display: "Cronograma de Aulas" },
+    { internal: "Local e Horário", display: "Local e Horario" },
+    { internal: "Valor do Curso", display: "Valor do Curso" },
+    { internal: "Perfil do Aluno", display: "Perfil do Aluno" },
+    { internal: "Processo Seletivo", display: "Processo Seletivo" },
+    {
+      internal: "Perguntas frequentes (FAQ)",
+      display: "Perguntas frequentes FAQ",
+    },
   ];
 
   // Objeto para armazenar informações sobre as capturas de tela
   const screenshots = []; // For each section
   for (const section of sections) {
-    console.log(`📸 Capturando seção: ${section}`);
+    console.log(`📸 Capturando seção: ${section.internal}`);
 
     try {
       // Click on the section button
@@ -37,7 +43,7 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
             btn.textContent.trim().includes(text)
           );
           if (target) target.click();
-        }, section),
+        }, section.internal),
       ]);
 
       // Wait for content to load
@@ -48,7 +54,7 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
         })
         .catch(() => {
           console.log(
-            `⚠️ Não foi possível encontrar o conteúdo para ${section}, tentando continuar...`
+            `⚠️ Não foi possível encontrar o conteúdo para ${section.internal}, tentando continuar...`
           );
         });
       await new Promise((r) => setTimeout(r, 1000));
@@ -109,25 +115,27 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       // Wait a moment for modality expansion
       await new Promise((r) => setTimeout(r, 1000));
 
-      // Ensure consistent handling of filenames and screenshots for all sections
-      const filename = `${sections.indexOf(section) + 1}_${section}`
-        .replace(/[^\w\s]/gi, "")
-        .replace(/\s+/g, "_")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/_+/g, "_")
-        .replace(/_$/, "")
-        .trim();
+      // Create screenshot filename from section name
+      const sectionNumber = sections.indexOf(section) + 1;
+      const filename =
+        `${sectionNumber}_${section.display}`
+          .replace(/[^\w\s]/gi, "")
+          .replace(/\s+/g, "_")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/_+/g, "_")
+          .replace(/_$/, "") + ".png";
 
-      if (!filename) {
-        throw new Error(`Invalid filename generated for section: ${section}`);
+      if (!filename || filename === ".png") {
+        console.error(
+          `❌ Invalid filename generated for section: ${section.display}`
+        );
+        continue; // Skip this section if filename is invalid
       }
-
-      const fullFilename = `${filename}.png`;
 
       // Take screenshot of appropriate content
       let content;
-      if (section === "curso") {
+      if (section.internal === "curso") {
         content = await page.$(".sobre-section");
       } else {
         content = await page.$(".turma-wrapper-content");
@@ -135,29 +143,44 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
 
       if (content) {
         await content.screenshot({
+          path: path.join(outputFolder, filename),
+        });
+        console.log(`✅ Screenshot saved: ${filename}`);
+        screenshots.push({
+          section: section,
+          filename: filename,
+          index: sections.indexOf(section), // Armazena o índice da seção para ordenação posterior
+        });
+      } else {
+        const fullFilename =
+          section.internal.replace(/[^\w\s]/gi, "").replace(/\s+/g, "_") +
+          "_full.png";
+        await page.screenshot({
           path: path.join(outputFolder, fullFilename),
         });
-        console.log(`✅ Screenshot saved: ${fullFilename}`);
+        console.log(`⚠️ Full page screenshot saved: ${fullFilename}`);
         screenshots.push({
           section: section,
           filename: fullFilename,
-          index: sections.indexOf(section),
+          index: sections.indexOf(section), // Armazena o índice da seção para ordenação posterior
         });
-      } else {
-        console.error(`❌ Content not found for section: ${section}`);
       }
     } catch (error) {
-      console.error(`❌ Error capturing section ${section}:`, error.message);
+      console.error(
+        `❌ Error capturing section ${section.internal}:`,
+        error.message
+      );
     }
   }
 
   // Ordena as capturas de tela com base no índice da seção (a ordem original do array sections)
   screenshots.sort((a, b) => a.index - b.index);
 
-  // Salva os arquivos na ordem correta
+  // Renomeia os arquivos para garantir a sequência correta
+  const finalScreenshots = [];
   screenshots.forEach((screenshot, index) => {
     const orderedFilename =
-      `${index + 1}_${screenshot.section}`
+      `${index + 1}_${screenshot.section.display}`
         .replace(/[^\w\s]/gi, "")
         .replace(/\s+/g, "_")
         .normalize("NFD")
@@ -170,14 +193,15 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
 
     if (fs.existsSync(oldPath)) {
       fs.renameSync(oldPath, newPath);
-      screenshot.filename = orderedFilename;
+      finalScreenshots.push(orderedFilename);
+      console.log(`✅ Renamed to: ${orderedFilename}`);
     } else {
       console.error(`❌ File not found for renaming: ${oldPath}`);
     }
   });
 
   // Retorna apenas os nomes dos arquivos ordenados
-  return screenshots.map((s) => s.filename);
+  return finalScreenshots;
 }
 
 // 1. Unidade Paulista | Quinzenal Prática Estendida
@@ -305,6 +329,47 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
       page,
       outputFolder
     );
+
+    // Ensure correct content is captured for each section
+    const sections = [
+      { internal: "Programa e Metodologia", display: "Programa e Metodologia" },
+      {
+        internal: "Objetivos e Qualificações",
+        display: "Objetivos e Qualificacoes",
+      },
+      { internal: "Corpo Docente", display: "Corpo Docente" },
+      { internal: "Cronograma de Aulas", display: "Cronograma de Aulas" },
+      { internal: "Local e Horário", display: "Local e Horario" },
+      { internal: "Valor do Curso", display: "Valor do Curso" },
+      { internal: "Perfil do Aluno", display: "Perfil do Aluno" },
+      { internal: "Processo Seletivo", display: "Processo Seletivo" },
+      {
+        internal: "Perguntas frequentes (FAQ)",
+        display: "Perguntas frequentes FAQ",
+      },
+    ];
+
+    screenshotFiles.forEach((screenshot, index) => {
+      const orderedFilename =
+        `${index + 1}_${sections[index].display}`
+          .replace(/[^\\w\s]/gi, "")
+          .replace(/\s+/g, "_")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/_+/g, "_")
+          .replace(/_$/, "") + ".png";
+
+      const oldPath = path.join(outputFolder, screenshot.filename);
+      const newPath = path.join(outputFolder, orderedFilename);
+
+      if (fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+        screenshot.filename = orderedFilename;
+      } else {
+        console.error(`❌ File not found for renaming: ${oldPath}`);
+      }
+    });
+
     await browser.close();
 
     // Map the ordered screenshot filenames to their full paths
@@ -443,6 +508,47 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
       page,
       outputFolder
     );
+
+    // Ensure correct content is captured for each section
+    const sections = [
+      { internal: "Programa e Metodologia", display: "Programa e Metodologia" },
+      {
+        internal: "Objetivos e Qualificações",
+        display: "Objetivos e Qualificacoes",
+      },
+      { internal: "Corpo Docente", display: "Corpo Docente" },
+      { internal: "Cronograma de Aulas", display: "Cronograma de Aulas" },
+      { internal: "Local e Horário", display: "Local e Horario" },
+      { internal: "Valor do Curso", display: "Valor do Curso" },
+      { internal: "Perfil do Aluno", display: "Perfil do Aluno" },
+      { internal: "Processo Seletivo", display: "Processo Seletivo" },
+      {
+        internal: "Perguntas frequentes (FAQ)",
+        display: "Perguntas frequentes FAQ",
+      },
+    ];
+
+    screenshotFiles.forEach((screenshot, index) => {
+      const orderedFilename =
+        `${index + 1}_${sections[index].display}`
+          .replace(/[^\\w\s]/gi, "")
+          .replace(/\s+/g, "_")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/_+/g, "_")
+          .replace(/_$/, "") + ".png";
+
+      const oldPath = path.join(outputFolder, screenshot.filename);
+      const newPath = path.join(outputFolder, orderedFilename);
+
+      if (fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+        screenshot.filename = orderedFilename;
+      } else {
+        console.error(`❌ File not found for renaming: ${oldPath}`);
+      }
+    });
+
     await browser.close();
 
     // Map the ordered screenshot filenames to their full paths
@@ -581,6 +687,47 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
       page,
       outputFolder
     );
+
+    // Ensure correct content is captured for each section
+    const sections = [
+      { internal: "Programa e Metodologia", display: "Programa e Metodologia" },
+      {
+        internal: "Objetivos e Qualificações",
+        display: "Objetivos e Qualificacoes",
+      },
+      { internal: "Corpo Docente", display: "Corpo Docente" },
+      { internal: "Cronograma de Aulas", display: "Cronograma de Aulas" },
+      { internal: "Local e Horário", display: "Local e Horario" },
+      { internal: "Valor do Curso", display: "Valor do Curso" },
+      { internal: "Perfil do Aluno", display: "Perfil do Aluno" },
+      { internal: "Processo Seletivo", display: "Processo Seletivo" },
+      {
+        internal: "Perguntas frequentes (FAQ)",
+        display: "Perguntas frequentes FAQ",
+      },
+    ];
+
+    screenshotFiles.forEach((screenshot, index) => {
+      const orderedFilename =
+        `${index + 1}_${sections[index].display}`
+          .replace(/[^\\w\s]/gi, "")
+          .replace(/\s+/g, "_")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/_+/g, "_")
+          .replace(/_$/, "") + ".png";
+
+      const oldPath = path.join(outputFolder, screenshot.filename);
+      const newPath = path.join(outputFolder, orderedFilename);
+
+      if (fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+        screenshot.filename = orderedFilename;
+      } else {
+        console.error(`❌ File not found for renaming: ${oldPath}`);
+      }
+    });
+
     await browser.close();
 
     // Map the ordered screenshot filenames to their full paths
