@@ -7,22 +7,62 @@ const router = express.Router();
 
 // Helper function to capture screenshots of all required sections with expanded text and modalities
 async function captureExpandedTextAndModalities(page, outputFolder) {
+  // Função para esconder banners de cookies
+  const hideCookieBanners = async (page) => {
+    await page.evaluate(() => {
+      const cookieBanners = document.querySelectorAll(".mensagem_cookies");
+      cookieBanners.forEach((banner) => {
+        banner.style.display = "none";
+      });
+    });
+  };
+
   // List of all sections we need to capture
   const sections = [
-    { internal: "Programa e Metodologia", display: "Programa e Metodologia" },
+    {
+      internal: "Programa e Metodologia",
+      display: "Programa e Metodologia",
+      selector: ".turma-wrapper-content",
+    },
     {
       internal: "Objetivos e Qualificações",
       display: "Objetivos e Qualificacoes",
+      selector: ".turma-wrapper-content",
     },
-    { internal: "Corpo Docente", display: "Corpo Docente" },
-    { internal: "Cronograma de Aulas", display: "Cronograma de Aulas" },
-    { internal: "Local e Horário", display: "Local e Horario" },
-    { internal: "Valor do Curso", display: "Valor do Curso" },
-    { internal: "Perfil do Aluno", display: "Perfil do Aluno" },
-    { internal: "Processo Seletivo", display: "Processo Seletivo" },
+    {
+      internal: "Corpo Docente",
+      display: "Corpo Docente",
+      selector: ".turma-wrapper-content",
+    },
+    {
+      internal: "Cronograma de Aulas",
+      display: "Cronograma de Aulas",
+      selector: ".turma-wrapper-content",
+    },
+    {
+      internal: "Local e Horário",
+      display: "Local e Horario",
+      selector: ".turma-wrapper-content",
+    },
+    {
+      internal: "Valor do Curso",
+      display: "Valor do Curso",
+      selector: ".turma-wrapper-content",
+    },
+    {
+      internal: "Perfil do Aluno",
+      display: "Perfil do Aluno",
+      selector: ".turma-wrapper-content",
+    },
+    {
+      internal: "Processo Seletivo",
+      display: "Processo Seletivo",
+      selector: ".turma-wrapper-content",
+    },
     {
       internal: "Perguntas frequentes (FAQ)",
       display: "Perguntas frequentes FAQ",
+      selector: ".turma-wrapper-content",
     },
     {
       internal: "Sobre o Curso",
@@ -51,11 +91,36 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
   const screenshots = []; // For each section
   for (const section of sections) {
     console.log(`📸 Capturando seção: ${section.internal}`);
+    await new Promise((r) => setTimeout(r, 1000)); // Aguarda entre cada seção
 
     try {
+      // Clica no botão da seção
+      const [navigation] = await Promise.all([
+        page
+          .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
+          .catch(() => null),
+        page.evaluate((text) => {
+          const btns = Array.from(document.querySelectorAll("button"));
+          const target = btns.find((btn) =>
+            btn.textContent.trim().includes(text)
+          );
+          if (target) target.click();
+        }, section.internal),
+      ]);
+
+      // Espera o conteúdo aparecer
+      await page.waitForSelector(section.selector, {
+        visible: true,
+        timeout: 10000,
+      });
+      await new Promise((r) => setTimeout(r, 1000));
+
       if (section.action) {
         await section.action(page);
       }
+
+      // Esconde banners de cookies antes de cada screenshot
+      await hideCookieBanners(page);
 
       const content = await page.$(section.selector);
 
@@ -88,8 +153,13 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
   // Renomeia os arquivos para garantir a sequência correta
   const finalScreenshots = [];
   screenshots.forEach((screenshot, index) => {
+    // Calcula o número principal e decimal
+    const mainNumber = Math.floor(index / 10) + 1;
+    const subNumber = index % 10;
+    const displayNumber = `${mainNumber}.${subNumber}`;
+
     const orderedFilename =
-      `${index + 1}_${screenshot.section.display}`
+      `${displayNumber}_${screenshot.section.display}`
         .replace(/[^\w\s]/gi, "")
         .replace(/\s+/g, "_")
         .normalize("NFD")
