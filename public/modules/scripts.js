@@ -28,7 +28,7 @@ export async function showPrints(pasta, folderOutput) {
     const res = await fetch(
       `/listar-prints?pasta=${encodeURIComponent(pasta)}`
     );
-    const prints = await res.json();
+    let prints = await res.json();
     let html = "";
     if (!Array.isArray(prints) || prints.length === 0) {
       html += "<span>Nenhum print encontrado.</span>";
@@ -37,6 +37,24 @@ export async function showPrints(pasta, folderOutput) {
         html;
       return;
     }
+    // Adiciona zeros à esquerda nos nomes dos prints
+    prints = prints.map((img) => {
+      const parts = img.split("/");
+      const filename = parts.pop();
+      const updatedFilename = filename.replace(/^(\d)_/, "0$1_");
+      return [...parts, updatedFilename].join("/");
+    });
+    // Ordena os prints para garantir a sequência correta (ordem numérica)
+    prints.sort((a, b) => {
+      const getNumber = (name) => {
+        const match = name.match(/(\d+)/);
+        if (!match) return 0;
+        const num = parseInt(match[1], 10);
+        // Adiciona zeros à esquerda para garantir ordenação correta
+        return num.toString().padStart(2, "0");
+      };
+      return getNumber(a).localeCompare(getNumber(b));
+    });
     html += `<div class='prints-grid'>`;
     html += prints
       .map(

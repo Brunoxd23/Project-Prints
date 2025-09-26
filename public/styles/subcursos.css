@@ -25,9 +25,12 @@ h2 {
 }
 
 /* Título do subcurso */
-#subcursos-wrapper .card-title {
+#subcursos-wrapper .card-title,
+#subcursos-wrapper h3,
+.curso-card h3 {
   text-align: center !important;
-  width: 85% !important;
+  width: 100% !important;
+  color: #0072ff;
   margin: 15px auto !important;
   z-index: 1 !important;
 }

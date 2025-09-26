@@ -10,9 +10,25 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
   // Função para lidar com banners de cookies
   const hideCookieBanners = async (page) => {
     try {
-      await page.waitForSelector("#inicia_cookies", { timeout: 5000 });
-      await page.click("#inicia_cookies");
-      await new Promise((r) => setTimeout(r, 2000)); // Espera maior para garantir que o banner sumiu
+      // Tenta diferentes seletores possíveis para o botão de cookies
+      const cookieSelectors = [
+        "#inicia_cookies",
+        "button[ng-click='inicia_cookies']",
+        ".cookies-banner button",
+        "#cookies-banner button",
+      ];
+
+      for (const selector of cookieSelectors) {
+        const button = await page.$(selector);
+        if (button) {
+          await button.click();
+          console.log(`✅ Cookie banner fechado usando seletor: ${selector}`);
+          await new Promise((r) => setTimeout(r, 2000));
+          return;
+        }
+      }
+
+      console.log("Nenhum banner de cookies encontrado");
     } catch (error) {
       console.log("Banner de cookies não encontrado ou já fechado");
     }
@@ -31,42 +47,66 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       selector: ".modal-container",
       action: async (page) => {
         try {
+          console.log("Iniciando captura da modalidade de ensino...");
+
           // Primeiro, verifica se há cookies e remove
           await hideCookieBanners(page);
 
-          // Espera a seção de modalidades aparecer e estar visível
+          console.log("Esperando página carregar completamente...");
+          await page.waitForTimeout(5000);
+
+          // Espera a seção de modalidades estar presente
           await page.waitForSelector(".modalidades-wrapper", {
             visible: true,
             timeout: 10000,
           });
 
-          // Espera específicamente pelo botão correto com o texto HÍBRIDO
-          const buttonSelector = ".modalidade-card-mobile .modalidade-front";
-          await page.waitForSelector(buttonSelector, {
-            visible: true,
-            timeout: 10000,
+          // Scroll para garantir visibilidade
+          await page.evaluate(() => {
+            const wrapper = document.querySelector(".modalidades-wrapper");
+            if (wrapper) {
+              wrapper.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
           });
 
-          // Clica usando uma combinação de métodos para garantir que o clique funcione
-          await Promise.all([
-            page.waitForSelector(".modal-container", { timeout: 10000 }),
-            page.evaluate(() => {
-              const button = document.querySelector(
-                ".modalidade-card-mobile .modalidade-front"
-              );
-              if (button) {
-                button.click();
-              } else {
-                throw new Error("Botão de modalidade não encontrado");
-              }
-            }),
-          ]);
+          console.log("Procurando botão da modalidade...");
 
-          // Espera adicional para garantir que o modal está completamente visível
+          // Espera garantir que a animação do scroll terminou
+          await page.waitForTimeout(2000);
+
+          // Tenta localizar e clicar no botão de várias maneiras
+          try {
+            // Primeira tentativa: clique direto
+            await page.click(".modalidade-card-mobile .modalidade-front");
+          } catch (e) {
+            console.log("Tentativa 1 falhou, tentando método alternativo...");
+
+            // Segunda tentativa: usando JavaScript
+            await page.evaluate(() => {
+              const buttons = Array.from(
+                document.querySelectorAll(
+                  ".modalidade-card-mobile .modalidade-front"
+                )
+              );
+              const button = buttons.find((b) =>
+                b.textContent.includes("HÍBRIDO")
+              );
+              if (button) button.click();
+            });
+          }
+
+          console.log("Esperando modal aparecer...");
+
+          // Espera inicial após o clique
+          await page.waitForTimeout(3000);
+
+          // Espera o modal aparecer
           await page.waitForFunction(
             () => {
               const modal = document.querySelector(".modal-container");
               if (!modal) return false;
+
+              // Verifica visibilidade real
               const style = window.getComputedStyle(modal);
               return (
                 style.display !== "none" &&
@@ -74,13 +114,23 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
                 style.opacity !== "0"
               );
             },
-            { timeout: 10000 }
+            { timeout: 15000 }
           );
 
-          // Tempo extra para garantir que todas as animações terminaram
-          await new Promise((r) => setTimeout(r, 5000));
-
           console.log("Modal de modalidade aberto e pronto para captura");
+
+          // Tempo extra para animações
+          await page.waitForTimeout(5000);
+
+          // Captura o screenshot do modal
+          const modal = await page.$(".modal-container");
+          if (modal) {
+            const filename = "2_Modalidade_de_Ensino.png";
+            await modal.screenshot({ path: path.join(outputFolder, filename) });
+            console.log(`✅ Screenshot saved: ${filename}`);
+          } else {
+            throw new Error("Modal não encontrado para captura");
+          }
         } catch (error) {
           console.log("Erro ao abrir modal de modalidades:", error.message);
           throw error;
@@ -181,8 +231,10 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       const content = await page.$(section.selector);
 
       if (content) {
+        const index = sections.indexOf(section) + 1;
+        const paddedIndex = index < 10 ? `0${index}` : index;
         const filename =
-          `${sections.indexOf(section) + 1}_${section.display}`
+          `${paddedIndex}_${section.display}`
             .replace(/[^\w\s]/gi, "")
             .replace(/\s+/g, "_")
             .normalize("NFD")
@@ -212,10 +264,11 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
     // Calcula o número principal e decimal
     const mainNumber = Math.floor(index / 10) + 1;
     const subNumber = index % 10;
-    const displayNumber = `${mainNumber}.${subNumber}`;
+    const fileIndex = index + 1;
+    const paddedIndex = fileIndex < 10 ? `0${fileIndex}` : fileIndex;
 
     const orderedFilename =
-      `${displayNumber}_${screenshot.section.display}`
+      `${paddedIndex}_${screenshot.section.display}`
         .replace(/[^\w\s]/gi, "")
         .replace(/\s+/g, "_")
         .normalize("NFD")
@@ -963,6 +1016,7 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
         selector: ".turma-wrapper-content",
       },
     ];
+
     screenshotFiles.forEach((screenshot, index) => {
       const orderedFilename =
         `${index + 1}_${sections[index].display}`

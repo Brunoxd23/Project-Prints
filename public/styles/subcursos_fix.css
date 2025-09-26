@@ -10,16 +10,54 @@ body {
 /* Correção para o grid de subcursos */
 .subcursos-grid {
   display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 20px !important;
+}
+
+/* Título da seção */
+.subcursos-grid > h2 {
+  width: 100% !important;
+  text-align: center !important;
+  color: #0072ff !important;
+  font-size: 2rem !important;
+  margin: 0 0 40px 0 !important;
+  padding-bottom: 10px !important;
+  border-bottom: 2px solid #e0e0e0 !important;
+}
+
+/* Estilo para h2 dentro de subcursos */
+.subcursos-grid h2 {
+  width: 100% !important;
+  text-align: center !important;
+  color: #0072ff !important;
+  font-size: 2rem !important;
+  margin: 0 auto 30px auto !important;
+  padding-bottom: 10px !important;
+  border-bottom: 2px solid #e0e0e0 !important;
+  display: block !important;
+}
+
+/* Container para centralizar todo o conteúdo */
+#subcursos-wrapper {
+  display: flex !important;
+  flex-direction: row !important;
   flex-wrap: wrap !important;
-  justify-content: center !important;
   gap: 20px !important;
-  margin-top: 20px !important;
+  padding: 20px !important;
+  justify-content: center !important;
+  align-items: center !important;
+  max-width: 1200px !important;
+  margin: 20px auto !important;
+  width: 100% !important;
 }
 
 /* Ajuste específico para os cards de subcursos */
 #subcursos-wrapper .curso-card {
   position: relative !important;
-  width: 300px !important;
+  width: 320px !important;
   height: 180px !important;
   min-height: auto !important;
   margin: 10px !important;
@@ -29,8 +67,8 @@ body {
   box-shadow: 0 4px 16px rgba(0, 114, 255, 0.1) !important;
   display: flex !important;
   flex-direction: column !important;
+  justify-content: center !important;
   align-items: center !important;
-  justify-content: center !important; /* Centraliza o conteúdo verticalmente */
   overflow: visible !important;
   border: 2px solid transparent !important;
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s !important;

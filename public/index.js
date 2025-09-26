@@ -43,8 +43,14 @@ window.cursosHibrida = [
   {
     nome: "Dependência Química",
     descricao: "Especialização Híbrida",
-    pasta: "Dependencia_Quimica",
     img: "./images/dependencia_quimica.webp",
+    subcursos: [
+      {
+        nome: "Unidade Centro de Ensino e Pesquisa | Mensal",
+        rota: "/api/run-script-dependencia-quimica",
+        pasta: "Dependencia_Quimica",
+      },
+    ],
   },
   {
     nome: "Sustentabilidade: Liderança e Inovação em ESG",
@@ -89,6 +95,16 @@ if (cardHibrida) {
   };
 }
 
+// Adiciona zeros à esquerda nos nomes dos prints
+function addLeadingZerosToPrints(prints) {
+  return prints.map((img) => {
+    const parts = img.split("/");
+    const filename = parts.pop();
+    const updatedFilename = filename.replace(/^(\d)_/, "0$1_");
+    return [...parts, updatedFilename].join("/");
+  });
+}
+
 // Abre a view de prints do curso selecionado
 window.abrirViewCurso = function (curso, semester) {
   const folderView = document.getElementById("folder-view");
@@ -128,6 +144,21 @@ window.abrirViewCurso = function (curso, semester) {
         folderOutput.innerHTML = html;
         return;
       }
+
+      // Adiciona zeros à esquerda nos nomes dos prints
+      prints = addLeadingZerosToPrints(prints);
+
+      // Ordena os prints para garantir a sequência correta (ordem numérica)
+      prints.sort((a, b) => {
+        const getNumber = (name) => {
+          const match = name.match(/(\d+)/);
+          if (!match) return 0;
+          const num = parseInt(match[1], 10);
+          // Adiciona zeros à esquerda para garantir ordenação correta
+          return num.toString().padStart(2, "0");
+        };
+        return getNumber(a).localeCompare(getNumber(b));
+      });
 
       html += `<div class='prints-grid'>`;
       html += prints

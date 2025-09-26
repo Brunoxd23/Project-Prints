@@ -8,11 +8,15 @@ const PORT = 3000;
 
 // Importa rotas
 const semestersRouter = require("./routes/semesters");
+const dependenciaQuimicaRouter = require("./routes/dependenciaQuimica");
 
 app.use(express.static(path.join(__dirname, "public")));
 
 // Rotas de gerenciamento de semestres
 app.use("/api/semesters", semestersRouter);
+
+// Rotas para os cursos
+app.use("/api", dependenciaQuimicaRouter);
 
 // Endpoint para listar semestres disponíveis para um curso específico
 app.get("/listar-semestres/:pasta", (req, res) => {
