@@ -7,18 +7,95 @@ const router = express.Router();
 
 // Helper function to capture screenshots of all required sections with expanded text and modalities
 async function captureExpandedTextAndModalities(page, outputFolder) {
-  // Função para esconder banners de cookies
+  // Função para lidar com banners de cookies
   const hideCookieBanners = async (page) => {
-    await page.evaluate(() => {
-      const cookieBanners = document.querySelectorAll(".mensagem_cookies");
-      cookieBanners.forEach((banner) => {
-        banner.style.display = "none";
-      });
-    });
+    try {
+      await page.waitForSelector("#inicia_cookies", { timeout: 5000 });
+      await page.click("#inicia_cookies");
+      await new Promise((r) => setTimeout(r, 2000)); // Espera maior para garantir que o banner sumiu
+    } catch (error) {
+      console.log("Banner de cookies não encontrado ou já fechado");
+    }
   };
 
   // List of all sections we need to capture
   const sections = [
+    {
+      internal: "Sobre o Curso",
+      display: "Sobre o Curso",
+      selector: ".sobre-section",
+    },
+    {
+      internal: "Modalidade de Ensino",
+      display: "Modalidade de Ensino",
+      selector: ".modal-container",
+      action: async (page) => {
+        try {
+          // Primeiro, verifica se há cookies e remove
+          await hideCookieBanners(page);
+
+          // Espera a seção de modalidades aparecer e estar visível
+          await page.waitForSelector(".modalidades-wrapper", {
+            visible: true,
+            timeout: 10000,
+          });
+
+          // Espera específicamente pelo botão correto com o texto HÍBRIDO
+          const buttonSelector = ".modalidade-card-mobile .modalidade-front";
+          await page.waitForSelector(buttonSelector, {
+            visible: true,
+            timeout: 10000,
+          });
+
+          // Clica usando uma combinação de métodos para garantir que o clique funcione
+          await Promise.all([
+            page.waitForSelector(".modal-container", { timeout: 10000 }),
+            page.evaluate(() => {
+              const button = document.querySelector(
+                ".modalidade-card-mobile .modalidade-front"
+              );
+              if (button) {
+                button.click();
+              } else {
+                throw new Error("Botão de modalidade não encontrado");
+              }
+            }),
+          ]);
+
+          // Espera adicional para garantir que o modal está completamente visível
+          await page.waitForFunction(
+            () => {
+              const modal = document.querySelector(".modal-container");
+              if (!modal) return false;
+              const style = window.getComputedStyle(modal);
+              return (
+                style.display !== "none" &&
+                style.visibility !== "hidden" &&
+                style.opacity !== "0"
+              );
+            },
+            { timeout: 10000 }
+          );
+
+          // Tempo extra para garantir que todas as animações terminaram
+          await new Promise((r) => setTimeout(r, 5000));
+
+          console.log("Modal de modalidade aberto e pronto para captura");
+        } catch (error) {
+          console.log("Erro ao abrir modal de modalidades:", error.message);
+          throw error;
+        }
+      },
+    },
+    {
+      internal: "Selecionar uma Turma",
+      display: "Selecionar uma Turma",
+      selector: ".seletor-container.turma-selecionada",
+      action: async (page) => {
+        await page.waitForSelector(".seletor-container.turma-selecionada");
+        await new Promise((r) => setTimeout(r, 1000)); // Espera para garantir que o conteúdo esteja carregado
+      },
+    },
     {
       internal: "Programa e Metodologia",
       display: "Programa e Metodologia",
@@ -63,27 +140,6 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Perguntas frequentes (FAQ)",
       display: "Perguntas frequentes FAQ",
       selector: ".turma-wrapper-content",
-    },
-    {
-      internal: "Sobre o Curso",
-      display: "Sobre o Curso",
-      selector: ".sobre-section",
-    },
-    {
-      internal: "Modalidade de Ensino",
-      display: "Modalidade de Ensino",
-      selector: ".modalidade-front",
-      action: async (page) => {
-        await page.click(".modalidade-front");
-        await page.waitForSelector(".modalidade-front-modal", {
-          visible: true,
-        });
-      },
-    },
-    {
-      internal: "Selecionar uma Turma",
-      display: "Selecionar uma Turma",
-      selector: ".seletor-container.turma-selecionada",
     },
   ];
 
@@ -334,21 +390,6 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
 
     // Ensure correct content is captured for each section
     const sections = [
-      { internal: "Programa e Metodologia", display: "Programa e Metodologia" },
-      {
-        internal: "Objetivos e Qualificações",
-        display: "Objetivos e Qualificacoes",
-      },
-      { internal: "Corpo Docente", display: "Corpo Docente" },
-      { internal: "Cronograma de Aulas", display: "Cronograma de Aulas" },
-      { internal: "Local e Horário", display: "Local e Horario" },
-      { internal: "Valor do Curso", display: "Valor do Curso" },
-      { internal: "Perfil do Aluno", display: "Perfil do Aluno" },
-      { internal: "Processo Seletivo", display: "Processo Seletivo" },
-      {
-        internal: "Perguntas frequentes (FAQ)",
-        display: "Perguntas frequentes FAQ",
-      },
       {
         internal: "Sobre o Curso",
         display: "Sobre o Curso",
@@ -369,6 +410,51 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
         internal: "Selecionar uma Turma",
         display: "Selecionar uma Turma",
         selector: ".seletor-container.turma-selecionada",
+      },
+      {
+        internal: "Programa e Metodologia",
+        display: "Programa e Metodologia",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Objetivos e Qualificações",
+        display: "Objetivos e Qualificacoes",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Corpo Docente",
+        display: "Corpo Docente",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Cronograma de Aulas",
+        display: "Cronograma de Aulas",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Local e Horário",
+        display: "Local e Horario",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Valor do Curso",
+        display: "Valor do Curso",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Perfil do Aluno",
+        display: "Perfil do Aluno",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Processo Seletivo",
+        display: "Processo Seletivo",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Perguntas frequentes (FAQ)",
+        display: "Perguntas frequentes FAQ",
+        selector: ".turma-wrapper-content",
       },
     ];
 
@@ -557,21 +643,6 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
 
     // Ensure correct content is captured for each section
     const sections = [
-      { internal: "Programa e Metodologia", display: "Programa e Metodologia" },
-      {
-        internal: "Objetivos e Qualificações",
-        display: "Objetivos e Qualificacoes",
-      },
-      { internal: "Corpo Docente", display: "Corpo Docente" },
-      { internal: "Cronograma de Aulas", display: "Cronograma de Aulas" },
-      { internal: "Local e Horário", display: "Local e Horario" },
-      { internal: "Valor do Curso", display: "Valor do Curso" },
-      { internal: "Perfil do Aluno", display: "Perfil do Aluno" },
-      { internal: "Processo Seletivo", display: "Processo Seletivo" },
-      {
-        internal: "Perguntas frequentes (FAQ)",
-        display: "Perguntas frequentes FAQ",
-      },
       {
         internal: "Sobre o Curso",
         display: "Sobre o Curso",
@@ -592,6 +663,51 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
         internal: "Selecionar uma Turma",
         display: "Selecionar uma Turma",
         selector: ".seletor-container.turma-selecionada",
+      },
+      {
+        internal: "Programa e Metodologia",
+        display: "Programa e Metodologia",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Objetivos e Qualificações",
+        display: "Objetivos e Qualificacoes",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Corpo Docente",
+        display: "Corpo Docente",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Cronograma de Aulas",
+        display: "Cronograma de Aulas",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Local e Horário",
+        display: "Local e Horario",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Valor do Curso",
+        display: "Valor do Curso",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Perfil do Aluno",
+        display: "Perfil do Aluno",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Processo Seletivo",
+        display: "Processo Seletivo",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Perguntas frequentes (FAQ)",
+        display: "Perguntas frequentes FAQ",
+        selector: ".turma-wrapper-content",
       },
     ];
 
@@ -780,21 +896,6 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
 
     // Ensure correct content is captured for each section
     const sections = [
-      { internal: "Programa e Metodologia", display: "Programa e Metodologia" },
-      {
-        internal: "Objetivos e Qualificações",
-        display: "Objetivos e Qualificacoes",
-      },
-      { internal: "Corpo Docente", display: "Corpo Docente" },
-      { internal: "Cronograma de Aulas", display: "Cronograma de Aulas" },
-      { internal: "Local e Horário", display: "Local e Horario" },
-      { internal: "Valor do Curso", display: "Valor do Curso" },
-      { internal: "Perfil do Aluno", display: "Perfil do Aluno" },
-      { internal: "Processo Seletivo", display: "Processo Seletivo" },
-      {
-        internal: "Perguntas frequentes (FAQ)",
-        display: "Perguntas frequentes FAQ",
-      },
       {
         internal: "Sobre o Curso",
         display: "Sobre o Curso",
@@ -816,8 +917,52 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
         display: "Selecionar uma Turma",
         selector: ".seletor-container.turma-selecionada",
       },
+      {
+        internal: "Programa e Metodologia",
+        display: "Programa e Metodologia",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Objetivos e Qualificações",
+        display: "Objetivos e Qualificacoes",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Corpo Docente",
+        display: "Corpo Docente",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Cronograma de Aulas",
+        display: "Cronograma de Aulas",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Local e Horário",
+        display: "Local e Horario",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Valor do Curso",
+        display: "Valor do Curso",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Perfil do Aluno",
+        display: "Perfil do Aluno",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Processo Seletivo",
+        display: "Processo Seletivo",
+        selector: ".turma-wrapper-content",
+      },
+      {
+        internal: "Perguntas frequentes (FAQ)",
+        display: "Perguntas frequentes FAQ",
+        selector: ".turma-wrapper-content",
+      },
     ];
-
     screenshotFiles.forEach((screenshot, index) => {
       const orderedFilename =
         `${index + 1}_${sections[index].display}`
