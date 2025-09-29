@@ -7,29 +7,39 @@ const router = express.Router();
 
 // Helper function to capture screenshots of all required sections with expanded text and modalities
 async function captureExpandedTextAndModalities(page, outputFolder) {
-  // Função para lidar com banners de cookies
+  // Função melhorada para lidar com banners de cookies
   const hideCookieBanners = async (page) => {
     try {
+      // Tenta diferentes seletores possíveis para o botão de cookies
       const cookieSelectors = [
         "#inicia_cookies",
         "button[ng-click='inicia_cookies']",
         ".cookies-banner button",
         "#cookies-banner button",
+        ".mensagem_cookies button",
+        "button[contains(text(), 'Aceitar')]",
+        "button[contains(text(), 'Entendi')]",
+        "button[contains(text(), 'Fechar')]"
       ];
 
       for (const selector of cookieSelectors) {
-        const button = await page.$(selector);
-        if (button) {
-          await button.click();
-          console.log(`✅ Cookie banner fechado usando seletor: ${selector}`);
-          await new Promise((r) => setTimeout(r, 2000));
-          return;
+        try {
+          const button = await page.$(selector);
+          if (button) {
+            await button.click();
+            console.log(`✅ Cookie banner fechado usando seletor: ${selector}`);
+            await new Promise((r) => setTimeout(r, 2000));
+            return;
+          }
+        } catch (e) {
+          // Continua tentando outros seletores
+          continue;
         }
       }
 
-      console.log("Nenhum banner de cookies encontrado");
+      console.log("ℹ️ Nenhum banner de cookies encontrado");
     } catch (error) {
-      console.log("Banner de cookies não encontrado ou já fechado");
+      console.log("ℹ️ Banner de cookies não encontrado ou já fechado");
     }
   };
 
@@ -185,27 +195,49 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
     await new Promise((r) => setTimeout(r, 1000));
 
     try {
-      const [navigation] = await Promise.all([
-        page
-          .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
-          .catch(() => null),
-        page.evaluate((text) => {
-          const btns = Array.from(document.querySelectorAll("button"));
-          const target = btns.find((btn) =>
-            btn.textContent.trim().includes(text)
-          );
-          if (target) target.click();
-        }, section.internal),
-      ]);
+      // Verifica se a página ainda está conectada
+      if (page.isClosed()) {
+        console.error(`❌ Página foi fechada durante captura de ${section.internal}`);
+        continue;
+      }
 
-      await page.waitForSelector(section.selector, {
-        visible: true,
-        timeout: 10000,
-      });
-      await new Promise((r) => setTimeout(r, 1000));
+      // Clica no botão da seção com tratamento de erro melhorado
+      try {
+        const [navigation] = await Promise.all([
+          page
+            .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
+            .catch(() => null),
+          page.evaluate((text) => {
+            const btns = Array.from(document.querySelectorAll("button"));
+            const target = btns.find((btn) =>
+              btn.textContent.trim().includes(text)
+            );
+            if (target) target.click();
+          }, section.internal),
+        ]);
+      } catch (navError) {
+        console.log(`⚠️ Erro de navegação para ${section.internal}, continuando...`);
+      }
+
+      // Espera o conteúdo aparecer com timeout maior
+      try {
+        await page.waitForSelector(section.selector, {
+          visible: true,
+          timeout: 15000,
+        });
+        await new Promise((r) => setTimeout(r, 1000));
+      } catch (selectorError) {
+        console.log(`⚠️ Seletor ${section.selector} não encontrado para ${section.internal}`);
+        continue;
+      }
 
       if (section.action) {
-        await section.action(page);
+        try {
+          await section.action(page);
+        } catch (actionError) {
+          console.log(`⚠️ Erro na ação específica para ${section.internal}: ${actionError.message}`);
+          // Continua mesmo com erro na ação específica
+        }
       }
 
       await hideCookieBanners(page);
@@ -224,14 +256,18 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
             .replace(/_+/g, "_")
             .replace(/_$/, "") + ".png";
 
-        await content.screenshot({ path: path.join(outputFolder, filename) });
-        console.log(`✅ Screenshot saved: ${filename}`);
+        try {
+          await content.screenshot({ path: path.join(outputFolder, filename) });
+          console.log(`✅ Screenshot saved: ${filename}`);
 
-        screenshots.push({
-          section: section,
-          filename: filename,
-          index: sections.indexOf(section),
-        });
+          screenshots.push({
+            section: section,
+            filename: filename,
+            index: sections.indexOf(section),
+          });
+        } catch (screenshotError) {
+          console.error(`❌ Erro ao salvar screenshot para ${section.internal}: ${screenshotError.message}`);
+        }
       } else {
         console.error(`❌ Content not found for section: ${section.internal}`);
       }
@@ -240,6 +276,7 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
         `❌ Error capturing section ${section.internal}:`,
         error.message
       );
+      // Continua para a próxima seção mesmo com erro
     }
   }
 

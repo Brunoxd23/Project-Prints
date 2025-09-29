@@ -1,6 +1,48 @@
 import { getCurrentSemester } from "./semester.js";
 import { createSemesterView } from "./semesterView.js";
 
+// Função para mostrar modal de confirmação
+function showConfirmModal() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("confirmModal");
+    const confirmBtn = document.getElementById("confirmButton");
+    const cancelBtn = document.getElementById("cancelButton");
+
+    // Atualizar texto do modal para ser mais específico
+    const modalMessage = document.querySelector(".modal-message");
+    modalMessage.textContent = "Deseja criar um novo semestre com prints?";
+
+    modal.classList.add("active");
+
+    const handleConfirm = () => {
+      modal.classList.remove("active");
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      modal.classList.remove("active");
+      resolve(false);
+    };
+
+    confirmBtn.onclick = handleConfirm;
+    cancelBtn.onclick = handleCancel;
+
+    // Fechar modal ao clicar fora dele
+    modal.onclick = (e) => {
+      if (e.target === modal) handleCancel();
+    };
+
+    // Fechar modal com ESC
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        handleCancel();
+        document.removeEventListener("keydown", handleEsc);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+  });
+}
+
 export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
   cursosContainer.innerHTML = "";
   const wrapper = document.createElement("div");
@@ -113,14 +155,37 @@ function renderSubcursos(curso, cursosContainer) {
 
     btn.onclick = async function (e) {
       e.stopPropagation();
+      
+      // Mostrar modal de confirmação
+      const confirmed = await showConfirmModal();
+      
+      if (!confirmed) {
+        // Usuário cancelou, mostrar toast informativo
+        const toast = document.getElementById("toast");
+        toast.textContent = "Operação cancelada";
+        toast.className = "toast info show";
+        setTimeout(() => (toast.className = "toast"), 3000);
+        return;
+      }
+      
+      // Usuário confirmou, executar script
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Executando...';
+      
       try {
         const res = await fetch(sub.rota, { method: "POST" });
         if (!res.ok) throw new Error("Erro ao executar script");
+        
         btn.textContent = "Sucesso!";
         btn.style.background = "#00c6ff";
         btn.style.color = "#fff";
+        
+        // Mostrar toast de sucesso
+        const toast = document.getElementById("toast");
+        toast.textContent = "Semestre criado com sucesso!";
+        toast.className = "toast success show";
+        setTimeout(() => (toast.className = "toast"), 3000);
+        
         setTimeout(() => {
           btn.textContent = "Executar Script";
           btn.style.background = "";
@@ -131,6 +196,13 @@ function renderSubcursos(curso, cursosContainer) {
         btn.textContent = "Erro";
         btn.style.background = "#ff4d4f";
         btn.style.color = "#fff";
+        
+        // Mostrar toast de erro
+        const toast = document.getElementById("toast");
+        toast.textContent = "Erro ao executar script";
+        toast.className = "toast error show";
+        setTimeout(() => (toast.className = "toast"), 3000);
+        
         setTimeout(() => {
           btn.textContent = "Executar Script";
           btn.style.background = "";

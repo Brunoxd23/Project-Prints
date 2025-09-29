@@ -7,14 +7,18 @@
 
 .toast {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 16px 24px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 8px 16px;
   margin-bottom: 10px;
   display: flex;
   align-items: center;
   animation: slideIn 0.3s ease-in-out;
-  border-left: 4px solid #0072ff;
+  border-left: 3px solid #0072ff;
+  max-width: 200px;
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 .toast.success {

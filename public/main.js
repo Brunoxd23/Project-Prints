@@ -3,6 +3,121 @@
 
 // Função para mostrar toast
 function showToast(message, type = "info") {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.className = `toast ${type} show`;
+  setTimeout(() => (toast.className = "toast"), 3000);
+}
+
+window.abrirViewCurso = async function (curso) {
+  document.getElementById("cursos-hibrida-container").style.display = "none";
+  document.getElementById("cards-container").style.display = "none";
+  const folderView = document.getElementById("folder-view");
+  const folderTitle = document.getElementById("folder-title");
+  const folderOutput = document.getElementById("folder-output");
+
+  // Armazena a pasta atual para uso posterior
+  window.currentPasta = curso.pasta;
+
+  folderView.style.display = "flex";
+  folderTitle.textContent = curso.nome;
+
+  // Remove qualquer botão existente
+  const oldBtn = document.querySelector(".run-script-btn");
+  if (oldBtn) {
+    oldBtn.remove();
+  }
+
+  // Cria um novo botão
+  const newBtn = document.createElement("button");
+  newBtn.className = "run-script-btn";
+  newBtn.textContent = "Executar Script";
+
+  // Adiciona o evento de clique com validação
+  newBtn.onclick = async function (e) {
+    e.preventDefault();
+
+    const confirmModal = document.getElementById("confirmModal");
+    if (!confirmModal) {
+      console.error("Modal não encontrado");
+      return;
+    }
+
+    confirmModal.classList.add("active");
+
+    const confirmed = await new Promise((resolve) => {
+      const confirmButton = document.getElementById("confirmButton");
+      const cancelButton = document.getElementById("cancelButton");
+
+      const handleConfirm = () => {
+        cleanup();
+        resolve(true);
+      };
+
+      const handleCancel = () => {
+        cleanup();
+        resolve(false);
+      };
+
+      const cleanup = () => {
+        confirmModal.classList.remove("active");
+        confirmButton.removeEventListener("click", handleConfirm);
+        cancelButton.removeEventListener("click", handleCancel);
+      };
+
+      confirmButton.addEventListener("click", handleConfirm);
+      cancelButton.addEventListener("click", handleCancel);
+    });
+
+    if (!confirmed) {
+      showToast("Operação cancelada", "info");
+      return;
+    }
+
+    newBtn.disabled = true;
+    newBtn.textContent = "Processando...";
+    showToast("Criando novo semestre...", "info");
+
+    try {
+      const response = await fetch("/run-script", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ pasta: curso.pasta }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao executar o script");
+      }
+
+      showToast("Semestre criado com sucesso!", "success");
+      newBtn.textContent = "Concluído";
+      newBtn.style.backgroundColor = "#4CAF50";
+
+      setTimeout(() => {
+        newBtn.disabled = false;
+        newBtn.textContent = "Executar Script";
+        newBtn.style.backgroundColor = "";
+      }, 2000);
+    } catch (error) {
+      console.error(error);
+      showToast("Erro ao criar semestre: " + error.message, "error");
+      newBtn.disabled = false;
+      newBtn.textContent = "Tentar Novamente";
+      newBtn.style.backgroundColor = "#f44336";
+    }
+  };
+
+  // Adiciona o novo botão ao DOM
+  folderView.querySelector(".card").appendChild(newBtn);
+  folderOutput.innerHTML = "";
+  loadPastas(curso.pasta);
+};
+ndex.js;
+
+// Função para mostrar toast
+function showToast(message, type = "info") {
   // Cria container de toast se não existir
   let container = document.querySelector(".toast-container");
   if (!container) {
@@ -100,7 +215,7 @@ window.abrirViewCurso = function (curso) {
   folderTitle.textContent = curso.nome;
   runScriptBtn.style.display = "block";
   runScriptBtn.textContent = "Executar Script";
-  runScriptBtn.onclick = () => runScriptWithConfirmation(curso.pasta);
+  runScriptBtn.onclick = () => runScript(curso.pasta);
   folderOutput.innerHTML = "";
   loadPastas(curso.pasta);
 };

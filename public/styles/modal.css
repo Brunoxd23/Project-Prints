@@ -36,6 +36,7 @@
 
 .modal-title {
   font-size: 1.5rem;
+  padding: 15px 0px;
   color: #0072ff;
   margin-bottom: 16px;
   text-align: center;
@@ -85,20 +86,24 @@
 
 .toast {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  padding: 16px 24px;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 16px;
   background: white;
   color: #333;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   z-index: 1001;
   opacity: 0;
   transform: translateX(100%);
   transition: all 0.3s ease;
+  max-width: 200px;
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
 .toast.show {

@@ -86,26 +86,33 @@ body {
   text-decoration: none;
   box-shadow: 0 4px 16px rgba(0, 114, 255, 0.13);
 }
-/* Toast notification */
+/* Toast notification - Pequeno e discreto com animação */
 .toast {
-  position: fixed;
-  top: 32px;
-  right: 32px;
-  background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%);
-  color: #fff;
-  padding: 16px 32px;
-  border-radius: 10px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.13);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 2000;
-  transition: opacity 0.4s;
+  position: fixed !important;
+  right: 20px !important;
+  background: linear-gradient(90deg, #00c6ff 0%, #0072ff 100%) !important;
+  color: #fff !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: 9999 !important;
+  transition: all 0.3s ease !important;
+  max-width: 300px !important;
+  white-space: normal !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: auto !important;
+  min-height: auto !important;
+  transform: translateX(100%) !important;
 }
 .toast.show {
-  opacity: 1;
-  pointer-events: auto;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateX(0) !important;
 }
 /* Download link with icon and hover text */
 .download-link {
