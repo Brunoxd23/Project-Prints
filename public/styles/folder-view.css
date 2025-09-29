@@ -18,7 +18,8 @@ body {
 }
 
 .folder-card {
-  width: 95%;
+  margin-top: -50px;
+  width: 98%;
   max-width: 1800px;
   padding: 30px;
   box-shadow: 0 4px 24px rgba(0, 114, 255, 0.1);
@@ -75,24 +76,43 @@ body {
   display: block;
 }
 
-/* Botão voltar bem posicionado */
-.back-btn-inside {
-  padding: 8px 16px;
-  font-size: 1rem;
-  background-color: #0072ff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-left: 20px;
-  white-space: nowrap;
-  height: fit-content;
-  align-self: center;
-  transition: none;
+/* Ocultar título duplicado */
+#folder-title {
+  display: none !important;
 }
 
-.back-btn-inside:hover {
-  background-color: #0072ff;
+/* Botão voltar padronizado - estilos definidos em back-button.css */
+
+/* Header de prints com layout alinhado */
+.prints-header {
+  width: 90%;
+  max-width: 1200px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 auto 20px auto;
+  background-color: #f7fbff;
+  padding: 15px 20px;
+  border-radius: 12px;
+  border-bottom: 3px solid #0072ff;
+  box-shadow: 0 5px 20px rgba(0, 114, 255, 0.12);
+}
+
+.prints-title {
+  flex: 1;
+  text-align: center;
+  color: #0072ff;
+  font-size: 1.2rem;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 114, 255, 0.1);
+  font-weight: 600;
+}
+
+/* Botão voltar dentro do header de prints */
+.prints-header .back-btn {
+  flex-shrink: 0;
+  margin: 0;
+  white-space: nowrap;
 }
 
 /* Título do print mais visível */

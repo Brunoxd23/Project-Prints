@@ -53,7 +53,7 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
     {
       internal: "Modalidade de Ensino",
       display: "Modalidade de Ensino",
-      selector: ".modal-container",
+      selector: "body", // Usar body como fallback
       action: async (page) => {
         try {
           console.log("Iniciando captura da modalidade de ensino...");
@@ -62,87 +62,211 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
           await hideCookieBanners(page);
 
           console.log("Esperando página carregar completamente...");
-          await page.waitForTimeout(5000);
+          await new Promise(resolve => setTimeout(resolve, 3000));
 
           // Espera a seção de modalidades estar presente
-          await page.waitForSelector(".modalidades-wrapper", {
+          await page.waitForSelector(".modalidade-inner", {
             visible: true,
             timeout: 10000,
           });
 
-          // Scroll para garantir visibilidade
+          // Scroll para garantir visibilidade da seção de modalidades
           await page.evaluate(() => {
-            const wrapper = document.querySelector(".modalidades-wrapper");
-            if (wrapper) {
-              wrapper.scrollIntoView({ behavior: "smooth", block: "center" });
+            const modalidadeSection = document.querySelector(".modalidade-inner");
+            if (modalidadeSection) {
+              modalidadeSection.scrollIntoView({ behavior: "smooth", block: "center" });
             }
           });
 
-          console.log("Procurando botão da modalidade...");
+          console.log("Procurando botão HÍBRIDO...");
 
           // Espera garantir que a animação do scroll terminou
-          await page.waitForTimeout(2000);
+          await new Promise(resolve => setTimeout(resolve, 2000));
 
-          // Tenta localizar e clicar no botão de várias maneiras
+          // Tenta localizar e clicar no botão HÍBRIDO
           try {
-            // Primeira tentativa: clique direto
-            await page.click(".modalidade-card-mobile .modalidade-front");
-          } catch (e) {
-            console.log("Tentativa 1 falhou, tentando método alternativo...");
-
-            // Segunda tentativa: usando JavaScript
+            // Busca pelo botão que contém "HÍBRIDO"
             await page.evaluate(() => {
-              const buttons = Array.from(
-                document.querySelectorAll(
-                  ".modalidade-card-mobile .modalidade-front"
-                )
+              const buttons = Array.from(document.querySelectorAll(".modalidade-front"));
+              const hibridoButton = buttons.find((btn) =>
+                btn.textContent.includes("HÍBRIDO")
               );
-              const button = buttons.find((b) =>
-                b.textContent.includes("HÍBRIDO")
-              );
-              if (button) button.click();
+              if (hibridoButton) {
+                console.log("Botão HÍBRIDO encontrado, clicando...");
+                hibridoButton.click();
+              } else {
+                console.log("Botão HÍBRIDO não encontrado");
+              }
             });
+          } catch (e) {
+            console.log("Erro ao clicar no botão HÍBRIDO:", e.message);
           }
 
           console.log("Esperando modal aparecer...");
 
           // Espera inicial após o clique
-          await page.waitForTimeout(3000);
+          await new Promise(resolve => setTimeout(resolve, 3000));
 
-          // Espera o modal aparecer
-          await page.waitForFunction(
-            () => {
-              const modal = document.querySelector(".modal-container");
-              if (!modal) return false;
+          // Espera o modal aparecer - tentando diferentes seletores
+          let modalFound = false;
+          const modalSelectors = [
+            ".modal-container",
+            ".modal",
+            "[class*='modal']",
+            "[class*='Modal']"
+          ];
 
-              // Verifica visibilidade real
-              const style = window.getComputedStyle(modal);
-              return (
-                style.display !== "none" &&
-                style.visibility !== "hidden" &&
-                style.opacity !== "0"
-              );
-            },
-            { timeout: 15000 }
-          );
-
-          console.log("Modal de modalidade aberto e pronto para captura");
-
-          // Tempo extra para animações
-          await page.waitForTimeout(5000);
-
-          // Captura o screenshot do modal
-          const modal = await page.$(".modal-container");
-          if (modal) {
-            const filename = "2_Modalidade_de_Ensino.png";
-            await modal.screenshot({ path: path.join(outputFolder, filename) });
-            console.log(`✅ Screenshot saved: ${filename}`);
-          } else {
-            throw new Error("Modal não encontrado para captura");
+          for (const selector of modalSelectors) {
+            try {
+              await page.waitForSelector(selector, {
+                visible: true,
+                timeout: 8000,
+              });
+              console.log(`Modal encontrado com seletor: ${selector}`);
+              modalFound = true;
+              break;
+            } catch (e) {
+              console.log(`Seletor ${selector} não encontrado, tentando próximo...`);
+            }
           }
+
+          if (!modalFound) {
+            console.log("Modal não encontrado com nenhum seletor, tentando captura da tela inteira...");
+          }
+
+          // Tempo extra para garantir que todas as animações terminaram e o modal está completamente carregado
+          await new Promise(resolve => setTimeout(resolve, 8000)); // Aumentado para 8 segundos
+
+          // Captura o screenshot - estratégia mais robusta para garantir que o modal seja capturado
+          let screenshotTaken = false;
+          const filename = "02_Modalidade_de_Ensino.png";
+          
+          // Tentativa 1: Capturar apenas o modal específico
+          for (const selector of modalSelectors) {
+            try {
+              console.log(`Tentando capturar modal com seletor: ${selector}`);
+              
+              // Verifica se o modal existe e está visível
+              const modalInfo = await page.evaluate((sel) => {
+                const element = document.querySelector(sel);
+                if (!element) return { exists: false, visible: false };
+                
+                const style = window.getComputedStyle(element);
+                const rect = element.getBoundingClientRect();
+                
+                return {
+                  exists: true,
+                  visible: style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0',
+                  width: rect.width,
+                  height: rect.height,
+                  top: rect.top,
+                  left: rect.left
+                };
+              }, selector);
+              
+              console.log(`Modal info:`, modalInfo);
+              
+              if (modalInfo.exists && modalInfo.visible) {
+                console.log(`Modal encontrado e visível com seletor: ${selector}`);
+                
+                // Verifica se o modal tem o conteúdo esperado
+                const modalContent = await page.evaluate((sel) => {
+                  const element = document.querySelector(sel);
+                  if (!element) return null;
+                  
+                  const title = element.querySelector('h4');
+                  const hibridoText = element.querySelector('.modalidade-name span');
+                  
+                  return {
+                    title: title ? title.textContent : null,
+                    hibridoText: hibridoText ? hibridoText.textContent : null,
+                    hasContent: title && hibridoText
+                  };
+                }, selector);
+                
+                console.log(`Conteúdo do modal:`, modalContent);
+                
+                if (modalContent && modalContent.hasContent) {
+                  console.log(`Modal tem conteúdo válido, capturando...`);
+                  
+                  // Captura o modal específico
+                  await page.screenshot({ 
+                    path: path.join(outputFolder, filename),
+                    clip: {
+                      x: modalInfo.left,
+                      y: modalInfo.top,
+                      width: modalInfo.width,
+                      height: modalInfo.height
+                    }
+                  });
+                  
+                  console.log(`✅ Screenshot do modal salvo: ${filename}`);
+                  screenshotTaken = true;
+                  break;
+                } else {
+                  console.log(`Modal não tem conteúdo válido, tentando próximo seletor...`);
+                }
+              } else {
+                console.log(`Modal com seletor ${selector} não está visível ou não existe`);
+              }
+            } catch (e) {
+              console.log(`Erro ao capturar modal com seletor ${selector}:`, e.message);
+            }
+          }
+
+          // Tentativa 2: Se não conseguiu capturar o modal específico, captura a tela inteira
+          if (!screenshotTaken) {
+            try {
+              console.log("Tentando capturar tela inteira como fallback...");
+              await page.screenshot({ 
+                path: path.join(outputFolder, filename),
+                fullPage: false // Captura apenas a viewport visível
+              });
+              console.log(`✅ Screenshot da tela salvo: ${filename}`);
+              screenshotTaken = true;
+            } catch (e) {
+              console.log("Erro ao capturar screenshot da tela:", e.message);
+            }
+          }
+
+          if (!screenshotTaken) {
+            console.log("⚠️ Não foi possível capturar screenshot da modalidade de ensino");
+          }
+
+          // IMPORTANTE: Aguardar muito mais tempo para garantir que o screenshot foi salvo corretamente
+          console.log("Aguardando para garantir que o screenshot foi capturado e salvo...");
+          await new Promise(resolve => setTimeout(resolve, 8000)); // Aumentado para 8 segundos
+
+          // Verificar se o modal ainda está aberto
+          const modalStillOpen = await page.evaluate(() => {
+            const modalSelectors = ['.modal-container', '.modal', '[class*="modal"]', '[class*="Modal"]'];
+            for (const selector of modalSelectors) {
+              const element = document.querySelector(selector);
+              if (element) {
+                const style = window.getComputedStyle(element);
+                if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+                  return true;
+                }
+              }
+            }
+            return false;
+          });
+
+          if (modalStillOpen) {
+            console.log("✅ Modal ainda está aberto, mantendo aberto por mais tempo...");
+            // Aguardar mais tempo para garantir que o arquivo foi salvo
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Mais 5 segundos
+            console.log("✅ Tempo suficiente para salvamento concluído");
+          } else {
+            console.log("⚠️ Modal já foi fechado automaticamente");
+          }
+
+          // NÃO fechar o modal aqui - deixar aberto para a próxima seção fechar
+          console.log("ℹ️ Mantendo modal aberto para ser fechado na próxima seção...");
+
         } catch (error) {
-          console.log("Erro ao abrir modal de modalidades:", error.message);
-          throw error;
+          console.log("Erro ao capturar modalidade de ensino:", error.message);
+          // Não relança o erro para não interromper o script
         }
       },
     },
@@ -151,6 +275,62 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       display: "Selecionar uma Turma",
       selector: ".seletor-container.turma-selecionada",
       action: async (page) => {
+        // Primeiro, fechar o modal de modalidades se ainda estiver aberto
+        console.log("Verificando se há modal aberto para fechar...");
+        try {
+          const modalStillOpen = await page.evaluate(() => {
+            const modalSelectors = ['.modal-container', '.modal', '[class*="modal"]', '[class*="Modal"]'];
+            for (const selector of modalSelectors) {
+              const element = document.querySelector(selector);
+              if (element) {
+                const style = window.getComputedStyle(element);
+                if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+                  return true;
+                }
+              }
+            }
+            return false;
+          });
+
+          if (modalStillOpen) {
+            console.log("Fechando modal de modalidades antes de capturar Selecionar uma Turma...");
+            await page.evaluate(() => {
+              const closeButtons = [
+                ".modal-close",
+                ".modal .close",
+                ".modal-container .close",
+                "[class*='close']",
+                "button[ng-click*='close']",
+                "button[ng-click*='Close']"
+              ];
+              
+              for (const selector of closeButtons) {
+                const button = document.querySelector(selector);
+                if (button) {
+                  console.log(`Fechando modal com seletor: ${selector}`);
+                  button.click();
+                  return true;
+                }
+              }
+              
+              // Se não encontrou botão específico, tenta pressionar ESC
+              console.log("Tentando fechar modal com tecla ESC");
+              const event = new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27 });
+              document.dispatchEvent(event);
+              return false;
+            });
+            
+            // Aguarda o modal fechar
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            console.log("✅ Modal fechado antes de capturar Selecionar uma Turma");
+          } else {
+            console.log("ℹ️ Nenhum modal aberto encontrado");
+          }
+        } catch (e) {
+          console.log("Erro ao fechar modal:", e.message);
+        }
+
+        // Agora captura a seção Selecionar uma Turma
         await page.waitForSelector(".seletor-container.turma-selecionada");
         await new Promise((r) => setTimeout(r, 1000)); // Espera para garantir que o conteúdo esteja carregado
       },
@@ -159,6 +339,45 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Programa e Metodologia",
       display: "Programa e Metodologia",
       selector: ".turma-wrapper-content",
+      action: async (page) => {
+        try {
+          // Aguarda o conteúdo carregar
+          await page.waitForSelector(".turma-wrapper-content", {
+            visible: true,
+            timeout: 10000,
+          });
+
+          // Faz scroll para garantir que todo o conteúdo seja visível, mas evita completamente o header
+          await page.evaluate(() => {
+            const content = document.querySelector(".turma-wrapper-content");
+            if (content) {
+              // Scroll para o início do conteúdo, com margem muito maior para evitar header
+              const rect = content.getBoundingClientRect();
+              const scrollTo = rect.top + window.scrollY - 400; // 400px acima do conteúdo para evitar header
+              window.scrollTo({ top: scrollTo, behavior: 'smooth' });
+            }
+          });
+
+          // Aguarda um pouco para o scroll terminar
+          await new Promise(resolve => setTimeout(resolve, 2000));
+
+          // Faz scroll adicional para baixo para capturar todo o conteúdo, mas sem voltar ao header
+          await page.evaluate(() => {
+            const content = document.querySelector(".turma-wrapper-content");
+            if (content) {
+              const rect = content.getBoundingClientRect();
+              const scrollAmount = rect.height * 0.1; // Scroll muito menos para evitar header
+              window.scrollBy(0, scrollAmount);
+            }
+          });
+
+          // Aguarda o scroll adicional terminar
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+        } catch (error) {
+          console.log("Erro ao preparar captura de Programa e Metodologia:", error.message);
+        }
+      },
     },
     {
       internal: "Objetivos e Qualificações",

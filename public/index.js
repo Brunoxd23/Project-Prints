@@ -125,8 +125,7 @@ window.abrirViewCurso = function (curso, semester) {
 
   // Se não tiver semestre, usar o semestre atual
   const semesterStr = semester || getCurrentSemester();
-  folderTitle.textContent = `${curso.nome} (${semesterStr})`;
-
+  
   // Formatar nome da pasta conforme padrão do servidor (pasta_semestre)
   let pastaCompleta;
 
@@ -196,8 +195,19 @@ window.abrirViewCurso = function (curso, semester) {
         createSemesterView(curso);
       };
 
+      // Criar header com botão e título alinhados
+      const header = document.createElement("div");
+      header.className = "prints-header";
+      
+      const title = document.createElement("h2");
+      title.className = "prints-title";
+      title.textContent = `${curso.nome} (${semesterStr})`;
+
+      header.appendChild(voltar);
+      header.appendChild(title);
+
       folderOutput.innerHTML = "";
-      folderOutput.appendChild(voltar);
+      folderOutput.appendChild(header);
       const htmlContainer = document.createElement("div");
       htmlContainer.innerHTML = html;
       folderOutput.appendChild(htmlContainer);

@@ -4,9 +4,12 @@
 flowchart TD
   Start([Início])
   Carrega[Frontend carrega pastas]
-  Executa[Usuário executa script]
+  Executa[Usuário clica Executar Script]
+  Modal[Modal de Confirmação]
+  Confirma{Usuário confirma?}
+  Cancela[Toast: Operação cancelada]
   Backend[Backend gera prints]
-  Toast[Frontend mostra toast]
+  Toast[Frontend mostra toast de sucesso]
   Clica[Usuário clica em pasta]
   Mostra[Frontend mostra prints da pasta]
   Zoom[Zoom/Download/Voltar]
@@ -14,10 +17,14 @@ flowchart TD
   Erro[Erro ao gerar prints]
 
   Start --> Carrega
-  Executa --> Backend
+  Executa --> Modal
+  Modal --> Confirma
+  Confirma -->|Sim| Backend
+  Confirma -->|Não| Cancela
   Backend --> Toast
   Backend --> Erro
   Toast --> Clica
+  Cancela --> Clica
   Clica --> Mostra
   Mostra --> Zoom
   Zoom --> Fim
@@ -47,9 +54,9 @@ SPA (Single Page Application) é uma aplicação web que carrega uma única pág
 
 1. **Home SPA**: exibe o card "Especialização Híbrida" centralizado.
 2. **Cards dos Cursos**: ao clicar, mostra os seis cursos disponíveis. Cursos com subcursos (ex: Cuidados Paliativos) exibem cards dos subcursos.
-3. **Execução de Scripts**: cada card de subcurso tem botão para executar o script de automação de prints (via backend). O resultado aparece na pasta correspondente.
+3. **Execução de Scripts**: cada card de subcurso tem botão para executar o script de automação de prints (via backend). **Validação de Confirmação**: antes de executar, um modal de confirmação aparece perguntando se deseja criar novo semestre com prints (evita execuções acidentais).
 4. **Visualização de Prints**: ao acessar uma pasta, os prints gerados são exibidos em grid horizontal responsivo, com opção de zoom e download.
-5. **Toast**: toda ação relevante exibe toast de sucesso ou erro, global e sem duplicidade.
+5. **Toast**: toda ação relevante exibe toast de sucesso ou erro, global e sem duplicidade. Toast compacto e discreto com animação slide da direita para esquerda.
 
 #### Estrutura de Pastas
 
@@ -71,6 +78,14 @@ SPA (Single Page Application) é uma aplicação web que carrega uma única pág
 - Para adicionar novos cursos: crie um novo arquivo de rota em `routes/` e adicione o curso no array global do frontend.
 - Para novos subcursos: adicione no array `subcursos` do curso correspondente no frontend.
 - O frontend e backend estão preparados para receber novos cards, rotas e scripts sem duplicidade ou bagunça visual.
+
+### Funcionalidades de Segurança e Validação
+
+- **Modal de Confirmação**: antes de executar scripts de automação, um modal aparece perguntando confirmação para evitar execuções acidentais.
+- **Toast Compacto**: notificações discretas com animação slide da direita para esquerda, sem ocupar muito espaço na tela.
+- **Validação de Conteúdo**: scripts verificam se elementos estão visíveis antes de capturar screenshots.
+- **Tratamento de Erros**: captura robusta com fallbacks para garantir que scripts continuem mesmo com falhas pontuais.
+- **Timing Otimizado**: delays ajustados para garantir que elementos estejam completamente carregados antes da captura.
 
 ### Boas Práticas e Organização
 
@@ -122,11 +137,22 @@ O fluxograma do projeto está disponível em `fluxograma_profissional_drawio.xml
 
 ## Tecnologias Utilizadas
 
-- Node.js
-- Express
-- Puppeteer
-- HTML, CSS, JavaScript (SPA modularizado)
-- draw.io (fluxograma)
+- **Node.js**: Backend JavaScript
+- **Express**: Framework web para Node.js
+- **Puppeteer**: Automação de browser para captura de screenshots
+- **HTML, CSS, JavaScript**: Frontend SPA modularizado
+- **draw.io**: Fluxograma visual do projeto
+
+## Funcionalidades Implementadas
+
+- **Automação Inteligente**: Captura automática de screenshots com tratamento de erros
+- **Modal de Confirmação**: Validação antes de executar scripts para evitar execuções acidentais
+- **Toast Notifications**: Notificações discretas com animação slide
+- **Layout Padronizado**: Botões e elementos com design consistente
+- **Captura de Modais**: Suporte especial para capturar modais (ex: Modalidades de Ensino)
+- **Scroll Inteligente**: Posicionamento automático para evitar headers indesejados
+- **Tratamento de Cookies**: Remoção automática de banners de cookies
+- **Fallback Robusto**: Scripts continuam funcionando mesmo com falhas pontuais
 
 ## Créditos
 
