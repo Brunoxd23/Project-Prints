@@ -126,7 +126,7 @@ function renderSubcursos(curso, cursosContainer) {
   grid.style.justifyContent = "center";
   grid.style.gap = "32px";
   grid.style.marginTop = "32px";
-  curso.subcursos.forEach((sub) => {
+  curso.subcursos.forEach((sub, index) => {
     const card = document.createElement("div");
     card.className = "curso-card";
     // Removendo estilos inline para usar CSS
@@ -216,4 +216,79 @@ function renderSubcursos(curso, cursosContainer) {
   });
   wrapper.appendChild(grid);
   cursosContainer.appendChild(wrapper);
+  
+  // Adicionar setinha indicativa de scroll
+  addScrollIndicator();
+}
+
+// Função para adicionar setinha indicativa de scroll
+function addScrollIndicator() {
+  // Remover setinha existente se houver
+  const existingIndicator = document.querySelector('.scroll-indicator');
+  if (existingIndicator) {
+    existingIndicator.remove();
+  }
+  
+  // Criar elemento da setinha
+  const indicator = document.createElement('div');
+  indicator.className = 'scroll-indicator';
+  
+  const arrow = document.createElement('div');
+  arrow.className = 'arrow';
+  
+  // Criar SVG da seta para baixo
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.innerHTML = '<path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>';
+  
+  arrow.appendChild(svg);
+  indicator.appendChild(arrow);
+  
+  // Adicionar ao body
+  document.body.appendChild(indicator);
+  
+  // Mostrar setinha após um pequeno delay
+  setTimeout(() => {
+    indicator.classList.add('show');
+  }, 500);
+  
+  // Esconder setinha quando o usuário rolar
+  let scrollTimeout;
+  window.addEventListener('scroll', () => {
+    indicator.classList.remove('show');
+    
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      // Verificar se ainda há conteúdo abaixo
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // Se não estiver no final da página, mostrar setinha novamente
+      if (scrollTop + windowHeight < documentHeight - 100) {
+        indicator.classList.add('show');
+      }
+    }, 1000);
+  });
+  
+  // Esconder setinha quando clicar nela
+  indicator.addEventListener('click', () => {
+    indicator.classList.remove('show');
+    // Scroll suave para baixo
+    window.scrollBy({
+      top: window.innerHeight * 0.8,
+      behavior: 'smooth'
+    });
+  });
+  
+  // Tornar clicável
+  indicator.style.pointerEvents = 'auto';
+  indicator.style.cursor = 'pointer';
+  
+  // Forçar animação para funcionar
+  setTimeout(() => {
+    arrow.style.animation = 'none';
+    arrow.offsetHeight; // Trigger reflow
+    arrow.style.animation = 'bounceArrow 1.5s ease-in-out infinite';
+  }, 100);
 }

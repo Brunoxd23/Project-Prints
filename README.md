@@ -203,12 +203,16 @@ O fluxograma do projeto está disponível em `fluxograma_profissional_drawio.xml
 
 URL's Prints
 
-cuiodados_paliativos
-https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10690&cidade=sp unidade paulista | Quinzenal Pratica estendida
+cuidados_paliativos
+https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10690&cidade=sp - unidade paulista | Quinzenal Pratica estendida
 
 https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10691&cidade=sp - unidade paulista | Quinzenal
 
 https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10693&cidade=sp - unidade paulista | Semanal
+
+https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10923&cidade=rj - unidade rio de janeiro | Mensal
+
+https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10939&cidade=go - unidade goiânia | Mensal
 
 dependencia_quimica
 https://ensino.einstein.br/pos_dependencia_quimica_p5174/p?sku=10697&cidade=sp - Unidade CEP | Mensal

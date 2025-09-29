@@ -38,6 +38,16 @@ window.cursosHibrida = [
         rota: "/run-script-cuidados-semanal",
         pasta: "Paliativos_Semanal",
       },
+      {
+        nome: "Unidade Rio de Janeiro | Mensal",
+        rota: "/run-script-cuidados-rj-mensal",
+        pasta: "Paliativos_RJ_Mensal",
+      },
+      {
+        nome: "Unidade Goiânia | Mensal",
+        rota: "/run-script-cuidados-go-mensal",
+        pasta: "Paliativos_GO_Mensal",
+      },
     ],
   },
   {
