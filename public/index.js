@@ -77,20 +77,38 @@ window.cursosHibrida = [
   {
     nome: "Gestão de Infraestrutura e Facilities em Saúde",
     descricao: "Especialização Híbrida",
-    pasta: "Gestao_Infraestrutura",
     img: "./images/Gestão_Infra.webp",
+    subcursos: [
+      {
+        nome: "Unidade Paulista II | Mensal",
+        rota: "/api/run-script-infraestrutura-mensal",
+        pasta: "Infraestrutura_Mensal",
+      },
+    ],
   },
   {
     nome: "Psiquiatria Multiprofissional",
     descricao: "Especialização Híbrida",
-    pasta: "Psiquiatria_Multiprofissional",
     img: "./images/Psiquiatria_multi.webp",
+    subcursos: [
+      {
+        nome: "Unidade Paulista | Mensal",
+        rota: "/api/run-script-psiquiatria-mensal",
+        pasta: "Psiquiatria_Mensal",
+      },
+    ],
   },
   {
     nome: "Bases da Saúde Integrativa e Bem-Estar",
     descricao: "Especialização Híbrida",
-    pasta: "Saude_Integrativa_Bem_Estar",
     img: "./images/Bases_da_Saude.webp",
+    subcursos: [
+      {
+        nome: "Unidade Paulista | Mensal",
+        rota: "/api/run-script-bases-integrativa-mensal",
+        pasta: "Bases_Integrativa_Mensal",
+      },
+    ],
   },
 ];
 

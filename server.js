@@ -10,6 +10,9 @@ const PORT = 3000;
 const semestersRouter = require("./routes/semesters");
 const dependenciaQuimicaRouter = require("./routes/dependenciaQuimica");
 const sustentabilidadeInovacaoRouter = require("./routes/sustentabilidadeInovacao");
+const infraestruturaFacilitiesRouter = require("./routes/infraestruturaFacilities");
+const psiquiatriaMultiprofissionalRouter = require("./routes/psiquiatriaMultiprofissional");
+const basesIntegrativaRouter = require("./routes/basesIntegrativa");
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json()); // Adicionar middleware para parsing de JSON
@@ -20,6 +23,9 @@ app.use("/api/semesters", semestersRouter);
 // Rotas para os cursos
 app.use("/api", dependenciaQuimicaRouter);
 app.use("/api", sustentabilidadeInovacaoRouter);
+app.use("/api", infraestruturaFacilitiesRouter);
+app.use("/api", psiquiatriaMultiprofissionalRouter);
+app.use("/api", basesIntegrativaRouter);
 
 // Endpoint para listar semestres disponíveis para um curso específico
 app.get("/listar-semestres/:pasta", (req, res) => {
@@ -80,8 +86,13 @@ app.get("/listar-pastas", (req, res) => {
         f.startsWith("Pratica_Estendida_") ||
         f.startsWith("Paliativos_Quinzenal_") ||
         f.startsWith("Paliativos_Semanal_") ||
+        f.startsWith("Paliativos_RJ_Mensal_") ||
+        f.startsWith("Paliativos_GO_Mensal_") ||
         f.startsWith("Dependencia_Quimica_") ||
-        f.startsWith("Sustentabilidade_ESG_") ||
+        f.startsWith("Sustentabilidade_Quinzenal_") ||
+        f.startsWith("Infraestrutura_Mensal_") ||
+        f.startsWith("Psiquiatria_Mensal_") ||
+        f.startsWith("Bases_Integrativa_Mensal_") ||
         f.startsWith("Gestao_Infraestrutura_") ||
         f.startsWith("Psiquiatria_Multiprofissional_") ||
         f.startsWith("Saude_Integrativa_Bem_Estar_")
@@ -143,6 +154,12 @@ app.post("/update-prints/:pasta/:semester", async (req, res) => {
       baseUrl = "https://ensino.einstein.br/pos_gt_sustentabilidade_lider_inovacao_esg_p14832/p?sku=10905&cidade=sp";
     } else if (pasta.includes("Dependencia")) {
       baseUrl = "https://ensino.einstein.br/pos_dependencia_quimica_p5174/p?sku=10697&cidade=sp";
+    } else if (pasta.includes("Infraestrutura")) {
+      baseUrl = "https://ensino.einstein.br/pos_gt_infraestrutura_facilities_saude_p14827/p?sku=10906&cidade=sp";
+    } else if (pasta.includes("Psiquiatria")) {
+      baseUrl = "https://ensino.einstein.br/pos_psiquiatria_multiprofissional_p4542/p?sku=10771&cidade=sp";
+    } else if (pasta.includes("Bases_Integrativa")) {
+      baseUrl = "https://ensino.einstein.br/pos_bases_saude_integrativa_bem_estar_p0078/p?sku=10685&cidade=sp";
     } else {
       // URL padrão para outros cursos
       baseUrl = "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10691&cidade=sp";
