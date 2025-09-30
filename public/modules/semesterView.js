@@ -198,34 +198,18 @@ function renderSemesters(curso, semesters, grid) {
     const btnAtualizar = document.createElement("button");
     btnAtualizar.className = "update-prints-btn";
     btnAtualizar.textContent = "Atualizar";
-    btnAtualizar.onclick = async () => {
-      btnAtualizar.disabled = true;
-      btnAtualizar.innerHTML = '<span class="spinner"></span> Atualizando...';
-
-      try {
-        const response = await fetch(`/update-prints/${curso.pasta}/${semester}`, {
-          method: "POST",
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Erro ${response.status}: ${response.statusText}`);
-        }
-        
-        const result = await response.json();
-        showToast(`Prints atualizados com sucesso! Arquivos: ${result.updatedFiles.join(', ')}`);
-        btnAtualizar.textContent = "Atualizar";
-        btnAtualizar.disabled = false;
-        
-        // Recarregar a visualização após 2 segundos para mostrar os novos arquivos
-        setTimeout(() => {
-          window.abrirViewCurso(curso, semester);
-        }, 2000);
-        
-      } catch (error) {
-        console.error("Erro ao atualizar prints:", error);
-        showToast(`Erro ao atualizar prints: ${error.message}`, "error");
-        btnAtualizar.textContent = "Atualizar";
-        btnAtualizar.disabled = false;
+    btnAtualizar.setAttribute('data-curso', curso.pasta);
+    btnAtualizar.setAttribute('data-semester', semester);
+    btnAtualizar.onclick = () => {
+      console.log('Botão Atualizar clicado!', curso, semester);
+      console.log('Função showUpdateSelectionModal disponível:', typeof window.showUpdateSelectionModal);
+      
+      if (typeof window.showUpdateSelectionModal === 'function') {
+        // Abrir modal de seleção em vez de executar diretamente
+        window.showUpdateSelectionModal(curso, semester);
+      } else {
+        console.error('Função showUpdateSelectionModal não está disponível!');
+        showToast('Erro: Modal de seleção não carregado', 'error');
       }
     };
 

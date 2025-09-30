@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="styles/folder-view.css" />
     <link rel="stylesheet" href="styles/toast.css" />
     <link rel="stylesheet" href="styles/modal.css" />
+    <link rel="stylesheet" href="styles/update-selection-modal.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -152,7 +153,44 @@
       >
       <img id="zoom-img" src="" style="max-width: 90vw; max-height: 90vh" />
     </div>
+    
+    <!-- Modal de Seleção de Prints para Atualizar -->
+    <div id="update-selection-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Selecionar Prints para Atualizar</h3>
+          <span class="modal-close" onclick="closeUpdateSelectionModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+          <p>Escolha quais prints deseja atualizar:</p>
+          <div class="update-options">
+            <label class="update-option">
+              <input type="checkbox" id="update-local-horario" checked>
+              <span class="checkmark"></span>
+              <div class="option-content">
+                <strong>Local e Horário</strong>
+                <small>Atualiza informações de localização e horários das aulas</small>
+              </div>
+            </label>
+            <label class="update-option">
+              <input type="checkbox" id="update-valor-curso" checked>
+              <span class="checkmark"></span>
+              <div class="option-content">
+                <strong>Valor do Curso</strong>
+                <small>Atualiza informações de investimento e formas de pagamento</small>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeUpdateSelectionModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="confirmUpdateSelection()">Atualizar Selecionados</button>
+        </div>
+      </div>
+    </div>
+    
     <div id="toast" class="toast"></div>
+    <script src="js/update-selection-modal.js"></script>
     <script type="module" src="index.js"></script>
     <script src="js/script-execution.js"></script>
     <script src="js/script-confirmation.js"></script>

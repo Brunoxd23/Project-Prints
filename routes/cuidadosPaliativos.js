@@ -24,12 +24,12 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
 
       for (const selector of cookieSelectors) {
         try {
-          const button = await page.$(selector);
-          if (button) {
-            await button.click();
-            console.log(`✅ Cookie banner fechado usando seletor: ${selector}`);
-            await new Promise((r) => setTimeout(r, 2000));
-            return;
+        const button = await page.$(selector);
+        if (button) {
+          await button.click();
+          console.log(`✅ Cookie banner fechado usando seletor: ${selector}`);
+          await new Promise((r) => setTimeout(r, 2000));
+          return;
           }
         } catch (e) {
           // Continua tentando outros seletores
@@ -203,7 +203,7 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
                   console.log(`✅ Screenshot do modal salvo: ${filename}`);
                   screenshotTaken = true;
                   break;
-                } else {
+          } else {
                   console.log(`Modal não tem conteúdo válido, tentando próximo seletor...`);
                 }
               } else {
@@ -436,29 +436,29 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
 
       // Clica no botão da seção com tratamento de erro melhorado
       try {
-        const [navigation] = await Promise.all([
-          page
-            .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
-            .catch(() => null),
-          page.evaluate((text) => {
-            const btns = Array.from(document.querySelectorAll("button"));
-            const target = btns.find((btn) =>
-              btn.textContent.trim().includes(text)
-            );
-            if (target) target.click();
-          }, section.internal),
-        ]);
+      const [navigation] = await Promise.all([
+        page
+          .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
+          .catch(() => null),
+        page.evaluate((text) => {
+          const btns = Array.from(document.querySelectorAll("button"));
+          const target = btns.find((btn) =>
+            btn.textContent.trim().includes(text)
+          );
+          if (target) target.click();
+        }, section.internal),
+      ]);
       } catch (navError) {
         console.log(`⚠️ Erro de navegação para ${section.internal}, continuando...`);
       }
 
       // Espera o conteúdo aparecer com timeout maior
       try {
-        await page.waitForSelector(section.selector, {
-          visible: true,
+      await page.waitForSelector(section.selector, {
+        visible: true,
           timeout: 15000,
-        });
-        await new Promise((r) => setTimeout(r, 1000));
+      });
+      await new Promise((r) => setTimeout(r, 1000));
       } catch (selectorError) {
         console.log(`⚠️ Seletor ${section.selector} não encontrado para ${section.internal}`);
         continue;
@@ -466,7 +466,7 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
 
       if (section.action) {
         try {
-          await section.action(page);
+        await section.action(page);
         } catch (actionError) {
           console.log(`⚠️ Erro na ação específica para ${section.internal}: ${actionError.message}`);
           // Continua mesmo com erro na ação específica
@@ -491,8 +491,8 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
             .replace(/_$/, "") + ".png";
 
         try {
-          await content.screenshot({ path: path.join(outputFolder, filename) });
-          console.log(`✅ Screenshot saved: ${filename}`);
+        await content.screenshot({ path: path.join(outputFolder, filename) });
+        console.log(`✅ Screenshot saved: ${filename}`);
         } catch (screenshotError) {
           console.error(`❌ Erro ao salvar screenshot para ${section.internal}: ${screenshotError.message}`);
         }

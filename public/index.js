@@ -65,8 +65,14 @@ window.cursosHibrida = [
   {
     nome: "Sustentabilidade: Liderança e Inovação em ESG",
     descricao: "Especialização Híbrida",
-    pasta: "Sustentabilidade_ESG",
     img: "./images/Sustentabilidade.webp",
+    subcursos: [
+      {
+        nome: "Unidade Paulista II | Quinzenal",
+        rota: "/api/run-script-sustentabilidade-quinzenal",
+        pasta: "Sustentabilidade_Quinzenal",
+      },
+    ],
   },
   {
     nome: "Gestão de Infraestrutura e Facilities em Saúde",

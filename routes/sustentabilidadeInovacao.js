@@ -435,7 +435,7 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       }
 
       // Clica no botão da seção com tratamento de erro melhorado
-    try {
+      try {
       const [navigation] = await Promise.all([
         page
           .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
@@ -545,11 +545,11 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
   return finalScreenshots;
 }
 
-// Rota para Dependência Química
-router.post("/run-script-dependencia-quimica", async (req, res) => {
+// Rota para Sustentabilidade e Inovação - Unidade Paulista II | Quinzenal
+router.post("/run-script-sustentabilidade-quinzenal", async (req, res) => {
   try {
     const url =
-      "https://ensino.einstein.br/pos_dependencia_quimica_p5174/p?sku=10697&cidade=sp";
+      "https://ensino.einstein.br/pos_gt_sustentabilidade_lider_inovacao_esg_p14832/p?sku=10905&cidade=sp";
     const semesterUtils = require("../utils/semester");
 
     const today = new Date();
@@ -567,7 +567,7 @@ router.post("/run-script-dependencia-quimica", async (req, res) => {
     };
 
     let basePath = path.join(__dirname, "../public");
-    let coursePrefix = "Dependencia_Quimica_";
+    let coursePrefix = "Sustentabilidade_Quinzenal_";
     let foundEmptyFolder = false;
     let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
