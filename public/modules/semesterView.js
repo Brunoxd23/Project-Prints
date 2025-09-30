@@ -203,15 +203,27 @@ function renderSemesters(curso, semesters, grid) {
       btnAtualizar.innerHTML = '<span class="spinner"></span> Atualizando...';
 
       try {
-        await fetch(`/update-prints/${curso.pasta}/${semester}`, {
+        const response = await fetch(`/update-prints/${curso.pasta}/${semester}`, {
           method: "POST",
         });
-        showToast("Prints atualizados com sucesso!");
+        
+        if (!response.ok) {
+          throw new Error(`Erro ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        showToast(`Prints atualizados com sucesso! Arquivos: ${result.updatedFiles.join(', ')}`);
         btnAtualizar.textContent = "Atualizar";
         btnAtualizar.disabled = false;
+        
+        // Recarregar a visualização após 2 segundos para mostrar os novos arquivos
+        setTimeout(() => {
+          window.abrirViewCurso(curso, semester);
+        }, 2000);
+        
       } catch (error) {
         console.error("Erro ao atualizar prints:", error);
-        showToast("Erro ao atualizar prints", "error");
+        showToast(`Erro ao atualizar prints: ${error.message}`, "error");
         btnAtualizar.textContent = "Atualizar";
         btnAtualizar.disabled = false;
       }

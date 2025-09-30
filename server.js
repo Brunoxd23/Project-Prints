@@ -95,6 +95,210 @@ app.get("/listar-pastas", (req, res) => {
 // Importa rotas de Cuidados Paliativos
 const cuidadosPaliativosRoutes = require("./routes/cuidadosPaliativos");
 app.use(cuidadosPaliativosRoutes);
+
+// =========================
+//   ROTA DE ATUALIZAÇÃO DE PRINTS
+// =========================
+
+// Rota para atualizar prints específicos (08 e 09) de um semestre
+app.post("/update-prints/:pasta/:semester", async (req, res) => {
+  const { pasta, semester } = req.params;
+  const folderName = `${pasta}_${semester}`;
+  const outputFolder = path.join(__dirname, "public", folderName);
+  
+  // Verificar se a pasta existe
+  if (!fs.existsSync(outputFolder)) {
+    return res.status(404).json({ error: "Pasta do semestre não encontrada" });
+  }
+
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1920, height: 1080 });
+
+    // Determinar URL base baseada na pasta do curso com parâmetros corretos
+    let baseUrl;
+    if (pasta.includes("Paliativos_Quinzenal")) {
+      baseUrl = "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10691&cidade=sp";
+    } else if (pasta.includes("Pratica_Estendida")) {
+      baseUrl = "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10690&cidade=sp";
+    } else if (pasta.includes("Paliativos_Semanal")) {
+      baseUrl = "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10693&cidade=sp";
+    } else if (pasta.includes("Paliativos_RJ")) {
+      baseUrl = "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10923&cidade=rj";
+    } else if (pasta.includes("Paliativos_GO")) {
+      baseUrl = "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10939&cidade=go";
+    } else if (pasta.includes("Dependencia")) {
+      baseUrl = "https://ensino.einstein.br/pos_dependencia_quimica_p0082/p";
+    } else {
+      // URL padrão para outros cursos
+      baseUrl = "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10691&cidade=sp";
+    }
+    
+    console.log(`Navegando para: ${baseUrl}`);
+    await page.goto(baseUrl, { waitUntil: "networkidle2" });
+
+    // Função para esconder banners de cookies
+    const hideCookieBanners = async (page) => {
+      try {
+        const cookieSelectors = [
+          "#inicia_cookies",
+          "button[ng-click='inicia_cookies']",
+          ".cookies-banner button",
+          "#cookies-banner button",
+          ".mensagem_cookies button",
+          "button[contains(text(), 'Aceitar')]",
+          "button[contains(text(), 'Entendi')]",
+          "button[contains(text(), 'Fechar')]"
+        ];
+
+        for (const selector of cookieSelectors) {
+          try {
+            const button = await page.$(selector);
+            if (button) {
+              await button.click();
+              console.log(`✅ Cookie banner fechado usando seletor: ${selector}`);
+              await new Promise((r) => setTimeout(r, 2000));
+              return;
+            }
+          } catch (e) {
+            continue;
+          }
+        }
+        console.log("ℹ️ Nenhum banner de cookies encontrado");
+      } catch (error) {
+        console.log("ℹ️ Banner de cookies não encontrado ou já fechado");
+      }
+    };
+
+    await hideCookieBanners(page);
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // Primeiro, selecionar uma turma (necessário para acessar as seções)
+    console.log("Selecionando uma turma...");
+    try {
+      await page.waitForSelector(".seletor-container.turma-selecionada", {
+        visible: true,
+        timeout: 10000,
+      });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("✅ Turma selecionada");
+    } catch (error) {
+      console.log("⚠️ Erro ao selecionar turma:", error.message);
+    }
+
+    // Função para encontrar o próximo número sequencial
+    const getNextSequentialNumber = (baseNumber, outputFolder) => {
+      const files = fs.readdirSync(outputFolder);
+      const pattern = new RegExp(`^${baseNumber}\\.(\\d+)\\s-\\sAtualizado`);
+      let maxNumber = 0;
+      
+      files.forEach(file => {
+        const match = file.match(pattern);
+        if (match) {
+          const num = parseInt(match[1]);
+          if (num > maxNumber) {
+            maxNumber = num;
+          }
+        }
+      });
+      
+      return maxNumber + 1;
+    };
+
+    // Gerar data atual
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('pt-BR').replace(/\//g, '-'); // Formato DD-MM-YYYY
+
+    // Capturar Local e Horário (08)
+    console.log("Capturando Local e Horário...");
+    try {
+      // Usar a mesma lógica do arquivo cuidadosPaliativos.js
+      const [navigation] = await Promise.all([
+        page.waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 }).catch(() => null),
+        page.evaluate((text) => {
+          const btns = Array.from(document.querySelectorAll("button"));
+          const target = btns.find((btn) => btn.textContent.trim().includes(text));
+          if (target) target.click();
+        }, "Local e Horário"),
+      ]);
+      
+      // Aguarda o conteúdo aparecer com timeout maior
+      await page.waitForSelector(".turma-wrapper-content", {
+        visible: true,
+        timeout: 15000,
+      });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const nextNumber08 = getNextSequentialNumber('08', outputFolder);
+      const localHorarioFilename = `08.${nextNumber08} - Atualizado ${dateStr} - Local e Horario.png`;
+      
+      // Captura apenas o conteúdo da seção
+      const content = await page.$(".turma-wrapper-content");
+      if (content) {
+        await content.screenshot({ path: path.join(outputFolder, localHorarioFilename) });
+        console.log(`✅ Local e Horário capturado: ${localHorarioFilename}`);
+      } else {
+        console.error(`❌ Content not found for section: Local e Horário`);
+      }
+    } catch (error) {
+      console.log("❌ Erro ao capturar Local e Horário:", error.message);
+    }
+
+    // Capturar Valor do Curso (09)
+    console.log("Capturando Valor do Curso...");
+    try {
+      // Usar a mesma lógica do arquivo cuidadosPaliativos.js
+      const [navigation] = await Promise.all([
+        page.waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 }).catch(() => null),
+        page.evaluate((text) => {
+          const btns = Array.from(document.querySelectorAll("button"));
+          const target = btns.find((btn) => btn.textContent.trim().includes(text));
+          if (target) target.click();
+        }, "Valor do Curso"),
+      ]);
+      
+      // Aguarda o conteúdo aparecer com timeout maior
+      await page.waitForSelector(".turma-wrapper-content", {
+        visible: true,
+        timeout: 15000,
+      });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const nextNumber09 = getNextSequentialNumber('09', outputFolder);
+      const valorCursoFilename = `09.${nextNumber09} - Atualizado ${dateStr} - Valor do Curso.png`;
+      
+      // Captura apenas o conteúdo da seção
+      const content = await page.$(".turma-wrapper-content");
+      if (content) {
+        await content.screenshot({ path: path.join(outputFolder, valorCursoFilename) });
+        console.log(`✅ Valor do Curso capturado: ${valorCursoFilename}`);
+      } else {
+        console.error(`❌ Content not found for section: Valor do Curso`);
+      }
+    } catch (error) {
+      console.log("❌ Erro ao capturar Valor do Curso:", error.message);
+    }
+
+    await browser.close();
+    
+    res.json({ 
+      success: true, 
+      message: "Prints atualizados com sucesso!",
+      updatedFiles: [
+        `08.${getNextSequentialNumber('08', outputFolder) - 1} - Atualizado ${dateStr} - Local e Horario.png`,
+        `09.${getNextSequentialNumber('09', outputFolder) - 1} - Atualizado ${dateStr} - Valor do Curso.png`
+      ]
+    });
+
+  } catch (error) {
+    console.error("Erro ao atualizar prints:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
+  }
+});
 app.listen(PORT, () =>
   console.log(`Servidor rodando em http://localhost:${PORT}`)
 );
