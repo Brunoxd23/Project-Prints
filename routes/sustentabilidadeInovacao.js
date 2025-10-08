@@ -566,8 +566,8 @@ router.post("/run-script-sustentabilidade-quinzenal", async (req, res) => {
       return false;
     };
 
-    let basePath = path.join(__dirname, "../public");
-    let coursePrefix = "Sustentabilidade_Quinzenal_";
+    let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
+    let coursePrefix = "SLI_Quinzenal_";
     let foundEmptyFolder = false;
     let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
@@ -623,8 +623,11 @@ router.post("/run-script-sustentabilidade-quinzenal", async (req, res) => {
     }
 
     const outputFolder = path.join(
-      __dirname,
-      "../public",
+      "C:",
+      "Users",
+      "drt62324",
+      "Documents",
+      "Pós Graduação",
       `${coursePrefix}${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {

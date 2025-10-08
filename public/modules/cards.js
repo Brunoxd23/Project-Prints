@@ -58,6 +58,24 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
   btnVoltar.onclick = function () {
     cursosContainer.style.display = "none";
     cardsContainer.style.display = "flex";
+    
+    // Esconder barra de pesquisa de prints se estiver visível
+    const printsSearchContainer = document.getElementById('search-prints-container');
+    if (printsSearchContainer) {
+      printsSearchContainer.style.display = 'none';
+    }
+    
+    // Esconder barra de pesquisa de subcursos se estiver visível
+    const subcursosSearchContainer = document.getElementById('search-subcursos-container');
+    if (subcursosSearchContainer) {
+      subcursosSearchContainer.style.display = 'none';
+    }
+    
+    // Mostrar barra de pesquisa de cursos
+    const coursesSearchContainer = document.getElementById('search-courses-container');
+    if (coursesSearchContainer) {
+      coursesSearchContainer.style.display = 'block';
+    }
   };
   wrapper.appendChild(btnVoltar);
 
@@ -83,6 +101,12 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
     cardContent.onclick = function () {
       // Se o curso tem subcursos, renderiza os cards de subcursos
       if (curso.subcursos && curso.subcursos.length > 0) {
+        // Esconder barra de pesquisa de cursos quando entrar nos subcursos
+        const coursesSearchContainer = document.getElementById('search-courses-container');
+        if (coursesSearchContainer) {
+          coursesSearchContainer.style.display = 'none';
+        }
+        
         renderSubcursos(curso, cursosContainer);
       } else {
         window.abrirViewCurso(curso);
@@ -101,6 +125,39 @@ function renderSubcursos(curso, cursosContainer) {
   wrapper.style.flexDirection = "column";
   wrapper.style.alignItems = "center";
   wrapper.id = "subcursos-wrapper";
+
+  // Criar barra de pesquisa para subcursos
+  const searchContainer = document.createElement("div");
+  searchContainer.className = "search-container";
+  searchContainer.id = "search-subcursos-container";
+  searchContainer.style.display = "block";
+
+  const searchBox = document.createElement("div");
+  searchBox.className = "search-box";
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.id = "search-subcursos-input";
+  searchInput.placeholder = "🔍 Pesquisar subcursos...";
+  searchInput.className = "search-input";
+
+  const clearSearchBtn = document.createElement("button");
+  clearSearchBtn.id = "clear-search-subcursos";
+  clearSearchBtn.className = "clear-search-btn";
+  clearSearchBtn.innerHTML = "&times;";
+  clearSearchBtn.style.display = "none";
+
+  const searchResultsInfo = document.createElement("div");
+  searchResultsInfo.id = "search-subcursos-results-info";
+  searchResultsInfo.className = "search-results-info";
+  searchResultsInfo.style.display = "none";
+
+  searchBox.appendChild(searchInput);
+  searchBox.appendChild(clearSearchBtn);
+  searchContainer.appendChild(searchBox);
+  searchContainer.appendChild(searchResultsInfo);
+
+  wrapper.appendChild(searchContainer);
   // Botão Voltar
   const btnVoltar = document.createElement("button");
   btnVoltar.className = "back-btn";
@@ -112,6 +169,24 @@ function renderSubcursos(curso, cursosContainer) {
       cursosContainer,
       document.getElementById("cards-container")
     );
+    
+    // Esconder barra de pesquisa de prints se estiver visível
+    const printsSearchContainer = document.getElementById('search-prints-container');
+    if (printsSearchContainer) {
+      printsSearchContainer.style.display = 'none';
+    }
+    
+    // Esconder barra de pesquisa de subcursos se estiver visível
+    const subcursosSearchContainer = document.getElementById('search-subcursos-container');
+    if (subcursosSearchContainer) {
+      subcursosSearchContainer.style.display = 'none';
+    }
+    
+    // Mostrar barra de pesquisa de cursos
+    const coursesSearchContainer = document.getElementById('search-courses-container');
+    if (coursesSearchContainer) {
+      coursesSearchContainer.style.display = 'block';
+    }
   };
   wrapper.appendChild(btnVoltar);
   // Título

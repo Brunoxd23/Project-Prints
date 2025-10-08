@@ -85,6 +85,7 @@ export function createSemesterView(curso) {
   subHeader.className = "semester-sub-header";
   subHeader.style = "margin-top: 0; padding-top: 0;";
 
+
   header.appendChild(btnVoltar);
   header.appendChild(title);
   view.appendChild(header);
@@ -110,6 +111,8 @@ export function createSemesterView(curso) {
       headerTitle.style.color = "#fff"; // Mantém branco por padrão
     });
   }
+
+  // A pesquisa de prints será inicializada quando os prints forem carregados
 }
 
 async function loadSemesters(curso, grid) {

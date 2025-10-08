@@ -566,8 +566,8 @@ router.post("/run-script-dependencia-quimica", async (req, res) => {
       return false;
     };
 
-    let basePath = path.join(__dirname, "../public");
-    let coursePrefix = "Dependencia_Quimica_";
+    let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
+    let coursePrefix = "DQ_Mensal_";
     let foundEmptyFolder = false;
     let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
@@ -623,8 +623,11 @@ router.post("/run-script-dependencia-quimica", async (req, res) => {
     }
 
     const outputFolder = path.join(
-      __dirname,
-      "../public",
+      "C:",
+      "Users",
+      "drt62324",
+      "Documents",
+      "Pós Graduação",
       `${coursePrefix}${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {

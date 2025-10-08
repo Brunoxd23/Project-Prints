@@ -570,8 +570,8 @@ router.post("/run-script-infraestrutura-mensal", async (req, res) => {
     };
 
     // Buscar próximo semestre disponível (que não tenha prints)
-    let basePath = path.join(__dirname, "../public");
-    let coursePrefix = "Infraestrutura_Mensal_";
+    let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
+    let coursePrefix = "GIF_Mensal_";
     let foundEmptyFolder = false;
     let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
@@ -634,9 +634,12 @@ router.post("/run-script-infraestrutura-mensal", async (req, res) => {
     }
 
     const outputFolder = path.join(
-      __dirname,
-      "../public",
-      `Infraestrutura_Mensal_${semesterFolder}`
+      "C:",
+      "Users",
+      "drt62324",
+      "Documents",
+      "Pós Graduação",
+      `GIF_Mensal_${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
@@ -789,7 +792,7 @@ router.post("/run-script-infraestrutura-mensal", async (req, res) => {
 
     // Map the ordered screenshot filenames to their full paths
     const files = screenshotFiles.map(
-      (filename) => `/Infraestrutura_Mensal_${semesterFolder}/${filename}`
+      (filename) => `/GIF_Mensal_${semesterFolder}/${filename}`
     );
 
     return res.json(files);

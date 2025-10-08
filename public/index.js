@@ -16,8 +16,20 @@ const folderList = document.getElementById("folder-list");
 const folderOutput = document.getElementById("folder-output");
 const runScriptBtn = document.getElementById("run-script-btn");
 
-// Array global de cursos
+// Array global de cursos (ordenado alfabeticamente)
 window.cursosHibrida = [
+  {
+    nome: "Bases da Saúde Integrativa e Bem-Estar",
+    descricao: "Especialização Híbrida",
+    img: "./images/Bases_da_Saude.webp",
+    subcursos: [
+      {
+        nome: "Unidade Paulista | Mensal",
+        rota: "/api/run-script-bases-integrativa-mensal",
+        pasta: "BSI_Mensal",
+      },
+    ],
+  },
   {
     nome: "Cuidados Paliativos",
     descricao: "Pós com opções de Prática Estendida",
@@ -26,27 +38,27 @@ window.cursosHibrida = [
       {
         nome: "Unidade Paulista | Quinzenal Prática Estendida",
         rota: "/run-script-cuidados-quinzenal-pratica",
-        pasta: "Pratica_Estendida",
+        pasta: "CP_Pratica_Estendida",
       },
       {
         nome: "Unidade Paulista | Quinzenal",
         rota: "/run-script-cuidados-quinzenal",
-        pasta: "Paliativos_Quinzenal",
+        pasta: "CP_Quinzenal",
       },
       {
         nome: "Unidade Paulista | Semanal",
         rota: "/run-script-cuidados-semanal",
-        pasta: "Paliativos_Semanal",
+        pasta: "CP_Semanal",
       },
       {
         nome: "Unidade Rio de Janeiro | Mensal",
         rota: "/run-script-cuidados-rj-mensal",
-        pasta: "Paliativos_RJ_Mensal",
+        pasta: "CP_RJ_Mensal",
       },
       {
         nome: "Unidade Goiânia | Mensal",
         rota: "/run-script-cuidados-go-mensal",
-        pasta: "Paliativos_GO_Mensal",
+        pasta: "CP_GO_Mensal",
       },
     ],
   },
@@ -58,19 +70,7 @@ window.cursosHibrida = [
       {
         nome: "Unidade Centro de Ensino e Pesquisa | Mensal",
         rota: "/api/run-script-dependencia-quimica",
-        pasta: "Dependencia_Quimica",
-      },
-    ],
-  },
-  {
-    nome: "Sustentabilidade: Liderança e Inovação em ESG",
-    descricao: "Especialização Híbrida",
-    img: "./images/Sustentabilidade.webp",
-    subcursos: [
-      {
-        nome: "Unidade Paulista II | Quinzenal",
-        rota: "/api/run-script-sustentabilidade-quinzenal",
-        pasta: "Sustentabilidade_Quinzenal",
+        pasta: "DQ_Mensal",
       },
     ],
   },
@@ -82,7 +82,7 @@ window.cursosHibrida = [
       {
         nome: "Unidade Paulista II | Mensal",
         rota: "/api/run-script-infraestrutura-mensal",
-        pasta: "Infraestrutura_Mensal",
+        pasta: "GIF_Mensal",
       },
     ],
   },
@@ -94,19 +94,19 @@ window.cursosHibrida = [
       {
         nome: "Unidade Paulista | Mensal",
         rota: "/api/run-script-psiquiatria-mensal",
-        pasta: "Psiquiatria_Mensal",
+        pasta: "PM_Mensal",
       },
     ],
   },
   {
-    nome: "Bases da Saúde Integrativa e Bem-Estar",
+    nome: "Sustentabilidade: Liderança e Inovação em ESG",
     descricao: "Especialização Híbrida",
-    img: "./images/Bases_da_Saude.webp",
+    img: "./images/Sustentabilidade.webp",
     subcursos: [
       {
-        nome: "Unidade Paulista | Mensal",
-        rota: "/api/run-script-bases-integrativa-mensal",
-        pasta: "Bases_Integrativa_Mensal",
+        nome: "Unidade Paulista II | Quinzenal",
+        rota: "/api/run-script-sustentabilidade-quinzenal",
+        pasta: "SLI_Quinzenal",
       },
     ],
   },
@@ -225,6 +225,18 @@ window.abrirViewCurso = function (curso, semester) {
         // Limpar a área de visualização
         folderOutput.innerHTML = "";
 
+        // Esconder barra de pesquisa de prints
+        const printsSearchContainer = document.getElementById('search-prints-container');
+        if (printsSearchContainer) {
+          printsSearchContainer.style.display = 'none';
+        }
+
+        // Mostrar barra de pesquisa de cursos
+        const coursesSearchContainer = document.getElementById('search-courses-container');
+        if (coursesSearchContainer) {
+          coursesSearchContainer.style.display = 'block';
+        }
+
         // Recriar a visualização de semestres
         createSemesterView(curso);
       };
@@ -237,14 +249,60 @@ window.abrirViewCurso = function (curso, semester) {
       title.className = "prints-title";
       title.textContent = `${curso.nome} (${semesterStr})`;
 
+      // Criar barra de pesquisa para prints
+      const searchContainer = document.createElement("div");
+      searchContainer.className = "search-container";
+      searchContainer.id = "search-prints-container";
+      searchContainer.style.display = "block";
+
+      const searchBox = document.createElement("div");
+      searchBox.className = "search-box";
+
+      const searchInput = document.createElement("input");
+      searchInput.type = "text";
+      searchInput.id = "search-prints-input";
+      searchInput.placeholder = "🔍 Pesquisar prints...";
+      searchInput.className = "search-input";
+
+      const clearSearchBtn = document.createElement("button");
+      clearSearchBtn.id = "clear-search-prints";
+      clearSearchBtn.className = "clear-search-btn";
+      clearSearchBtn.innerHTML = "&times;";
+      clearSearchBtn.style.display = "none";
+
+      const searchResultsInfo = document.createElement("div");
+      searchResultsInfo.id = "search-prints-results-info";
+      searchResultsInfo.className = "search-results-info";
+      searchResultsInfo.style.display = "none";
+
+      searchBox.appendChild(searchInput);
+      searchBox.appendChild(clearSearchBtn);
+      searchContainer.appendChild(searchBox);
+      searchContainer.appendChild(searchResultsInfo);
+
       header.appendChild(voltar);
       header.appendChild(title);
+      header.appendChild(searchContainer);
 
       folderOutput.innerHTML = "";
       folderOutput.appendChild(header);
       const htmlContainer = document.createElement("div");
       htmlContainer.innerHTML = html;
       folderOutput.appendChild(htmlContainer);
+
+      // Esconder barra de pesquisa de cursos quando estiver vendo prints
+      const coursesSearchContainer = document.getElementById('search-courses-container');
+      if (coursesSearchContainer) {
+        coursesSearchContainer.style.display = 'none';
+      }
+
+      // Inicializar pesquisa de prints após carregar os prints
+      setTimeout(() => {
+        if (typeof window.initPrintsSearch === 'function') {
+          console.log('🔍 Inicializando pesquisa de prints após carregamento...');
+          window.initPrintsSearch();
+        }
+      }, 500);
     })
     .catch((err) => {
       folderOutput.innerHTML = "<span>Erro ao carregar prints.</span>";

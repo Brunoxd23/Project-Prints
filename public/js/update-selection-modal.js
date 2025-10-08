@@ -27,6 +27,18 @@ function showUpdateSelectionModal(curso, semester) {
   document.getElementById('update-local-horario').checked = true;
   document.getElementById('update-valor-curso').checked = true;
   
+  // Resetar outros checkboxes para não selecionados por padrão
+  document.getElementById('update-sobre-curso').checked = false;
+  document.getElementById('update-modalidade-ensino').checked = false;
+  document.getElementById('update-selecionar-turma').checked = false;
+  document.getElementById('update-programa-metodologia').checked = false;
+  document.getElementById('update-objetivos-qualificacoes').checked = false;
+  document.getElementById('update-corpo-docente').checked = false;
+  document.getElementById('update-cronograma-aulas').checked = false;
+  document.getElementById('update-perfil-aluno').checked = false;
+  document.getElementById('update-processo-seletivo').checked = false;
+  document.getElementById('update-perguntas-frequentes').checked = false;
+  
   // Focar no modal
   modal.focus();
   
@@ -62,11 +74,37 @@ async function confirmUpdateSelection() {
   
   const localHorarioChecked = document.getElementById('update-local-horario').checked;
   const valorCursoChecked = document.getElementById('update-valor-curso').checked;
+  const sobreCursoChecked = document.getElementById('update-sobre-curso').checked;
+  const modalidadeEnsinoChecked = document.getElementById('update-modalidade-ensino').checked;
+  const selecionarTurmaChecked = document.getElementById('update-selecionar-turma').checked;
+  const programaMetodologiaChecked = document.getElementById('update-programa-metodologia').checked;
+  const objetivosQualificacoesChecked = document.getElementById('update-objetivos-qualificacoes').checked;
+  const corpoDocenteChecked = document.getElementById('update-corpo-docente').checked;
+  const cronogramaAulasChecked = document.getElementById('update-cronograma-aulas').checked;
+  const perfilAlunoChecked = document.getElementById('update-perfil-aluno').checked;
+  const processoSeletivoChecked = document.getElementById('update-processo-seletivo').checked;
+  const perguntasFrequentesChecked = document.getElementById('update-perguntas-frequentes').checked;
   
-  console.log('Opções selecionadas:', { localHorarioChecked, valorCursoChecked });
+  console.log('Opções selecionadas:', { 
+    localHorarioChecked, 
+    valorCursoChecked,
+    sobreCursoChecked,
+    modalidadeEnsinoChecked,
+    selecionarTurmaChecked,
+    programaMetodologiaChecked,
+    objetivosQualificacoesChecked,
+    corpoDocenteChecked,
+    cronogramaAulasChecked,
+    perfilAlunoChecked,
+    processoSeletivoChecked,
+    perguntasFrequentesChecked
+  });
   
   // Validar se pelo menos uma opção foi selecionada
-  if (!localHorarioChecked && !valorCursoChecked) {
+  if (!localHorarioChecked && !valorCursoChecked && !sobreCursoChecked && 
+      !modalidadeEnsinoChecked && !selecionarTurmaChecked && !programaMetodologiaChecked &&
+      !objetivosQualificacoesChecked && !corpoDocenteChecked && !cronogramaAulasChecked &&
+      !perfilAlunoChecked && !processoSeletivoChecked && !perguntasFrequentesChecked) {
     showToast('Selecione pelo menos uma opção para atualizar', 'error');
     return;
   }
@@ -81,7 +119,17 @@ async function confirmUpdateSelection() {
   // Preparar dados para envio
   const updateData = {
     localHorario: localHorarioChecked,
-    valorCurso: valorCursoChecked
+    valorCurso: valorCursoChecked,
+    sobreCurso: sobreCursoChecked,
+    modalidadeEnsino: modalidadeEnsinoChecked,
+    selecionarTurma: selecionarTurmaChecked,
+    programaMetodologia: programaMetodologiaChecked,
+    objetivosQualificacoes: objetivosQualificacoesChecked,
+    corpoDocente: corpoDocenteChecked,
+    cronogramaAulas: cronogramaAulasChecked,
+    perfilAluno: perfilAlunoChecked,
+    processoSeletivo: processoSeletivoChecked,
+    perguntasFrequentes: perguntasFrequentesChecked
   };
   
   console.log('Dados de atualização:', updateData);
@@ -121,11 +169,11 @@ async function executeUpdatePrints(curso, semester, updateData) {
   btnAtualizar.innerHTML = '<span class="spinner"></span> Atualizando...';
   
   try {
-    console.log(`Fazendo requisição para: /update-prints/${curso.pasta}/${semester}`);
+    console.log(`Fazendo requisição para: /update-all-prints/${curso.pasta}/${semester}`);
     console.log('Dados enviados:', updateData);
     
     // Fazer requisição para o backend com os dados de seleção
-    const response = await fetch(`/update-prints/${curso.pasta}/${semester}`, {
+    const response = await fetch(`/update-all-prints/${curso.pasta}/${semester}`, {
       method: "POST",
       headers: {
         'Content-Type': 'application/json',

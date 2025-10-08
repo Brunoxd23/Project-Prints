@@ -570,8 +570,8 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
     };
 
     // Buscar próximo semestre disponível (que não tenha prints)
-    let basePath = path.join(__dirname, "../public");
-    let coursePrefix = "Pratica_Estendida_";
+    let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
+    let coursePrefix = "CP_Pratica_Estendida_";
     let foundEmptyFolder = false;
     let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
@@ -634,9 +634,12 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
     }
 
     const outputFolder = path.join(
-      __dirname,
-      "../public",
-      `Pratica_Estendida_${semesterFolder}`
+      "C:",
+      "Users",
+      "drt62324",
+      "Documents",
+      "Pós Graduação",
+      `CP_Pratica_Estendida_${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
@@ -789,7 +792,7 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
 
     // Map the ordered screenshot filenames to their full paths
     const files = screenshotFiles.map(
-      (filename) => `/Pratica_Estendida_${semesterFolder}/${filename}`
+      (filename) => `/CP_Pratica_Estendida_${semesterFolder}/${filename}`
     );
 
     return res.json(files);
@@ -823,8 +826,8 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
     };
 
     // Buscar próximo semestre disponível (que não tenha prints)
-    let basePath = path.join(__dirname, "../public");
-    let coursePrefix = "Paliativos_Quinzenal_";
+    let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
+    let coursePrefix = "CP_Quinzenal_";
     let foundEmptyFolder = false;
     let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
@@ -887,9 +890,12 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
     }
 
     const outputFolder = path.join(
-      __dirname,
-      "../public",
-      `Paliativos_Quinzenal_${semesterFolder}`
+      "C:",
+      "Users",
+      "drt62324",
+      "Documents",
+      "Pós Graduação",
+      `CP_Quinzenal_${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
@@ -1042,7 +1048,7 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
 
     // Map the ordered screenshot filenames to their full paths
     const files = screenshotFiles.map(
-      (filename) => `/Paliativos_Quinzenal_${semesterFolder}/${filename}`
+      (filename) => `/CP_Quinzenal_${semesterFolder}/${filename}`
     );
 
     return res.json(files);
@@ -1076,8 +1082,8 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
     };
 
     // Buscar próximo semestre disponível (que não tenha prints)
-    let basePath = path.join(__dirname, "../public");
-    let coursePrefix = "Paliativos_Semanal_";
+    let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
+    let coursePrefix = "CP_Semanal_";
     let foundEmptyFolder = false;
     let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
@@ -1140,9 +1146,12 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
     }
 
     const outputFolder = path.join(
-      __dirname,
-      "../public",
-      `Paliativos_Semanal_${semesterFolder}`
+      "C:",
+      "Users",
+      "drt62324",
+      "Documents",
+      "Pós Graduação",
+      `CP_Semanal_${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
@@ -1295,7 +1304,7 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
 
     // Map the ordered screenshot filenames to their full paths
     const files = screenshotFiles.map(
-      (filename) => `/Paliativos_Semanal_${semesterFolder}/${filename}`
+      (filename) => `/CP_Semanal_${semesterFolder}/${filename}`
     );
 
     return res.json(files);
@@ -1329,8 +1338,8 @@ router.post("/run-script-cuidados-rj-mensal", async (req, res) => {
     };
 
     // Buscar próximo semestre disponível (que não tenha prints)
-    let basePath = path.join(__dirname, "../public");
-    let coursePrefix = "Paliativos_RJ_Mensal_";
+    let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
+    let coursePrefix = "CP_RJ_Mensal_";
     let foundEmptyFolder = false;
     let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
@@ -1393,9 +1402,12 @@ router.post("/run-script-cuidados-rj-mensal", async (req, res) => {
     }
 
     const outputFolder = path.join(
-      __dirname,
-      "../public",
-      `Paliativos_RJ_Mensal_${semesterFolder}`
+      "C:",
+      "Users",
+      "drt62324",
+      "Documents",
+      "Pós Graduação",
+      `CP_RJ_Mensal_${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
@@ -1457,7 +1469,7 @@ router.post("/run-script-cuidados-rj-mensal", async (req, res) => {
 
     // Map the ordered screenshot filenames to their full paths
     const files = screenshotFiles.map(
-      (filename) => `/Paliativos_RJ_Mensal_${semesterFolder}/${filename}`
+      (filename) => `/CP_RJ_Mensal_${semesterFolder}/${filename}`
     );
 
     return res.json(files);
@@ -1491,8 +1503,8 @@ router.post("/run-script-cuidados-go-mensal", async (req, res) => {
     };
 
     // Buscar próximo semestre disponível (que não tenha prints)
-    let basePath = path.join(__dirname, "../public");
-    let coursePrefix = "Paliativos_GO_Mensal_";
+    let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
+    let coursePrefix = "CP_GO_Mensal_";
     let foundEmptyFolder = false;
     let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
@@ -1555,9 +1567,12 @@ router.post("/run-script-cuidados-go-mensal", async (req, res) => {
     }
 
     const outputFolder = path.join(
-      __dirname,
-      "../public",
-      `Paliativos_GO_Mensal_${semesterFolder}`
+      "C:",
+      "Users",
+      "drt62324",
+      "Documents",
+      "Pós Graduação",
+      `CP_GO_Mensal_${semesterFolder}`
     );
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
@@ -1619,7 +1634,7 @@ router.post("/run-script-cuidados-go-mensal", async (req, res) => {
 
     // Map the ordered screenshot filenames to their full paths
     const files = screenshotFiles.map(
-      (filename) => `/Paliativos_GO_Mensal_${semesterFolder}/${filename}`
+      (filename) => `/CP_GO_Mensal_${semesterFolder}/${filename}`
     );
 
     return res.json(files);
