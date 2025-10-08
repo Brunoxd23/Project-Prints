@@ -5,7 +5,7 @@ class SearchManager {
     console.log('🔍 SearchManager inicializado');
     this.initCoursesSearch();
     this.initPrintsSearch();
-    this.initSubcursosSearch();
+    // Remover initSubcursosSearch daqui pois está em arquivo separado
     
     // Definir funções globais para uso externo
     window.initCoursesSearch = () => this.initCoursesSearch();

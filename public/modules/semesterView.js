@@ -7,6 +7,23 @@ import {
 import { showToast } from "./utils.js";
 
 export function createSemesterView(curso) {
+  // Salvar estado atual - encontrar o curso principal
+  if (typeof window.saveCurrentState === 'function') {
+    // Encontrar o curso principal que contém este subcurso
+    let cursoPrincipal = null;
+    if (window.cursosHibrida) {
+      cursoPrincipal = window.cursosHibrida.find(c => 
+        c.subcursos && c.subcursos.some(s => s.pasta === curso.pasta)
+      );
+    }
+    
+    window.saveCurrentState({
+      view: 'semesters',
+      curso: cursoPrincipal ? cursoPrincipal.nome : curso.nome, // Usar nome do curso principal
+      pasta: curso.pasta
+    });
+  }
+  
   const view = document.createElement("div");
   view.className = "semester-view";
 
@@ -70,18 +87,67 @@ export function createSemesterView(curso) {
     if (typeof window.showLoadingSpinner === "function") {
       window.showLoadingSpinner("Voltando para subcursos...");
     }
+    
+    // Atualizar estado para subcursos antes de voltar
+    if (typeof window.saveCurrentState === 'function') {
+      // Encontrar o curso principal que contém este subcurso
+      let cursoPrincipal = null;
+      if (window.cursosHibrida) {
+        cursoPrincipal = window.cursosHibrida.find(c => 
+          c.subcursos && c.subcursos.some(s => s.pasta === curso.pasta)
+        );
+      }
+      
+      window.saveCurrentState({
+        view: 'subcursos',
+        curso: cursoPrincipal ? cursoPrincipal.nome : curso.nome // Usar nome do curso principal
+      });
+    }
 
     // Aguardar um pouco para mostrar o spinner
     setTimeout(() => {
+      console.log('🔄 Voltando para subcursos...');
+      
       // Remover a visualização de semestres
       document.body.removeChild(view);
 
-      // Exibir a lista de subcursos
-      document.getElementById("cursos-hibrida-container").style.display =
-        "flex";
+      // Encontrar o curso principal que contém este subcurso
+      let cursoPrincipal = null;
+      if (window.cursosHibrida) {
+        cursoPrincipal = window.cursosHibrida.find(c => 
+          c.subcursos && c.subcursos.some(s => s.pasta === curso.pasta)
+        );
+      }
 
-      // Esconder outras views se estiverem visíveis
-      document.getElementById("folder-view").style.display = "none";
+      console.log('🔍 Curso principal encontrado:', cursoPrincipal ? cursoPrincipal.nome : 'Não encontrado');
+
+      if (cursoPrincipal) {
+        // Esconder outras views se estiverem visíveis
+        document.getElementById("folder-view").style.display = "none";
+        document.getElementById("cards-container").style.display = "none";
+        
+        // Exibir a lista de cursos primeiro
+        document.getElementById("cursos-hibrida-container").style.display = "flex";
+        
+        // Renderizar os cursos primeiro, depois os subcursos
+        if (typeof window.renderCursos === 'function') {
+          console.log('✅ Renderizando cursos...');
+          window.renderCursos(window.cursosHibrida, document.getElementById("cursos-hibrida-container"), document.getElementById("cards-container"));
+          
+          // Aguardar renderização e então mostrar subcursos
+          setTimeout(() => {
+            if (typeof window.renderSubcursos === 'function') {
+              console.log('✅ Renderizando subcursos para:', cursoPrincipal.nome);
+              window.renderSubcursos(cursoPrincipal, document.getElementById("cursos-hibrida-container"));
+            }
+          }, 100);
+        }
+      } else {
+        console.log('❌ Curso principal não encontrado, usando fallback');
+        // Fallback: apenas mostrar cursos
+        document.getElementById("cursos-hibrida-container").style.display = "flex";
+        document.getElementById("folder-view").style.display = "none";
+      }
 
       // Esconder spinner após renderizar
       if (typeof window.hideLoadingSpinner === "function") {

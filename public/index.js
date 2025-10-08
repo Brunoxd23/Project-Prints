@@ -8,11 +8,19 @@ import { getCurrentSemester } from "./modules/semester.js";
 
 // Função para salvar estado atual
 function saveCurrentState(state) {
-  localStorage.setItem('printsAppState', JSON.stringify(state));
+  if (state) {
+    console.log('💾 Salvando estado:', state);
+    localStorage.setItem('printsAppState', JSON.stringify(state));
+  } else {
+    console.log('🗑️ Limpando estado');
+    localStorage.removeItem('printsAppState');
+  }
 }
 
-// Tornar função global para uso em outros módulos
+// Tornar funções globais para uso em outros módulos
 window.saveCurrentState = saveCurrentState;
+window.renderCursos = renderCursos;
+window.renderSubcursos = renderSubcursos;
 
 // Funções para spinner de carregamento
 function showLoadingSpinner(message = 'Carregando...') {
@@ -62,13 +70,17 @@ window.hideLoadingSpinner = hideLoadingSpinner;
 // Função para restaurar estado
 function restoreState() {
   const savedState = localStorage.getItem('printsAppState');
+  console.log('🔍 Estado salvo encontrado:', savedState);
   if (savedState) {
     try {
-      return JSON.parse(savedState);
+      const parsed = JSON.parse(savedState);
+      console.log('✅ Estado parseado com sucesso:', parsed);
+      return parsed;
     } catch (e) {
-      console.error('Erro ao restaurar estado:', e);
+      console.error('❌ Erro ao restaurar estado:', e);
     }
   }
+  console.log('❌ Nenhum estado salvo encontrado');
   return null;
 }
 
@@ -81,6 +93,11 @@ const folderTitle = document.getElementById("folder-title");
 const folderList = document.getElementById("folder-list");
 const folderOutput = document.getElementById("folder-output");
 const runScriptBtn = document.getElementById("run-script-btn");
+
+// Esconder card do home imediatamente para evitar flash
+if (cardsContainer) {
+  cardsContainer.style.display = "none";
+}
 
 // Array global de cursos (ordenado alfabeticamente)
 window.cursosHibrida = [
@@ -217,9 +234,17 @@ window.abrirViewCurso = function (curso, semester) {
   const folderOutput = document.getElementById("folder-output");
 
   // Salvar estado atual
+  // Encontrar o curso principal que contém este subcurso
+  let cursoPrincipal = null;
+  if (window.cursosHibrida) {
+    cursoPrincipal = window.cursosHibrida.find(c => 
+      c.subcursos && c.subcursos.some(s => s.pasta === curso.pasta)
+    );
+  }
+  
   saveCurrentState({
     view: 'prints',
-    curso: curso.nome,
+    curso: cursoPrincipal ? cursoPrincipal.nome : curso.nome, // Usar nome do curso principal
     pasta: curso.pasta,
     semester: semester || getCurrentSemester()
   });
@@ -304,6 +329,23 @@ window.abrirViewCurso = function (curso, semester) {
         // Mostrar spinner ao voltar para semestres
         if (typeof window.showLoadingSpinner === 'function') {
           window.showLoadingSpinner('Voltando para semestres...');
+        }
+        
+        // Atualizar estado para semestres antes de voltar
+        if (typeof window.saveCurrentState === 'function') {
+          // Encontrar o curso principal que contém este subcurso
+          let cursoPrincipal = null;
+          if (window.cursosHibrida) {
+            cursoPrincipal = window.cursosHibrida.find(c => 
+              c.subcursos && c.subcursos.some(s => s.pasta === curso.pasta)
+            );
+          }
+          
+          window.saveCurrentState({
+            view: 'semesters',
+            curso: cursoPrincipal ? cursoPrincipal.nome : curso.nome, // Usar nome do curso principal
+            pasta: curso.pasta
+          });
         }
         
         // Aguardar um pouco para mostrar o spinner
@@ -428,59 +470,83 @@ window.updateSemesterPrints = function (curso) {
 
 // Função para restaurar estado após carregamento
 function restoreAppState() {
-  showLoadingSpinner('Restaurando página...');
+  // Esconder o card do home imediatamente para evitar flash
+  cardsContainer.style.display = "none";
   
   const savedState = restoreState();
   if (savedState) {
     console.log('🔄 Restaurando estado:', savedState);
+    console.log('🔍 Estado encontrado - view:', savedState.view);
     
     if (savedState.view === 'cursos') {
       // Restaurar para página de cursos
-      cardsContainer.style.display = "none";
       cursosContainer.style.display = "flex";
       renderCursos(window.cursosHibrida, cursosContainer, cardsContainer);
-      hideLoadingSpinner();
     } else if (savedState.view === 'subcursos' && savedState.curso) {
       // Restaurar para página de subcursos
       const curso = window.cursosHibrida.find(c => c.nome === savedState.curso);
       if (curso) {
-        cardsContainer.style.display = "none";
         cursosContainer.style.display = "flex";
         renderCursos(window.cursosHibrida, cursosContainer, cardsContainer);
         // Aguardar renderização e então mostrar subcursos
         setTimeout(() => {
           renderSubcursos(curso, cursosContainer);
-          hideLoadingSpinner();
-        }, 100);
-      } else {
-        hideLoadingSpinner();
+        }, 50); // Reduzido de 100ms para 50ms
       }
-    } else if (savedState.view === 'prints' && savedState.curso) {
-      // Restaurar para página de prints específica
+    } else if (savedState.view === 'semesters' && savedState.curso) {
+      // Restaurar para página de semestres - SEM SPINNER para ser mais rápido
       const curso = window.cursosHibrida.find(c => c.nome === savedState.curso);
       if (curso) {
+        console.log('✅ Curso encontrado:', curso.nome);
         // Encontrar o subcurso correto
         let subcurso = null;
         if (curso.subcursos) {
           subcurso = curso.subcursos.find(s => s.pasta === savedState.pasta);
+          console.log('🔍 Procurando subcurso com pasta:', savedState.pasta);
+          console.log('📁 Subcursos disponíveis:', curso.subcursos.map(s => s.pasta));
         }
         
         if (subcurso) {
+          console.log('✅ Subcurso encontrado:', subcurso.nome);
+          createSemesterView(subcurso);
+        } else {
+          console.log('❌ Subcurso não encontrado');
+        }
+      } else {
+        console.log('❌ Curso não encontrado');
+      }
+    } else if (savedState.view === 'prints' && savedState.curso) {
+      // Restaurar para página de prints específica - SEM SPINNER para ser mais rápido
+      const curso = window.cursosHibrida.find(c => c.nome === savedState.curso);
+      if (curso) {
+        console.log('✅ Curso encontrado:', curso.nome);
+        // Encontrar o subcurso correto
+        let subcurso = null;
+        if (curso.subcursos) {
+          subcurso = curso.subcursos.find(s => s.pasta === savedState.pasta);
+          console.log('🔍 Procurando subcurso com pasta:', savedState.pasta);
+        }
+        
+        if (subcurso) {
+          console.log('✅ Subcurso encontrado:', subcurso.nome);
           window.abrirViewCurso(subcurso, savedState.semester);
         } else {
+          console.log('❌ Subcurso não encontrado, usando curso principal');
           // Se não encontrar subcurso, usar o curso principal
           window.abrirViewCurso(curso, savedState.semester);
         }
         // O spinner será escondido pela função abrirViewCurso
       } else {
-        hideLoadingSpinner();
+        console.log('❌ Curso não encontrado');
       }
     } else {
-      hideLoadingSpinner();
+      // Estado padrão: mostrar home
+      cardsContainer.style.display = "flex";
+      window.goHome();
     }
   } else {
     // Estado padrão: mostrar home
-    hideLoadingSpinner();
+    cardsContainer.style.display = "flex";
     window.goHome();
   }
 }
