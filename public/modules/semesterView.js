@@ -67,23 +67,24 @@ export function createSemesterView(curso) {
   btnVoltar.innerHTML = "&larr; Voltar para Subcursos";
   btnVoltar.onclick = () => {
     // Mostrar spinner ao voltar para subcursos
-    if (typeof window.showLoadingSpinner === 'function') {
-      window.showLoadingSpinner('Voltando para subcursos...');
+    if (typeof window.showLoadingSpinner === "function") {
+      window.showLoadingSpinner("Voltando para subcursos...");
     }
-    
+
     // Aguardar um pouco para mostrar o spinner
     setTimeout(() => {
       // Remover a visualização de semestres
       document.body.removeChild(view);
 
       // Exibir a lista de subcursos
-      document.getElementById("cursos-hibrida-container").style.display = "flex";
+      document.getElementById("cursos-hibrida-container").style.display =
+        "flex";
 
       // Esconder outras views se estiverem visíveis
       document.getElementById("folder-view").style.display = "none";
-      
+
       // Esconder spinner após renderizar
-      if (typeof window.hideLoadingSpinner === 'function') {
+      if (typeof window.hideLoadingSpinner === "function") {
         window.hideLoadingSpinner();
       }
     }, 300); // Aguardar 300ms para mostrar o spinner
@@ -97,7 +98,6 @@ export function createSemesterView(curso) {
   const subHeader = document.createElement("div");
   subHeader.className = "semester-sub-header";
   subHeader.style = "margin-top: 0; padding-top: 0;";
-
 
   header.appendChild(btnVoltar);
   header.appendChild(title);
@@ -214,18 +214,21 @@ function renderSemesters(curso, semesters, grid) {
     const btnAtualizar = document.createElement("button");
     btnAtualizar.className = "update-prints-btn";
     btnAtualizar.textContent = "Atualizar";
-    btnAtualizar.setAttribute('data-curso', curso.pasta);
-    btnAtualizar.setAttribute('data-semester', semester);
+    btnAtualizar.setAttribute("data-curso", curso.pasta);
+    btnAtualizar.setAttribute("data-semester", semester);
     btnAtualizar.onclick = () => {
-      console.log('Botão Atualizar clicado!', curso, semester);
-      console.log('Função showUpdateSelectionModal disponível:', typeof window.showUpdateSelectionModal);
-      
-      if (typeof window.showUpdateSelectionModal === 'function') {
+      console.log("Botão Atualizar clicado!", curso, semester);
+      console.log(
+        "Função showUpdateSelectionModal disponível:",
+        typeof window.showUpdateSelectionModal
+      );
+
+      if (typeof window.showUpdateSelectionModal === "function") {
         // Abrir modal de seleção em vez de executar diretamente
         window.showUpdateSelectionModal(curso, semester);
       } else {
-        console.error('Função showUpdateSelectionModal não está disponível!');
-        showToast('Erro: Modal de seleção não carregado', 'error');
+        console.error("Função showUpdateSelectionModal não está disponível!");
+        showToast("Erro: Modal de seleção não carregado", "error");
       }
     };
 

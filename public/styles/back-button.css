@@ -46,10 +46,13 @@ body {
   border: none !important;
   margin-top: 0;
   align-self: flex-start;
+  display: inline-block;
+  text-decoration: none;
 }
 
 .back-btn-inside:hover {
   background: linear-gradient(90deg, #0096c7 0%, #005fa3 100%) !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 114, 255, 0.3);
+  color: #fff !important;
 }

@@ -298,7 +298,7 @@ window.abrirViewCurso = function (curso, semester) {
 
       // Sempre retornar para a tela de subcursos
       const voltar = document.createElement("button");
-      voltar.className = "back-btn back-btn-inside";
+      voltar.className = "back-btn";
       voltar.innerHTML = "&larr; Voltar para Semestres";
       voltar.onclick = function () {
         // Mostrar spinner ao voltar para semestres
