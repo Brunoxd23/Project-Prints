@@ -6,6 +6,10 @@ class SearchManager {
     this.initCoursesSearch();
     this.initPrintsSearch();
     this.initSubcursosSearch();
+    
+    // Definir funções globais para uso externo
+    window.initCoursesSearch = () => this.initCoursesSearch();
+    window.initPrintsSearch = () => this.initPrintsSearch();
   }
 
   // Inicializar pesquisa de cursos
@@ -450,5 +454,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // Função global para inicializar pesquisa de prints (chamada pelo semesterView.js)
 window.initPrintsSearch = () => {
   console.log('🔍 Inicializando pesquisa de prints...');
+  // Esta função será definida pelo SearchManager
+};
+
+// Função global para inicializar pesquisa de cursos (chamada quando voltar dos subcursos)
+window.initCoursesSearch = () => {
+  console.log('🔍 Reinicializando pesquisa de cursos...');
   // Esta função será definida pelo SearchManager
 };

@@ -66,14 +66,27 @@ export function createSemesterView(curso) {
   btnVoltar.className = "back-btn";
   btnVoltar.innerHTML = "&larr; Voltar para Subcursos";
   btnVoltar.onclick = () => {
-    // Remover a visualização de semestres
-    document.body.removeChild(view);
+    // Mostrar spinner ao voltar para subcursos
+    if (typeof window.showLoadingSpinner === 'function') {
+      window.showLoadingSpinner('Voltando para subcursos...');
+    }
+    
+    // Aguardar um pouco para mostrar o spinner
+    setTimeout(() => {
+      // Remover a visualização de semestres
+      document.body.removeChild(view);
 
-    // Exibir a lista de subcursos
-    document.getElementById("cursos-hibrida-container").style.display = "flex";
+      // Exibir a lista de subcursos
+      document.getElementById("cursos-hibrida-container").style.display = "flex";
 
-    // Esconder outras views se estiverem visíveis
-    document.getElementById("folder-view").style.display = "none";
+      // Esconder outras views se estiverem visíveis
+      document.getElementById("folder-view").style.display = "none";
+      
+      // Esconder spinner após renderizar
+      if (typeof window.hideLoadingSpinner === 'function') {
+        window.hideLoadingSpinner();
+      }
+    }, 300); // Aguardar 300ms para mostrar o spinner
   };
 
   const title = document.createElement("h2");

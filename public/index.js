@@ -1,10 +1,76 @@
 // Entry point: import and initialize modules
 import { goHome, voltarParaHome, ensurePastasVisible } from "./modules/spa.js";
-import { renderCursos } from "./modules/cards.js";
+import { renderCursos, renderSubcursos } from "./modules/cards.js";
 import { runScript, showPrints } from "./modules/scripts.js";
 import { showToast, zoomImg } from "./modules/utils.js";
 import { createSemesterView } from "./modules/semesterView.js";
 import { getCurrentSemester } from "./modules/semester.js";
+
+// Função para salvar estado atual
+function saveCurrentState(state) {
+  localStorage.setItem('printsAppState', JSON.stringify(state));
+}
+
+// Tornar função global para uso em outros módulos
+window.saveCurrentState = saveCurrentState;
+
+// Funções para spinner de carregamento
+function showLoadingSpinner(message = 'Carregando...') {
+  // Remover spinner existente se houver
+  hideLoadingSpinner();
+  
+  const spinner = document.createElement('div');
+  spinner.className = 'loading-spinner';
+  spinner.id = 'loading-spinner';
+  spinner.innerHTML = `
+    <div class="spinner"></div>
+    <div class="spinner-text">${message}</div>
+  `;
+  
+  document.body.appendChild(spinner);
+  
+  // Garantir que o spinner seja visível por pelo menos 800ms
+  setTimeout(() => {
+    const currentSpinner = document.getElementById('loading-spinner');
+    if (currentSpinner) {
+      currentSpinner.classList.add('minimum-duration');
+    }
+  }, 100);
+}
+
+function hideLoadingSpinner() {
+  const spinner = document.getElementById('loading-spinner');
+  if (spinner) {
+    // Se o spinner tem classe minimum-duration, aguardar um pouco mais
+    if (spinner.classList.contains('minimum-duration')) {
+      setTimeout(() => {
+        const currentSpinner = document.getElementById('loading-spinner');
+        if (currentSpinner) {
+          currentSpinner.remove();
+        }
+      }, 700); // Total de 800ms mínimo
+    } else {
+      spinner.remove();
+    }
+  }
+}
+
+// Tornar funções globais
+window.showLoadingSpinner = showLoadingSpinner;
+window.hideLoadingSpinner = hideLoadingSpinner;
+
+// Função para restaurar estado
+function restoreState() {
+  const savedState = localStorage.getItem('printsAppState');
+  if (savedState) {
+    try {
+      return JSON.parse(savedState);
+    } catch (e) {
+      console.error('Erro ao restaurar estado:', e);
+    }
+  }
+  return null;
+}
 
 // Elementos principais
 const homeView = document.getElementById("home-view");
@@ -123,6 +189,11 @@ window.zoomImg = zoomImg;
 const cardHibrida = document.getElementById("card-hibrida");
 if (cardHibrida) {
   cardHibrida.onclick = function () {
+    // Salvar estado atual
+    saveCurrentState({
+      view: 'cursos'
+    });
+    
     cardsContainer.style.display = "none";
     cursosContainer.style.display = "flex";
     renderCursos(window.cursosHibrida, cursosContainer, cardsContainer);
@@ -145,6 +216,14 @@ window.abrirViewCurso = function (curso, semester) {
   const folderTitle = document.getElementById("folder-title");
   const folderOutput = document.getElementById("folder-output");
 
+  // Salvar estado atual
+  saveCurrentState({
+    view: 'prints',
+    curso: curso.nome,
+    pasta: curso.pasta,
+    semester: semester || getCurrentSemester()
+  });
+
   // Esconder todas as outras views
   document.getElementById("cursos-hibrida-container").style.display = "none";
   document.getElementById("cards-container").style.display = "none";
@@ -165,12 +244,15 @@ window.abrirViewCurso = function (curso, semester) {
 
   pastaCompleta = `${curso.pasta}_${semesterStr}`;
   folderOutput.innerHTML = "<span>Carregando prints...</span>";
+  showLoadingSpinner('Carregando prints...');
 
   // Buscar prints da pasta
   console.log("Buscando prints em:", pastaCompleta);
   fetch(`/listar-prints?pasta=${encodeURIComponent(pastaCompleta)}`)
     .then((res) => res.json())
     .then((prints) => {
+      hideLoadingSpinner();
+      
       let html = "";
       if (!Array.isArray(prints) || prints.length === 0) {
         html += "<span>Nenhum print encontrado nesta pasta.</span>";
@@ -219,26 +301,39 @@ window.abrirViewCurso = function (curso, semester) {
       voltar.className = "back-btn back-btn-inside";
       voltar.innerHTML = "&larr; Voltar para Semestres";
       voltar.onclick = function () {
-        // Ocultar a visualização de prints
-        document.getElementById("folder-view").style.display = "none";
-
-        // Limpar a área de visualização
-        folderOutput.innerHTML = "";
-
-        // Esconder barra de pesquisa de prints
-        const printsSearchContainer = document.getElementById('search-prints-container');
-        if (printsSearchContainer) {
-          printsSearchContainer.style.display = 'none';
+        // Mostrar spinner ao voltar para semestres
+        if (typeof window.showLoadingSpinner === 'function') {
+          window.showLoadingSpinner('Voltando para semestres...');
         }
+        
+        // Aguardar um pouco para mostrar o spinner
+        setTimeout(() => {
+          // Ocultar a visualização de prints
+          document.getElementById("folder-view").style.display = "none";
 
-        // Mostrar barra de pesquisa de cursos
-        const coursesSearchContainer = document.getElementById('search-courses-container');
-        if (coursesSearchContainer) {
-          coursesSearchContainer.style.display = 'block';
-        }
+          // Limpar a área de visualização
+          folderOutput.innerHTML = "";
 
-        // Recriar a visualização de semestres
-        createSemesterView(curso);
+          // Esconder barra de pesquisa de prints
+          const printsSearchContainer = document.getElementById('search-prints-container');
+          if (printsSearchContainer) {
+            printsSearchContainer.style.display = 'none';
+          }
+
+          // Mostrar barra de pesquisa de cursos
+          const coursesSearchContainer = document.getElementById('search-courses-container');
+          if (coursesSearchContainer) {
+            coursesSearchContainer.style.display = 'block';
+          }
+
+          // Recriar a visualização de semestres
+          createSemesterView(curso);
+          
+          // Esconder spinner após renderizar
+          if (typeof window.hideLoadingSpinner === 'function') {
+            window.hideLoadingSpinner();
+          }
+        }, 300); // Aguardar 300ms para mostrar o spinner
       };
 
       // Criar header com botão e título alinhados
@@ -305,6 +400,7 @@ window.abrirViewCurso = function (curso, semester) {
       }, 500);
     })
     .catch((err) => {
+      hideLoadingSpinner();
       folderOutput.innerHTML = "<span>Erro ao carregar prints.</span>";
       console.error("Erro:", err);
     });
@@ -330,5 +426,64 @@ window.updateSemesterPrints = function (curso) {
     });
 };
 
-// Inicializa home
-window.goHome();
+// Função para restaurar estado após carregamento
+function restoreAppState() {
+  showLoadingSpinner('Restaurando página...');
+  
+  const savedState = restoreState();
+  if (savedState) {
+    console.log('🔄 Restaurando estado:', savedState);
+    
+    if (savedState.view === 'cursos') {
+      // Restaurar para página de cursos
+      cardsContainer.style.display = "none";
+      cursosContainer.style.display = "flex";
+      renderCursos(window.cursosHibrida, cursosContainer, cardsContainer);
+      hideLoadingSpinner();
+    } else if (savedState.view === 'subcursos' && savedState.curso) {
+      // Restaurar para página de subcursos
+      const curso = window.cursosHibrida.find(c => c.nome === savedState.curso);
+      if (curso) {
+        cardsContainer.style.display = "none";
+        cursosContainer.style.display = "flex";
+        renderCursos(window.cursosHibrida, cursosContainer, cardsContainer);
+        // Aguardar renderização e então mostrar subcursos
+        setTimeout(() => {
+          renderSubcursos(curso, cursosContainer);
+          hideLoadingSpinner();
+        }, 100);
+      } else {
+        hideLoadingSpinner();
+      }
+    } else if (savedState.view === 'prints' && savedState.curso) {
+      // Restaurar para página de prints específica
+      const curso = window.cursosHibrida.find(c => c.nome === savedState.curso);
+      if (curso) {
+        // Encontrar o subcurso correto
+        let subcurso = null;
+        if (curso.subcursos) {
+          subcurso = curso.subcursos.find(s => s.pasta === savedState.pasta);
+        }
+        
+        if (subcurso) {
+          window.abrirViewCurso(subcurso, savedState.semester);
+        } else {
+          // Se não encontrar subcurso, usar o curso principal
+          window.abrirViewCurso(curso, savedState.semester);
+        }
+        // O spinner será escondido pela função abrirViewCurso
+      } else {
+        hideLoadingSpinner();
+      }
+    } else {
+      hideLoadingSpinner();
+    }
+  } else {
+    // Estado padrão: mostrar home
+    hideLoadingSpinner();
+    window.goHome();
+  }
+}
+
+// Inicializa aplicação restaurando estado ou indo para home
+restoreAppState();

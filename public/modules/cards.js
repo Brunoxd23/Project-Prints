@@ -56,26 +56,44 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
   btnVoltar.innerHTML = "&larr; Voltar";
   btnVoltar.style.marginBottom = "32px";
   btnVoltar.onclick = function () {
-    cursosContainer.style.display = "none";
-    cardsContainer.style.display = "flex";
-    
-    // Esconder barra de pesquisa de prints se estiver visível
-    const printsSearchContainer = document.getElementById('search-prints-container');
-    if (printsSearchContainer) {
-      printsSearchContainer.style.display = 'none';
+    // Mostrar spinner ao voltar para home
+    if (typeof window.showLoadingSpinner === 'function') {
+      window.showLoadingSpinner('Voltando para home...');
     }
     
-    // Esconder barra de pesquisa de subcursos se estiver visível
-    const subcursosSearchContainer = document.getElementById('search-subcursos-container');
-    if (subcursosSearchContainer) {
-      subcursosSearchContainer.style.display = 'none';
-    }
-    
-    // Mostrar barra de pesquisa de cursos
-    const coursesSearchContainer = document.getElementById('search-courses-container');
-    if (coursesSearchContainer) {
-      coursesSearchContainer.style.display = 'block';
-    }
+    // Aguardar um pouco para mostrar o spinner
+    setTimeout(() => {
+      // Limpar estado ao voltar para home
+      if (typeof window.saveCurrentState === 'function') {
+        localStorage.removeItem('printsAppState');
+      }
+      
+      cursosContainer.style.display = "none";
+      cardsContainer.style.display = "flex";
+      
+      // Esconder barra de pesquisa de prints se estiver visível
+      const printsSearchContainer = document.getElementById('search-prints-container');
+      if (printsSearchContainer) {
+        printsSearchContainer.style.display = 'none';
+      }
+      
+      // Esconder barra de pesquisa de subcursos se estiver visível
+      const subcursosSearchContainer = document.getElementById('search-subcursos-container');
+      if (subcursosSearchContainer) {
+        subcursosSearchContainer.style.display = 'none';
+      }
+      
+      // Esconder barra de pesquisa de cursos ao voltar para home
+      const coursesSearchContainer = document.getElementById('search-courses-container');
+      if (coursesSearchContainer) {
+        coursesSearchContainer.style.display = 'none';
+      }
+      
+      // Esconder spinner após renderizar
+      if (typeof window.hideLoadingSpinner === 'function') {
+        window.hideLoadingSpinner();
+      }
+    }, 300); // Aguardar 300ms para mostrar o spinner
   };
   wrapper.appendChild(btnVoltar);
 
@@ -101,6 +119,14 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
     cardContent.onclick = function () {
       // Se o curso tem subcursos, renderiza os cards de subcursos
       if (curso.subcursos && curso.subcursos.length > 0) {
+        // Salvar estado atual
+        if (typeof window.saveCurrentState === 'function') {
+          window.saveCurrentState({
+            view: 'subcursos',
+            curso: curso.nome
+          });
+        }
+        
         // Esconder barra de pesquisa de cursos quando entrar nos subcursos
         const coursesSearchContainer = document.getElementById('search-courses-container');
         if (coursesSearchContainer) {
@@ -118,7 +144,7 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
   cursosContainer.appendChild(wrapper);
 }
 
-function renderSubcursos(curso, cursosContainer) {
+export function renderSubcursos(curso, cursosContainer) {
   cursosContainer.innerHTML = "";
   const wrapper = document.createElement("div");
   wrapper.style.display = "flex";
@@ -164,29 +190,21 @@ function renderSubcursos(curso, cursosContainer) {
   btnVoltar.innerHTML = "&larr; Voltar";
   btnVoltar.style.marginBottom = "32px";
   btnVoltar.onclick = function () {
-    renderCursos(
-      window.cursosHibrida,
-      cursosContainer,
-      document.getElementById("cards-container")
-    );
-    
-    // Esconder barra de pesquisa de prints se estiver visível
-    const printsSearchContainer = document.getElementById('search-prints-container');
-    if (printsSearchContainer) {
-      printsSearchContainer.style.display = 'none';
+    // Mostrar spinner ao voltar
+    if (typeof window.showLoadingSpinner === 'function') {
+      window.showLoadingSpinner('Voltando para cursos...');
     }
     
-    // Esconder barra de pesquisa de subcursos se estiver visível
-    const subcursosSearchContainer = document.getElementById('search-subcursos-container');
-    if (subcursosSearchContainer) {
-      subcursosSearchContainer.style.display = 'none';
+    // Atualizar estado para cursos antes de recarregar
+    if (typeof window.saveCurrentState === 'function') {
+      window.saveCurrentState({ view: 'cursos' });
     }
     
-    // Mostrar barra de pesquisa de cursos
-    const coursesSearchContainer = document.getElementById('search-courses-container');
-    if (coursesSearchContainer) {
-      coursesSearchContainer.style.display = 'block';
-    }
+    // Aguardar um pouco para mostrar o spinner e depois recarregar a página
+    setTimeout(() => {
+      // Recarregar a página completamente para garantir que tudo funcione
+      window.location.reload();
+    }, 800); // Aguardar 800ms para mostrar o spinner
   };
   wrapper.appendChild(btnVoltar);
   // Título
