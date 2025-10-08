@@ -553,12 +553,31 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
     // Importar funções de manipulação de semestre
     const semesterUtils = require("../utils/semester");
 
-    // Get current semester (2025-2)
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1; // 0-11 to 1-12
-    const semester = month <= 6 ? "1" : "2";
-    let semesterFolder = `${year}-${semester}`;
+    // Usar semestre personalizado se fornecido, senão usar semestre atual
+    let semesterFolder;
+    if (req.body && req.body.semester) {
+      const customSemester = req.body.semester.trim();
+      // Validar formato do semestre (YYYY-N onde N pode ser qualquer número)
+      const semesterRegex = /^\d{4}-\d+$/;
+      
+      if (!semesterRegex.test(customSemester)) {
+        console.log(`❌ Semestre inválido fornecido: ${customSemester}`);
+        return res.status(400).json({ 
+          error: "Semestre inválido. Use o formato YYYY-N (ex: 2025-1, 2025-81, 2025-92)" 
+        });
+      }
+      
+      semesterFolder = customSemester;
+      console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
+    } else {
+      // Get current semester (2025-2)
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1; // 0-11 to 1-12
+      const semester = month <= 6 ? "1" : "2";
+      semesterFolder = `${year}-${semester}`;
+      console.log(`📅 Usando semestre automático: ${semesterFolder}`);
+    }
 
     // Função auxiliar para verificar se existe pasta para um determinado semestre e se tem prints
     const checkSemesterHasPrints = (folder) => {
@@ -586,51 +605,17 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
       foundEmptyFolder = true;
     }
     // Se a pasta atual tiver prints, procure próximas pastas vazias
+    // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
-      // Tente até 6 semestres futuros (3 anos)
-      let tempSemester = semesterFolder;
       console.log(
-        `Pasta do semestre ${semesterFolder.replace(
+        `❌ Semestre ${semesterFolder.replace(
           "-",
           "/"
-        )} já tem prints. Buscando próximo semestre disponível...`
+        )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
-
-      for (let i = 0; i < 6 && !foundEmptyFolder; i++) {
-        // Avança para o próximo semestre
-        tempSemester = semesterUtils.getNextSemester(tempSemester);
-        let tempFolder = path.join(basePath, `${coursePrefix}${tempSemester}`);
-
-        // Verifica se o próximo semestre já tem prints
-        if (!checkSemesterHasPrints(tempFolder)) {
-          semesterFolder = tempSemester;
-          console.log(
-            `Semestre disponível encontrado: ${semesterFolder.replace(
-              "-",
-              "/"
-            )}`
-          );
-          foundEmptyFolder = true;
-        } else {
-          console.log(
-            `Pasta do semestre ${tempSemester.replace(
-              "-",
-              "/"
-            )} já tem prints. Verificando próximo...`
-          );
-        }
-      }
-
-      // Se não encontrar pasta vazia em 6 tentativas, usa o próximo semestre e avisa
-      if (!foundEmptyFolder) {
-        semesterFolder = semesterUtils.getNextSemester(tempSemester);
-        console.log(
-          `Nenhuma pasta vazia encontrada nos próximos semestres. Usando o próximo semestre: ${semesterFolder.replace(
-            "-",
-            "/"
-          )}`
-        );
-      }
+      return res.status(400).json({ 
+        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+      });
     }
 
     const outputFolder = path.join(
@@ -809,12 +794,31 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
     // Importar funções de manipulação de semestre
     const semesterUtils = require("../utils/semester");
 
-    // Get current semester (2025-2)
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1; // 0-11 to 1-12
-    const semester = month <= 6 ? "1" : "2";
-    let semesterFolder = `${year}-${semester}`;
+    // Usar semestre personalizado se fornecido, senão usar semestre atual
+    let semesterFolder;
+    if (req.body && req.body.semester) {
+      const customSemester = req.body.semester.trim();
+      // Validar formato do semestre (YYYY-N onde N pode ser qualquer número)
+      const semesterRegex = /^\d{4}-\d+$/;
+      
+      if (!semesterRegex.test(customSemester)) {
+        console.log(`❌ Semestre inválido fornecido: ${customSemester}`);
+        return res.status(400).json({ 
+          error: "Semestre inválido. Use o formato YYYY-N (ex: 2025-1, 2025-81, 2025-92)" 
+        });
+      }
+      
+      semesterFolder = customSemester;
+      console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
+    } else {
+      // Get current semester (2025-2)
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1; // 0-11 to 1-12
+      const semester = month <= 6 ? "1" : "2";
+      semesterFolder = `${year}-${semester}`;
+      console.log(`📅 Usando semestre automático: ${semesterFolder}`);
+    }
 
     // Função auxiliar para verificar se existe pasta para um determinado semestre e se tem prints
     const checkSemesterHasPrints = (folder) => {
@@ -842,51 +846,17 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
       foundEmptyFolder = true;
     }
     // Se a pasta atual tiver prints, procure próximas pastas vazias
+    // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
-      // Tente até 6 semestres futuros (3 anos)
-      let tempSemester = semesterFolder;
       console.log(
-        `Pasta do semestre ${semesterFolder.replace(
+        `❌ Semestre ${semesterFolder.replace(
           "-",
           "/"
-        )} já tem prints. Buscando próximo semestre disponível...`
+        )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
-
-      for (let i = 0; i < 6 && !foundEmptyFolder; i++) {
-        // Avança para o próximo semestre
-        tempSemester = semesterUtils.getNextSemester(tempSemester);
-        let tempFolder = path.join(basePath, `${coursePrefix}${tempSemester}`);
-
-        // Verifica se o próximo semestre já tem prints
-        if (!checkSemesterHasPrints(tempFolder)) {
-          semesterFolder = tempSemester;
-          console.log(
-            `Semestre disponível encontrado: ${semesterFolder.replace(
-              "-",
-              "/"
-            )}`
-          );
-          foundEmptyFolder = true;
-        } else {
-          console.log(
-            `Pasta do semestre ${tempSemester.replace(
-              "-",
-              "/"
-            )} já tem prints. Verificando próximo...`
-          );
-        }
-      }
-
-      // Se não encontrar pasta vazia em 6 tentativas, usa o próximo semestre e avisa
-      if (!foundEmptyFolder) {
-        semesterFolder = semesterUtils.getNextSemester(tempSemester);
-        console.log(
-          `Nenhuma pasta vazia encontrada nos próximos semestres. Usando o próximo semestre: ${semesterFolder.replace(
-            "-",
-            "/"
-          )}`
-        );
-      }
+      return res.status(400).json({ 
+        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+      });
     }
 
     const outputFolder = path.join(
@@ -1065,12 +1035,31 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
     // Importar funções de manipulação de semestre
     const semesterUtils = require("../utils/semester");
 
-    // Get current semester (2025-2)
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1; // 0-11 to 1-12
-    const semester = month <= 6 ? "1" : "2";
-    let semesterFolder = `${year}-${semester}`;
+    // Usar semestre personalizado se fornecido, senão usar semestre atual
+    let semesterFolder;
+    if (req.body && req.body.semester) {
+      const customSemester = req.body.semester.trim();
+      // Validar formato do semestre (YYYY-N onde N pode ser qualquer número)
+      const semesterRegex = /^\d{4}-\d+$/;
+      
+      if (!semesterRegex.test(customSemester)) {
+        console.log(`❌ Semestre inválido fornecido: ${customSemester}`);
+        return res.status(400).json({ 
+          error: "Semestre inválido. Use o formato YYYY-N (ex: 2025-1, 2025-81, 2025-92)" 
+        });
+      }
+      
+      semesterFolder = customSemester;
+      console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
+    } else {
+      // Get current semester (2025-2)
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1; // 0-11 to 1-12
+      const semester = month <= 6 ? "1" : "2";
+      semesterFolder = `${year}-${semester}`;
+      console.log(`📅 Usando semestre automático: ${semesterFolder}`);
+    }
 
     // Função auxiliar para verificar se existe pasta para um determinado semestre e se tem prints
     const checkSemesterHasPrints = (folder) => {
@@ -1098,51 +1087,17 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
       foundEmptyFolder = true;
     }
     // Se a pasta atual tiver prints, procure próximas pastas vazias
+    // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
-      // Tente até 6 semestres futuros (3 anos)
-      let tempSemester = semesterFolder;
       console.log(
-        `Pasta do semestre ${semesterFolder.replace(
+        `❌ Semestre ${semesterFolder.replace(
           "-",
           "/"
-        )} já tem prints. Buscando próximo semestre disponível...`
+        )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
-
-      for (let i = 0; i < 6 && !foundEmptyFolder; i++) {
-        // Avança para o próximo semestre
-        tempSemester = semesterUtils.getNextSemester(tempSemester);
-        let tempFolder = path.join(basePath, `${coursePrefix}${tempSemester}`);
-
-        // Verifica se o próximo semestre já tem prints
-        if (!checkSemesterHasPrints(tempFolder)) {
-          semesterFolder = tempSemester;
-          console.log(
-            `Semestre disponível encontrado: ${semesterFolder.replace(
-              "-",
-              "/"
-            )}`
-          );
-          foundEmptyFolder = true;
-        } else {
-          console.log(
-            `Pasta do semestre ${tempSemester.replace(
-              "-",
-              "/"
-            )} já tem prints. Verificando próximo...`
-          );
-        }
-      }
-
-      // Se não encontrar pasta vazia em 6 tentativas, usa o próximo semestre e avisa
-      if (!foundEmptyFolder) {
-        semesterFolder = semesterUtils.getNextSemester(tempSemester);
-        console.log(
-          `Nenhuma pasta vazia encontrada nos próximos semestres. Usando o próximo semestre: ${semesterFolder.replace(
-            "-",
-            "/"
-          )}`
-        );
-      }
+      return res.status(400).json({ 
+        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+      });
     }
 
     const outputFolder = path.join(
@@ -1321,12 +1276,31 @@ router.post("/run-script-cuidados-rj-mensal", async (req, res) => {
     // Importar funções de manipulação de semestre
     const semesterUtils = require("../utils/semester");
 
-    // Get current semester (2025-2)
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1; // 0-11 to 1-12
-    const semester = month <= 6 ? "1" : "2";
-    let semesterFolder = `${year}-${semester}`;
+    // Usar semestre personalizado se fornecido, senão usar semestre atual
+    let semesterFolder;
+    if (req.body && req.body.semester) {
+      const customSemester = req.body.semester.trim();
+      // Validar formato do semestre (YYYY-N onde N pode ser qualquer número)
+      const semesterRegex = /^\d{4}-\d+$/;
+      
+      if (!semesterRegex.test(customSemester)) {
+        console.log(`❌ Semestre inválido fornecido: ${customSemester}`);
+        return res.status(400).json({ 
+          error: "Semestre inválido. Use o formato YYYY-N (ex: 2025-1, 2025-81, 2025-92)" 
+        });
+      }
+      
+      semesterFolder = customSemester;
+      console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
+    } else {
+      // Get current semester (2025-2)
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1; // 0-11 to 1-12
+      const semester = month <= 6 ? "1" : "2";
+      semesterFolder = `${year}-${semester}`;
+      console.log(`📅 Usando semestre automático: ${semesterFolder}`);
+    }
 
     // Função auxiliar para verificar se existe pasta para um determinado semestre e se tem prints
     const checkSemesterHasPrints = (folder) => {
@@ -1354,51 +1328,17 @@ router.post("/run-script-cuidados-rj-mensal", async (req, res) => {
       foundEmptyFolder = true;
     }
     // Se a pasta atual tiver prints, procure próximas pastas vazias
+    // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
-      // Tente até 6 semestres futuros (3 anos)
-      let tempSemester = semesterFolder;
       console.log(
-        `Pasta do semestre ${semesterFolder.replace(
+        `❌ Semestre ${semesterFolder.replace(
           "-",
           "/"
-        )} já tem prints. Buscando próximo semestre disponível...`
+        )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
-
-      for (let i = 0; i < 6 && !foundEmptyFolder; i++) {
-        // Avança para o próximo semestre
-        tempSemester = semesterUtils.getNextSemester(tempSemester);
-        let tempFolder = path.join(basePath, `${coursePrefix}${tempSemester}`);
-
-        // Verifica se o próximo semestre já tem prints
-        if (!checkSemesterHasPrints(tempFolder)) {
-          semesterFolder = tempSemester;
-          console.log(
-            `Semestre disponível encontrado: ${semesterFolder.replace(
-              "-",
-              "/"
-            )}`
-          );
-          foundEmptyFolder = true;
-        } else {
-          console.log(
-            `Pasta do semestre ${tempSemester.replace(
-              "-",
-              "/"
-            )} já tem prints. Verificando próximo...`
-          );
-        }
-      }
-
-      // Se não encontrar pasta vazia em 6 tentativas, usa o próximo semestre e avisa
-      if (!foundEmptyFolder) {
-        semesterFolder = semesterUtils.getNextSemester(tempSemester);
-        console.log(
-          `Nenhuma pasta vazia encontrada nos próximos semestres. Usando o próximo semestre: ${semesterFolder.replace(
-            "-",
-            "/"
-          )}`
-        );
-      }
+      return res.status(400).json({ 
+        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+      });
     }
 
     const outputFolder = path.join(
@@ -1486,12 +1426,31 @@ router.post("/run-script-cuidados-go-mensal", async (req, res) => {
     // Importar funções de manipulação de semestre
     const semesterUtils = require("../utils/semester");
 
-    // Get current semester (2025-2)
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth() + 1; // 0-11 to 1-12
-    const semester = month <= 6 ? "1" : "2";
-    let semesterFolder = `${year}-${semester}`;
+    // Usar semestre personalizado se fornecido, senão usar semestre atual
+    let semesterFolder;
+    if (req.body && req.body.semester) {
+      const customSemester = req.body.semester.trim();
+      // Validar formato do semestre (YYYY-N onde N pode ser qualquer número)
+      const semesterRegex = /^\d{4}-\d+$/;
+      
+      if (!semesterRegex.test(customSemester)) {
+        console.log(`❌ Semestre inválido fornecido: ${customSemester}`);
+        return res.status(400).json({ 
+          error: "Semestre inválido. Use o formato YYYY-N (ex: 2025-1, 2025-81, 2025-92)" 
+        });
+      }
+      
+      semesterFolder = customSemester;
+      console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
+    } else {
+      // Get current semester (2025-2)
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1; // 0-11 to 1-12
+      const semester = month <= 6 ? "1" : "2";
+      semesterFolder = `${year}-${semester}`;
+      console.log(`📅 Usando semestre automático: ${semesterFolder}`);
+    }
 
     // Função auxiliar para verificar se existe pasta para um determinado semestre e se tem prints
     const checkSemesterHasPrints = (folder) => {
@@ -1519,51 +1478,17 @@ router.post("/run-script-cuidados-go-mensal", async (req, res) => {
       foundEmptyFolder = true;
     }
     // Se a pasta atual tiver prints, procure próximas pastas vazias
+    // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
-      // Tente até 6 semestres futuros (3 anos)
-      let tempSemester = semesterFolder;
       console.log(
-        `Pasta do semestre ${semesterFolder.replace(
+        `❌ Semestre ${semesterFolder.replace(
           "-",
           "/"
-        )} já tem prints. Buscando próximo semestre disponível...`
+        )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
-
-      for (let i = 0; i < 6 && !foundEmptyFolder; i++) {
-        // Avança para o próximo semestre
-        tempSemester = semesterUtils.getNextSemester(tempSemester);
-        let tempFolder = path.join(basePath, `${coursePrefix}${tempSemester}`);
-
-        // Verifica se o próximo semestre já tem prints
-        if (!checkSemesterHasPrints(tempFolder)) {
-          semesterFolder = tempSemester;
-          console.log(
-            `Semestre disponível encontrado: ${semesterFolder.replace(
-              "-",
-              "/"
-            )}`
-          );
-          foundEmptyFolder = true;
-        } else {
-          console.log(
-            `Pasta do semestre ${tempSemester.replace(
-              "-",
-              "/"
-            )} já tem prints. Verificando próximo...`
-          );
-        }
-      }
-
-      // Se não encontrar pasta vazia em 6 tentativas, usa o próximo semestre e avisa
-      if (!foundEmptyFolder) {
-        semesterFolder = semesterUtils.getNextSemester(tempSemester);
-        console.log(
-          `Nenhuma pasta vazia encontrada nos próximos semestres. Usando o próximo semestre: ${semesterFolder.replace(
-            "-",
-            "/"
-          )}`
-        );
-      }
+      return res.status(400).json({ 
+        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+      });
     }
 
     const outputFolder = path.join(

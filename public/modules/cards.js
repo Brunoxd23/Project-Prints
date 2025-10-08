@@ -1,7 +1,7 @@
 import { getCurrentSemester } from "./semester.js";
 import { createSemesterView } from "./semesterView.js";
 
-// Função para mostrar modal de confirmação
+// Função para mostrar modal de confirmação com input de semestre
 function showConfirmModal() {
   return new Promise((resolve) => {
     const modal = document.getElementById("confirmModal");
@@ -10,13 +10,61 @@ function showConfirmModal() {
 
     // Atualizar texto do modal para ser mais específico
     const modalMessage = document.querySelector(".modal-message");
-    modalMessage.textContent = "Deseja criar um novo semestre com prints?";
+    modalMessage.innerHTML = `
+      <p>Deseja criar um novo semestre com prints?</p>
+      <div style="margin-top: 20px;">
+        <label for="semesterInput" style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">
+          Digite o semestre (ex: 2025-1, 2025-81...):
+        </label>
+        <input 
+          type="text" 
+          id="semesterInput" 
+          placeholder="Ex: 2025-1" 
+          style="
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #ddd; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+          "
+          onfocus="this.style.borderColor='#0072ff'"
+          onblur="this.style.borderColor='#ddd'"
+        />
+        <div id="semesterError" style="color: #e74c3c; font-size: 14px; margin-top: 5px; display: none;">
+          Por favor, digite um semestre válido (ex: 2025-1, 2025-81, 2025-92)
+        </div>
+      </div>
+    `;
 
     modal.classList.add("active");
 
+    // Focar no input automaticamente
+    setTimeout(() => {
+      const input = document.getElementById("semesterInput");
+      if (input) {
+        input.focus();
+      }
+    }, 100);
+
     const handleConfirm = () => {
+      const input = document.getElementById("semesterInput");
+      const errorDiv = document.getElementById("semesterError");
+      const semester = input.value.trim();
+      
+      // Validar formato do semestre (ex: 2025-1, 2025-2, 2025-81, 2025-92)
+      const semesterRegex = /^\d{4}-\d+$/;
+      
+      if (!semester || !semesterRegex.test(semester)) {
+        errorDiv.style.display = "block";
+        errorDiv.textContent = "Por favor, digite um semestre válido (ex: 2025-1, 2025-81, 2025-92)";
+        input.style.borderColor = "#e74c3c";
+        return;
+      }
+      
       modal.classList.remove("active");
-      resolve(true);
+      resolve(semester);
     };
 
     const handleCancel = () => {
@@ -26,6 +74,13 @@ function showConfirmModal() {
 
     confirmBtn.onclick = handleConfirm;
     cancelBtn.onclick = handleCancel;
+
+    // Permitir Enter no input para confirmar
+    const handleKeyPress = (e) => {
+      if (e.key === "Enter") {
+        handleConfirm();
+      }
+    };
 
     // Fechar modal ao clicar fora dele
     modal.onclick = (e) => {
@@ -39,7 +94,16 @@ function showConfirmModal() {
         document.removeEventListener("keydown", handleEsc);
       }
     };
+    
     document.addEventListener("keydown", handleEsc);
+    
+    // Adicionar listener para Enter no input
+    setTimeout(() => {
+      const input = document.getElementById("semesterInput");
+      if (input) {
+        input.addEventListener("keydown", handleKeyPress);
+      }
+    }, 100);
   });
 }
 
@@ -266,8 +330,21 @@ export function renderSubcursos(curso, cursosContainer) {
       btn.innerHTML = '<span class="spinner"></span> Executando...';
       
       try {
-        const res = await fetch(sub.rota, { method: "POST" });
-        if (!res.ok) throw new Error("Erro ao executar script");
+        // Enviar semestre personalizado para o servidor
+        const res = await fetch(sub.rota, { 
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            semester: confirmed // confirmed agora contém o semestre digitado
+          })
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+          throw new Error(errorData.error || `Erro ${res.status}: ${res.statusText}`);
+        }
         
         btn.textContent = "Sucesso!";
         btn.style.background = "#00c6ff";
@@ -275,7 +352,7 @@ export function renderSubcursos(curso, cursosContainer) {
         
         // Mostrar toast de sucesso
         const toast = document.getElementById("toast");
-        toast.textContent = "Semestre criado com sucesso!";
+        toast.textContent = `Semestre ${confirmed} criado com sucesso!`;
         toast.className = "toast success show";
         setTimeout(() => (toast.className = "toast"), 3000);
         
@@ -290,11 +367,11 @@ export function renderSubcursos(curso, cursosContainer) {
         btn.style.background = "#ff4d4f";
         btn.style.color = "#fff";
         
-        // Mostrar toast de erro
+        // Mostrar toast de erro com mensagem específica
         const toast = document.getElementById("toast");
-        toast.textContent = "Erro ao executar script";
+        toast.textContent = err.message || "Erro ao executar script";
         toast.className = "toast error show";
-        setTimeout(() => (toast.className = "toast"), 3000);
+        setTimeout(() => (toast.className = "toast"), 5000);
         
         setTimeout(() => {
           btn.textContent = "Executar Script";
