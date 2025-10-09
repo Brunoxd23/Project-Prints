@@ -84,7 +84,7 @@ C:\Users\drt62324\Documents\Pós Graduação\
 │   └── Mensal 2025-6\
 ├── Pós-graduação em Psiquiatria Multiprofissional\
 │   └── Mensal 2025-6\
-└── Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG\
+└── Pós-graduação em Sustentabilidade - Liderança e Inovação em ESG\
     └── Quinzenal 2025-6\
 ```
 

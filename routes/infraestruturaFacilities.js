@@ -596,7 +596,7 @@ router.post("/run-script-infraestrutura-mensal", async (req, res) => {
         "Dependência Química": "Pós-graduação em Dependência Química",
         "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
         "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
-        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade - Liderança e Inovação em ESG"
       };
 
       const subcourseMap = {

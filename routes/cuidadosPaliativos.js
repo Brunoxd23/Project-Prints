@@ -596,7 +596,7 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
         "Dependência Química": "Pós-graduação em Dependência Química",
         "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
         "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
-        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade - Liderança e Inovação em ESG"
       };
 
       const subcourseMap = {
@@ -878,7 +878,7 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
         "Dependência Química": "Pós-graduação em Dependência Química",
         "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
         "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
-        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade - Liderança e Inovação em ESG"
       };
 
       const subcourseMap = {
@@ -1160,7 +1160,7 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
         "Dependência Química": "Pós-graduação em Dependência Química",
         "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
         "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
-        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade - Liderança e Inovação em ESG"
       };
 
       const subcourseMap = {
@@ -1442,7 +1442,7 @@ router.post("/run-script-cuidados-rj-mensal", async (req, res) => {
         "Dependência Química": "Pós-graduação em Dependência Química",
         "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
         "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
-        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade - Liderança e Inovação em ESG"
       };
 
       const subcourseMap = {
@@ -1633,7 +1633,7 @@ router.post("/run-script-cuidados-go-mensal", async (req, res) => {
         "Dependência Química": "Pós-graduação em Dependência Química",
         "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
         "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
-        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade - Liderança e Inovação em ESG"
       };
 
       const subcourseMap = {
