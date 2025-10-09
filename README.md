@@ -62,10 +62,36 @@ SPA (Single Page Application) é uma aplicação web que carrega uma única pág
 
 - **public/**: arquivos estáticos do frontend (HTML, CSS, JS, imagens)
 - **routes/**: rotas separadas por curso no backend (Node.js)
-- **Cuidados_Paliativos_Quinzenal_Pratica_YYYY-MM-DD/**: pasta gerada automaticamente com prints do subcurso específico
-- **Cuidados_Paliativos_Quinzenal_YYYY-MM-DD/**: prints da turma quinzenal
-- **Cuidados_Paliativos_Semanal_YYYY-MM-DD/**: prints da turma semanal
-- (Demais cursos seguem padrão de nomeação)
+
+#### Estrutura de Salvamento dos Prints
+
+Todos os prints são salvos no caminho base: `C:\Users\drt62324\Documents\Pós Graduação\`
+
+**Estrutura atual implementada:**
+```
+C:\Users\drt62324\Documents\Pós Graduação\
+├── Pós-graduação em Cuidados Paliativos\
+│   ├── Prática Estendida 2025-6\
+│   ├── Quinzenal 2025-6\
+│   ├── RJ-Mensal 2025-6\
+│   ├── GO-Mensal 2025-6\
+│   └── Semanal 2025-6\
+├── Pós-graduação em Dependência Química\
+│   └── Mensal 2025-6\
+├── Pós-graduação em Bases da Saúde Integrativa e Bem-Estar\
+│   └── Mensal 2025-6\
+├── Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde\
+│   └── Mensal 2025-6\
+├── Pós-graduação em Psiquiatria Multiprofissional\
+│   └── Mensal 2025-6\
+└── Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG\
+    └── Quinzenal 2025-6\
+```
+
+**Padrão de nomenclatura:**
+- `Pós-graduação em [Nome do Curso]\[Subcurso] [Semestre]`
+- O semestre é incluído diretamente no nome da pasta do subcurso
+- Exemplo: `Quinzenal 2025-6` ao invés de `Quinzenal\2025-6`
 
 ### Backend Modularizado
 

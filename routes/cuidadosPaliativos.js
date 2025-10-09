@@ -570,11 +570,11 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
       semesterFolder = customSemester;
       console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
     } else {
-      // Get current semester (2025-2)
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1; // 0-11 to 1-12
-      const semester = month <= 6 ? "1" : "2";
+    // Get current semester (2025-2)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 0-11 to 1-12
+    const semester = month <= 6 ? "1" : "2";
       semesterFolder = `${year}-${semester}`;
       console.log(`📅 Usando semestre automático: ${semesterFolder}`);
     }
@@ -588,16 +588,64 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
       return false;
     };
 
+    // Função para obter o nome completo do curso e subcurso baseado na rota
+    const getCourseFolderName = (courseName, subcourseName) => {
+      const courseMap = {
+        "Cuidados Paliativos": "Pós-graduação em Cuidados Paliativos",
+        "Bases da Saúde Integrativa e Bem-Estar": "Pós-graduação em Bases da Saúde Integrativa e Bem-Estar",
+        "Dependência Química": "Pós-graduação em Dependência Química",
+        "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
+        "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+      };
+
+      const subcourseMap = {
+        "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
+        "Unidade Paulista | Quinzenal": "Quinzenal",
+        "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
+        "Unidade Goiânia | Mensal": "GO-Mensal",
+        "Unidade Paulista | Semanal": "Semanal",
+        "Unidade Paulista | Mensal": "Mensal"
+      };
+
+      const fullCourseName = courseMap[courseName] || courseName;
+      const fullSubcourseName = subcourseMap[subcourseName] || subcourseName;
+      
+      return {
+        courseFolder: fullCourseName,
+        subcourseFolder: fullSubcourseName
+      };
+    };
+
+    // Mapear rota para curso e subcurso
+    const getRouteMapping = (routePath) => {
+      const routeMap = {
+        "/run-script-cuidados-quinzenal-pratica": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal Prática Estendida" },
+        "/run-script-cuidados-quinzenal": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal" },
+        "/run-script-cuidados-semanal": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Semanal" },
+        "/run-script-cuidados-rj-mensal": { course: "Cuidados Paliativos", subcourse: "Unidade Rio de Janeiro | Mensal" },
+        "/run-script-cuidados-go-mensal": { course: "Cuidados Paliativos", subcourse: "Unidade Goiânia | Mensal" }
+      };
+      return routeMap[routePath] || { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal Prática Estendida" };
+    };
+
     // Buscar próximo semestre disponível (que não tenha prints)
     let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
-    let coursePrefix = "CP_Pratica_Estendida_";
+    console.log("🔍 DEBUG - req.path:", req.path);
+    const routeMapping = getRouteMapping(req.path);
+    console.log("🔍 DEBUG - routeMapping:", routeMapping);
+    const courseInfo = getCourseFolderName(routeMapping.course, routeMapping.subcourse);
+    console.log("🔍 DEBUG - courseInfo:", courseInfo);
+    let courseFolder = path.join(basePath, courseInfo.courseFolder);
+    let semesterFolderPath = path.join(courseFolder, `${courseInfo.subcourseFolder} ${semesterFolder}`);
+    console.log("🔍 DEBUG - semesterFolderPath:", semesterFolderPath);
+    
     let foundEmptyFolder = false;
-    let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
     // Se a pasta atual não existir ou estiver vazia, use-a
-    if (!checkSemesterHasPrints(currentFolder)) {
+    if (!checkSemesterHasPrints(semesterFolderPath)) {
       console.log(
-        `Usando pasta do semestre atual ${semesterFolder.replace(
+        `Usando pasta do semestre atual ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )}, pois não existe ou não contém prints ainda`
@@ -608,24 +656,17 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
     // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
       console.log(
-        `❌ Semestre ${semesterFolder.replace(
+        `❌ Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
       return res.status(400).json({ 
-        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+        error: `Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
       });
     }
 
-    const outputFolder = path.join(
-      "C:",
-      "Users",
-      "drt62324",
-      "Documents",
-      "Pós Graduação",
-      `CP_Pratica_Estendida_${semesterFolder}`
-    );
+    const outputFolder = semesterFolderPath;
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
     }
@@ -811,11 +852,11 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
       semesterFolder = customSemester;
       console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
     } else {
-      // Get current semester (2025-2)
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1; // 0-11 to 1-12
-      const semester = month <= 6 ? "1" : "2";
+    // Get current semester (2025-2)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 0-11 to 1-12
+    const semester = month <= 6 ? "1" : "2";
       semesterFolder = `${year}-${semester}`;
       console.log(`📅 Usando semestre automático: ${semesterFolder}`);
     }
@@ -829,16 +870,64 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
       return false;
     };
 
+    // Função para obter o nome completo do curso e subcurso baseado na rota
+    const getCourseFolderName = (courseName, subcourseName) => {
+      const courseMap = {
+        "Cuidados Paliativos": "Pós-graduação em Cuidados Paliativos",
+        "Bases da Saúde Integrativa e Bem-Estar": "Pós-graduação em Bases da Saúde Integrativa e Bem-Estar",
+        "Dependência Química": "Pós-graduação em Dependência Química",
+        "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
+        "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+      };
+
+      const subcourseMap = {
+        "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
+        "Unidade Paulista | Quinzenal": "Quinzenal",
+        "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
+        "Unidade Goiânia | Mensal": "GO-Mensal",
+        "Unidade Paulista | Semanal": "Semanal",
+        "Unidade Paulista | Mensal": "Mensal"
+      };
+
+      const fullCourseName = courseMap[courseName] || courseName;
+      const fullSubcourseName = subcourseMap[subcourseName] || subcourseName;
+      
+      return {
+        courseFolder: fullCourseName,
+        subcourseFolder: fullSubcourseName
+      };
+    };
+
+    // Mapear rota para curso e subcurso
+    const getRouteMapping = (routePath) => {
+      const routeMap = {
+        "/run-script-cuidados-quinzenal-pratica": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal Prática Estendida" },
+        "/run-script-cuidados-quinzenal": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal" },
+        "/run-script-cuidados-semanal": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Semanal" },
+        "/run-script-cuidados-rj-mensal": { course: "Cuidados Paliativos", subcourse: "Unidade Rio de Janeiro | Mensal" },
+        "/run-script-cuidados-go-mensal": { course: "Cuidados Paliativos", subcourse: "Unidade Goiânia | Mensal" }
+      };
+      return routeMap[routePath] || { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal Prática Estendida" };
+    };
+
     // Buscar próximo semestre disponível (que não tenha prints)
     let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
-    let coursePrefix = "CP_Quinzenal_";
+    console.log("🔍 DEBUG - req.path:", req.path);
+    const routeMapping = getRouteMapping(req.path);
+    console.log("🔍 DEBUG - routeMapping:", routeMapping);
+    const courseInfo = getCourseFolderName(routeMapping.course, routeMapping.subcourse);
+    console.log("🔍 DEBUG - courseInfo:", courseInfo);
+    let courseFolder = path.join(basePath, courseInfo.courseFolder);
+    let semesterFolderPath = path.join(courseFolder, `${courseInfo.subcourseFolder} ${semesterFolder}`);
+    console.log("🔍 DEBUG - semesterFolderPath:", semesterFolderPath);
+    
     let foundEmptyFolder = false;
-    let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
     // Se a pasta atual não existir ou estiver vazia, use-a
-    if (!checkSemesterHasPrints(currentFolder)) {
+    if (!checkSemesterHasPrints(semesterFolderPath)) {
       console.log(
-        `Usando pasta do semestre atual ${semesterFolder.replace(
+        `Usando pasta do semestre atual ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )}, pois não existe ou não contém prints ainda`
@@ -849,24 +938,17 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
     // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
       console.log(
-        `❌ Semestre ${semesterFolder.replace(
+        `❌ Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
       return res.status(400).json({ 
-        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+        error: `Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
       });
     }
 
-    const outputFolder = path.join(
-      "C:",
-      "Users",
-      "drt62324",
-      "Documents",
-      "Pós Graduação",
-      `CP_Quinzenal_${semesterFolder}`
-    );
+    const outputFolder = semesterFolderPath;
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
     }
@@ -1052,11 +1134,11 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
       semesterFolder = customSemester;
       console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
     } else {
-      // Get current semester (2025-2)
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1; // 0-11 to 1-12
-      const semester = month <= 6 ? "1" : "2";
+    // Get current semester (2025-2)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 0-11 to 1-12
+    const semester = month <= 6 ? "1" : "2";
       semesterFolder = `${year}-${semester}`;
       console.log(`📅 Usando semestre automático: ${semesterFolder}`);
     }
@@ -1070,16 +1152,64 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
       return false;
     };
 
+    // Função para obter o nome completo do curso e subcurso baseado na rota
+    const getCourseFolderName = (courseName, subcourseName) => {
+      const courseMap = {
+        "Cuidados Paliativos": "Pós-graduação em Cuidados Paliativos",
+        "Bases da Saúde Integrativa e Bem-Estar": "Pós-graduação em Bases da Saúde Integrativa e Bem-Estar",
+        "Dependência Química": "Pós-graduação em Dependência Química",
+        "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
+        "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+      };
+
+      const subcourseMap = {
+        "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
+        "Unidade Paulista | Quinzenal": "Quinzenal",
+        "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
+        "Unidade Goiânia | Mensal": "GO-Mensal",
+        "Unidade Paulista | Semanal": "Semanal",
+        "Unidade Paulista | Mensal": "Mensal"
+      };
+
+      const fullCourseName = courseMap[courseName] || courseName;
+      const fullSubcourseName = subcourseMap[subcourseName] || subcourseName;
+      
+      return {
+        courseFolder: fullCourseName,
+        subcourseFolder: fullSubcourseName
+      };
+    };
+
+    // Mapear rota para curso e subcurso
+    const getRouteMapping = (routePath) => {
+      const routeMap = {
+        "/run-script-cuidados-quinzenal-pratica": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal Prática Estendida" },
+        "/run-script-cuidados-quinzenal": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal" },
+        "/run-script-cuidados-semanal": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Semanal" },
+        "/run-script-cuidados-rj-mensal": { course: "Cuidados Paliativos", subcourse: "Unidade Rio de Janeiro | Mensal" },
+        "/run-script-cuidados-go-mensal": { course: "Cuidados Paliativos", subcourse: "Unidade Goiânia | Mensal" }
+      };
+      return routeMap[routePath] || { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal Prática Estendida" };
+    };
+
     // Buscar próximo semestre disponível (que não tenha prints)
     let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
-    let coursePrefix = "CP_Semanal_";
+    console.log("🔍 DEBUG - req.path:", req.path);
+    const routeMapping = getRouteMapping(req.path);
+    console.log("🔍 DEBUG - routeMapping:", routeMapping);
+    const courseInfo = getCourseFolderName(routeMapping.course, routeMapping.subcourse);
+    console.log("🔍 DEBUG - courseInfo:", courseInfo);
+    let courseFolder = path.join(basePath, courseInfo.courseFolder);
+    let semesterFolderPath = path.join(courseFolder, `${courseInfo.subcourseFolder} ${semesterFolder}`);
+    console.log("🔍 DEBUG - semesterFolderPath:", semesterFolderPath);
+    
     let foundEmptyFolder = false;
-    let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
     // Se a pasta atual não existir ou estiver vazia, use-a
-    if (!checkSemesterHasPrints(currentFolder)) {
+    if (!checkSemesterHasPrints(semesterFolderPath)) {
       console.log(
-        `Usando pasta do semestre atual ${semesterFolder.replace(
+        `Usando pasta do semestre atual ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )}, pois não existe ou não contém prints ainda`
@@ -1090,24 +1220,17 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
     // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
       console.log(
-        `❌ Semestre ${semesterFolder.replace(
+        `❌ Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
       return res.status(400).json({ 
-        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+        error: `Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
       });
     }
 
-    const outputFolder = path.join(
-      "C:",
-      "Users",
-      "drt62324",
-      "Documents",
-      "Pós Graduação",
-      `CP_Semanal_${semesterFolder}`
-    );
+    const outputFolder = semesterFolderPath;
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
     }
@@ -1311,16 +1434,64 @@ router.post("/run-script-cuidados-rj-mensal", async (req, res) => {
       return false;
     };
 
+    // Função para obter o nome completo do curso e subcurso baseado na rota
+    const getCourseFolderName = (courseName, subcourseName) => {
+      const courseMap = {
+        "Cuidados Paliativos": "Pós-graduação em Cuidados Paliativos",
+        "Bases da Saúde Integrativa e Bem-Estar": "Pós-graduação em Bases da Saúde Integrativa e Bem-Estar",
+        "Dependência Química": "Pós-graduação em Dependência Química",
+        "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
+        "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+      };
+
+      const subcourseMap = {
+        "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
+        "Unidade Paulista | Quinzenal": "Quinzenal",
+        "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
+        "Unidade Goiânia | Mensal": "GO-Mensal",
+        "Unidade Paulista | Semanal": "Semanal",
+        "Unidade Paulista | Mensal": "Mensal"
+      };
+
+      const fullCourseName = courseMap[courseName] || courseName;
+      const fullSubcourseName = subcourseMap[subcourseName] || subcourseName;
+      
+      return {
+        courseFolder: fullCourseName,
+        subcourseFolder: fullSubcourseName
+      };
+    };
+
+    // Mapear rota para curso e subcurso
+    const getRouteMapping = (routePath) => {
+      const routeMap = {
+        "/run-script-cuidados-quinzenal-pratica": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal Prática Estendida" },
+        "/run-script-cuidados-quinzenal": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal" },
+        "/run-script-cuidados-semanal": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Semanal" },
+        "/run-script-cuidados-rj-mensal": { course: "Cuidados Paliativos", subcourse: "Unidade Rio de Janeiro | Mensal" },
+        "/run-script-cuidados-go-mensal": { course: "Cuidados Paliativos", subcourse: "Unidade Goiânia | Mensal" }
+      };
+      return routeMap[routePath] || { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal Prática Estendida" };
+    };
+
     // Buscar próximo semestre disponível (que não tenha prints)
     let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
-    let coursePrefix = "CP_RJ_Mensal_";
+    console.log("🔍 DEBUG - req.path:", req.path);
+    const routeMapping = getRouteMapping(req.path);
+    console.log("🔍 DEBUG - routeMapping:", routeMapping);
+    const courseInfo = getCourseFolderName(routeMapping.course, routeMapping.subcourse);
+    console.log("🔍 DEBUG - courseInfo:", courseInfo);
+    let courseFolder = path.join(basePath, courseInfo.courseFolder);
+    let semesterFolderPath = path.join(courseFolder, `${courseInfo.subcourseFolder} ${semesterFolder}`);
+    console.log("🔍 DEBUG - semesterFolderPath:", semesterFolderPath);
+    
     let foundEmptyFolder = false;
-    let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
     // Se a pasta atual não existir ou estiver vazia, use-a
-    if (!checkSemesterHasPrints(currentFolder)) {
+    if (!checkSemesterHasPrints(semesterFolderPath)) {
       console.log(
-        `Usando pasta do semestre atual ${semesterFolder.replace(
+        `Usando pasta do semestre atual ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )}, pois não existe ou não contém prints ainda`
@@ -1331,24 +1502,17 @@ router.post("/run-script-cuidados-rj-mensal", async (req, res) => {
     // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
       console.log(
-        `❌ Semestre ${semesterFolder.replace(
+        `❌ Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
       return res.status(400).json({ 
-        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+        error: `Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
       });
     }
 
-    const outputFolder = path.join(
-      "C:",
-      "Users",
-      "drt62324",
-      "Documents",
-      "Pós Graduação",
-      `CP_RJ_Mensal_${semesterFolder}`
-    );
+    const outputFolder = semesterFolderPath;
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
     }
@@ -1461,16 +1625,64 @@ router.post("/run-script-cuidados-go-mensal", async (req, res) => {
       return false;
     };
 
+    // Função para obter o nome completo do curso e subcurso baseado na rota
+    const getCourseFolderName = (courseName, subcourseName) => {
+      const courseMap = {
+        "Cuidados Paliativos": "Pós-graduação em Cuidados Paliativos",
+        "Bases da Saúde Integrativa e Bem-Estar": "Pós-graduação em Bases da Saúde Integrativa e Bem-Estar",
+        "Dependência Química": "Pós-graduação em Dependência Química",
+        "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
+        "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+      };
+
+      const subcourseMap = {
+        "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
+        "Unidade Paulista | Quinzenal": "Quinzenal",
+        "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
+        "Unidade Goiânia | Mensal": "GO-Mensal",
+        "Unidade Paulista | Semanal": "Semanal",
+        "Unidade Paulista | Mensal": "Mensal"
+      };
+
+      const fullCourseName = courseMap[courseName] || courseName;
+      const fullSubcourseName = subcourseMap[subcourseName] || subcourseName;
+      
+      return {
+        courseFolder: fullCourseName,
+        subcourseFolder: fullSubcourseName
+      };
+    };
+
+    // Mapear rota para curso e subcurso
+    const getRouteMapping = (routePath) => {
+      const routeMap = {
+        "/run-script-cuidados-quinzenal-pratica": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal Prática Estendida" },
+        "/run-script-cuidados-quinzenal": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal" },
+        "/run-script-cuidados-semanal": { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Semanal" },
+        "/run-script-cuidados-rj-mensal": { course: "Cuidados Paliativos", subcourse: "Unidade Rio de Janeiro | Mensal" },
+        "/run-script-cuidados-go-mensal": { course: "Cuidados Paliativos", subcourse: "Unidade Goiânia | Mensal" }
+      };
+      return routeMap[routePath] || { course: "Cuidados Paliativos", subcourse: "Unidade Paulista | Quinzenal Prática Estendida" };
+    };
+
     // Buscar próximo semestre disponível (que não tenha prints)
     let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
-    let coursePrefix = "CP_GO_Mensal_";
+    console.log("🔍 DEBUG - req.path:", req.path);
+    const routeMapping = getRouteMapping(req.path);
+    console.log("🔍 DEBUG - routeMapping:", routeMapping);
+    const courseInfo = getCourseFolderName(routeMapping.course, routeMapping.subcourse);
+    console.log("🔍 DEBUG - courseInfo:", courseInfo);
+    let courseFolder = path.join(basePath, courseInfo.courseFolder);
+    let semesterFolderPath = path.join(courseFolder, `${courseInfo.subcourseFolder} ${semesterFolder}`);
+    console.log("🔍 DEBUG - semesterFolderPath:", semesterFolderPath);
+    
     let foundEmptyFolder = false;
-    let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
     // Se a pasta atual não existir ou estiver vazia, use-a
-    if (!checkSemesterHasPrints(currentFolder)) {
+    if (!checkSemesterHasPrints(semesterFolderPath)) {
       console.log(
-        `Usando pasta do semestre atual ${semesterFolder.replace(
+        `Usando pasta do semestre atual ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )}, pois não existe ou não contém prints ainda`
@@ -1481,24 +1693,17 @@ router.post("/run-script-cuidados-go-mensal", async (req, res) => {
     // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
       console.log(
-        `❌ Semestre ${semesterFolder.replace(
+        `❌ Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
       return res.status(400).json({ 
-        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+        error: `Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
       });
     }
 
-    const outputFolder = path.join(
-      "C:",
-      "Users",
-      "drt62324",
-      "Documents",
-      "Pós Graduação",
-      `CP_GO_Mensal_${semesterFolder}`
-    );
+    const outputFolder = semesterFolderPath;
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
     }

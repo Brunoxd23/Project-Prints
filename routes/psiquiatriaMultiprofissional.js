@@ -588,16 +588,47 @@ router.post("/run-script-psiquiatria-mensal", async (req, res) => {
       return false;
     };
 
+    // Função para obter o nome completo do curso e subcurso
+    const getCourseFolderName = (courseName, subcourseName) => {
+      const courseMap = {
+        "Cuidados Paliativos": "Pós-graduação em Cuidados Paliativos",
+        "Bases da Saúde Integrativa e Bem-Estar": "Pós-graduação em Bases da Saúde Integrativa e Bem-Estar",
+        "Dependência Química": "Pós-graduação em Dependência Química",
+        "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
+        "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade: Liderança e Inovação em ESG"
+      };
+
+      const subcourseMap = {
+        "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
+        "Unidade Paulista | Quinzenal": "Quinzenal",
+        "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
+        "Unidade Goiânia | Mensal": "GO-Mensal",
+        "Unidade Paulista | Semanal": "Semanal",
+        "Unidade Paulista | Mensal": "Mensal"
+      };
+
+      const fullCourseName = courseMap[courseName] || courseName;
+      const fullSubcourseName = subcourseMap[subcourseName] || subcourseName;
+      
+      return {
+        courseFolder: fullCourseName,
+        subcourseFolder: fullSubcourseName
+      };
+    };
+
     // Buscar próximo semestre disponível (que não tenha prints)
     let basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
-    let coursePrefix = "PM_Mensal_";
+    const courseInfo = getCourseFolderName("Psiquiatria Multiprofissional", "Unidade Paulista | Mensal");
+    let courseFolder = path.join(basePath, courseInfo.courseFolder);
+    let semesterFolderPath = path.join(courseFolder, `${courseInfo.subcourseFolder} ${semesterFolder}`);
+    
     let foundEmptyFolder = false;
-    let currentFolder = path.join(basePath, `${coursePrefix}${semesterFolder}`);
 
     // Se a pasta atual não existir ou estiver vazia, use-a
-    if (!checkSemesterHasPrints(currentFolder)) {
+    if (!checkSemesterHasPrints(semesterFolderPath)) {
       console.log(
-        `Usando pasta do semestre atual ${semesterFolder.replace(
+        `Usando pasta do semestre atual ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )}, pois não existe ou não contém prints ainda`
@@ -607,24 +638,17 @@ router.post("/run-script-psiquiatria-mensal", async (req, res) => {
     // Se a pasta atual tiver prints, retornar erro informando que já existe
     else {
       console.log(
-        `❌ Semestre ${semesterFolder.replace(
+        `❌ Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace(
           "-",
           "/"
         )} já possui prints. Não será criado um novo semestre automaticamente.`
       );
       return res.status(400).json({ 
-        error: `Semestre ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
+        error: `Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
       });
     }
 
-    const outputFolder = path.join(
-      "C:",
-      "Users",
-      "drt62324",
-      "Documents",
-      "Pós Graduação",
-      `PM_Mensal_${semesterFolder}`
-    );
+    const outputFolder = semesterFolderPath;
     if (!fs.existsSync(outputFolder)) {
       fs.mkdirSync(outputFolder, { recursive: true });
     }
