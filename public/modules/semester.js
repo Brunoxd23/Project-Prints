@@ -1,9 +1,23 @@
 // Funções para gerenciar semestres e pastas no frontend
 export async function listSemesters(curso) {
   try {
+    console.log('🔍 DEBUG - listSemesters chamado com curso:', curso);
+    console.log('🔍 DEBUG - URL da requisição:', `/listar-semestres/${curso}`);
+    
+    // Adicionar timestamp para evitar cache
+    const timestamp = Date.now();
+    const url = `/listar-semestres/${curso}?t=${timestamp}`;
+    console.log('🔍 DEBUG - URL com timestamp:', url);
+    
     // Usar a nova rota que lista diretamente do diretório public
-    const response = await fetch(`/listar-semestres/${curso}`);
+    const response = await fetch(url);
+    console.log('🔍 DEBUG - Response status:', response.status);
+    console.log('🔍 DEBUG - Response ok:', response.ok);
+    
     const data = await response.json();
+    console.log('🔍 DEBUG - Data retornada:', data);
+    console.log('🔍 DEBUG - Semesters:', data.semesters);
+    
     return data.semesters;
   } catch (error) {
     console.error("Erro ao listar semestres:", error);

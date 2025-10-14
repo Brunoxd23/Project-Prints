@@ -49,6 +49,96 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Sobre o Curso",
       display: "Sobre o Curso",
       selector: ".sobre-section",
+      action: async (page) => {
+        try {
+          console.log("🔍 Procurando botão 'mais' para expandir texto...");
+          
+          // Procura pelo span com "mais" que expande o texto
+          const expandButton = await page.evaluate(() => {
+            // Procura por diferentes seletores possíveis para o botão "mais"
+            const selectors = [
+              'span.btn-vermais',
+              'span[ng-click*="toggleAboutShowMoreText"]',
+              'span[class*="btn-vermais"]',
+              'span[class*="vermais"]',
+              'span:contains("mais")',
+              'button:contains("mais")',
+              'a:contains("mais")'
+            ];
+            
+            for (const selector of selectors) {
+              try {
+                const element = document.querySelector(selector);
+                if (element && element.textContent.includes('mais')) {
+                  return element;
+                }
+              } catch (e) {
+                continue;
+              }
+            }
+            
+            // Busca por qualquer elemento que contenha "mais" e seja clicável
+            const allElements = document.querySelectorAll('span, button, a');
+            for (const element of allElements) {
+              if (element.textContent.trim().includes('mais') && 
+                  (element.onclick || element.getAttribute('ng-click'))) {
+                return element;
+              }
+            }
+            
+            return null;
+          });
+          
+          if (expandButton) {
+            console.log("✅ Botão 'mais' encontrado, clicando para expandir texto...");
+            
+            // Clica no botão para expandir o texto
+            await page.evaluate(() => {
+              const selectors = [
+                'span.btn-vermais',
+                'span[ng-click*="toggleAboutShowMoreText"]',
+                'span[class*="btn-vermais"]',
+                'span[class*="vermais"]'
+              ];
+              
+              for (const selector of selectors) {
+                try {
+                  const element = document.querySelector(selector);
+                  if (element && element.textContent.includes('mais')) {
+                    element.click();
+                    console.log(`Botão 'mais' clicado usando seletor: ${selector}`);
+                    return;
+                  }
+                } catch (e) {
+                  continue;
+                }
+              }
+              
+              // Fallback: busca por qualquer elemento clicável com "mais"
+              const allElements = document.querySelectorAll('span, button, a');
+              for (const element of allElements) {
+                if (element.textContent.trim().includes('mais') && 
+                    (element.onclick || element.getAttribute('ng-click'))) {
+                  element.click();
+                  console.log('Botão "mais" clicado via fallback');
+                  return;
+                }
+              }
+            });
+            
+            // Aguarda o texto expandir
+            console.log("⏳ Aguardando texto expandir...");
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            console.log("✅ Texto expandido com sucesso!");
+          } else {
+            console.log("ℹ️ Botão 'mais' não encontrado - texto pode já estar expandido ou não ter limite");
+          }
+        } catch (error) {
+          console.log(`⚠️ Erro ao expandir texto 'Sobre o Curso': ${error.message}`);
+          // Continua mesmo com erro - não deve interromper o processo
+        }
+      },
     },
     {
       internal: "Modalidade de Ensino",
@@ -347,6 +437,46 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
             timeout: 10000,
           });
 
+          // 🔍 Procurar e abrir o accordion "Disciplinas"
+          console.log("🔍 Procurando accordion 'Disciplinas' para expandir...");
+          
+          const accordionOpened = await page.evaluate(() => {
+            // Procura pelo botão do accordion "Disciplinas"
+            const accordionButton = document.querySelector('button.accordion.template.campo[title="Disciplina"]');
+            
+            if (accordionButton && accordionButton.textContent.includes('Disciplinas')) {
+              console.log("✅ Botão accordion 'Disciplinas' encontrado, clicando...");
+              
+              // Clica no botão para abrir o accordion
+              accordionButton.click();
+              
+              // Verifica se o painel foi aberto
+              const panel = accordionButton.nextElementSibling;
+              if (panel && panel.classList.contains('panel')) {
+                console.log("✅ Accordion 'Disciplinas' aberto com sucesso!");
+                return true;
+              }
+            }
+            
+            // Fallback: procura por qualquer botão que contenha "Disciplinas"
+            const allButtons = document.querySelectorAll('button');
+            for (const button of allButtons) {
+              if (button.textContent.trim().includes('Disciplinas')) {
+                console.log("✅ Botão 'Disciplinas' encontrado via fallback, clicando...");
+                button.click();
+                return true;
+              }
+            }
+            
+            console.log("ℹ️ Accordion 'Disciplinas' não encontrado - pode já estar aberto ou não existir");
+            return false;
+          });
+
+          if (accordionOpened) {
+            console.log("⏳ Aguardando accordion 'Disciplinas' expandir completamente...");
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+
           // Faz scroll para garantir que todo o conteúdo seja visível, mas evita completamente o header
           await page.evaluate(() => {
             const content = document.querySelector(".turma-wrapper-content");
@@ -388,6 +518,98 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Corpo Docente",
       display: "Corpo Docente",
       selector: ".turma-wrapper-content",
+      action: async (page) => {
+        try {
+          console.log("🔍 Iniciando captura múltipla do Corpo Docente...");
+          
+          // Aguarda o conteúdo carregar
+          await page.waitForSelector(".turma-wrapper-content", {
+            visible: true,
+            timeout: 10000,
+          });
+
+          // Detecta quantos slides existem no carrossel
+          const totalSlides = await page.evaluate(() => {
+            const dots = document.querySelectorAll('.slick-dots li');
+            return dots.length;
+          });
+
+          console.log(`🎠 Carrossel detectado com ${totalSlides} slides`);
+
+          if (totalSlides > 1) {
+            // Captura todos os slides
+            for (let i = 0; i < totalSlides; i++) {
+              console.log(`📸 Capturando slide ${i + 1} de ${totalSlides}...`);
+              
+              // Aguarda um pouco para garantir que o slide está carregado
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+              // Captura o screenshot do slide atual
+              const content = await page.$(".turma-wrapper-content");
+              if (content) {
+                const filename = i === 0 
+                  ? "06_Corpo_Docente.png"
+                  : `06.${i}_Corpo_Docente.png`;
+                
+                try {
+                  await content.screenshot({ 
+                    path: path.join(outputFolder, filename) 
+                  });
+                  console.log(`✅ Screenshot salvo: ${filename}`);
+                } catch (screenshotError) {
+                  console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
+                }
+              }
+
+              // Se não é o último slide, navega para o próximo
+              if (i < totalSlides - 1) {
+                console.log(`➡️ Navegando para o próximo slide...`);
+                
+                // Método simples: clicar no dot do próximo slide
+                const navigationSuccess = await page.evaluate((targetSlideIndex) => {
+                  // Tentar pelo ID específico primeiro
+                  const dotId = `slick-slide-control${50 + targetSlideIndex}`;
+                  let dotButton = document.getElementById(dotId);
+                  
+                  if (dotButton) {
+                    console.log(`✅ Dot encontrado pelo ID: ${dotId}`);
+                    dotButton.click();
+                    return true;
+                  }
+                  
+                  // Fallback: tentar pelo índice
+                  const dots = document.querySelectorAll('.slick-dots li button');
+                  if (dots[targetSlideIndex]) {
+                    console.log(`✅ Dot encontrado pelo índice: ${targetSlideIndex}`);
+                    dots[targetSlideIndex].click();
+                    return true;
+                  }
+                  
+                  console.log(`❌ Dot não encontrado para slide ${targetSlideIndex + 1}`);
+                  return false;
+                }, i + 1);
+                
+                if (navigationSuccess) {
+                  // Aguardar a transição
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  console.log(`✅ Navegação para slide ${i + 2} bem-sucedida!`);
+                } else {
+                  console.log(`❌ Falha na navegação para slide ${i + 2}`);
+                  break;
+                }
+              }
+            }
+            
+            console.log(`✅ Captura múltipla do Corpo Docente concluída!`);
+          } else {
+            console.log("ℹ️ Apenas 1 slide detectado, capturando normalmente...");
+          }
+
+        } catch (error) {
+          console.log(`⚠️ Erro ao capturar Corpo Docente: ${error.message}`);
+          // Continua mesmo com erro - não deve interromper o processo
+        }
+      },
     },
     {
       internal: "Cronograma de Aulas",
@@ -470,6 +692,13 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
         } catch (actionError) {
           console.log(`⚠️ Erro na ação específica para ${section.internal}: ${actionError.message}`);
           // Continua mesmo com erro na ação específica
+        }
+        
+        // Se a seção tem action personalizada que já captura screenshots (como Corpo Docente),
+        // não precisa capturar novamente aqui
+        if (section.internal === "Corpo Docente") {
+          console.log("ℹ️ Corpo Docente já foi capturado pela action personalizada, pulando captura automática");
+          continue;
         }
       }
 
@@ -729,6 +958,96 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
         internal: "Sobre o Curso",
         display: "Sobre o Curso",
         selector: ".sobre-section",
+        action: async (page) => {
+          try {
+            console.log("🔍 Procurando botão 'mais' para expandir texto...");
+            
+            // Procura pelo span com "mais" que expande o texto
+            const expandButton = await page.evaluate(() => {
+              // Procura por diferentes seletores possíveis para o botão "mais"
+              const selectors = [
+                'span.btn-vermais',
+                'span[ng-click*="toggleAboutShowMoreText"]',
+                'span[class*="btn-vermais"]',
+                'span[class*="vermais"]',
+                'span:contains("mais")',
+                'button:contains("mais")',
+                'a:contains("mais")'
+              ];
+              
+              for (const selector of selectors) {
+                try {
+                  const element = document.querySelector(selector);
+                  if (element && element.textContent.includes('mais')) {
+                    return element;
+                  }
+                } catch (e) {
+                  continue;
+                }
+              }
+              
+              // Busca por qualquer elemento que contenha "mais" e seja clicável
+              const allElements = document.querySelectorAll('span, button, a');
+              for (const element of allElements) {
+                if (element.textContent.trim().includes('mais') && 
+                    (element.onclick || element.getAttribute('ng-click'))) {
+                  return element;
+                }
+              }
+              
+              return null;
+            });
+            
+            if (expandButton) {
+              console.log("✅ Botão 'mais' encontrado, clicando para expandir texto...");
+              
+              // Clica no botão para expandir o texto
+              await page.evaluate(() => {
+                const selectors = [
+                  'span.btn-vermais',
+                  'span[ng-click*="toggleAboutShowMoreText"]',
+                  'span[class*="btn-vermais"]',
+                  'span[class*="vermais"]'
+                ];
+                
+                for (const selector of selectors) {
+                  try {
+                    const element = document.querySelector(selector);
+                    if (element && element.textContent.includes('mais')) {
+                      element.click();
+                      console.log(`Botão 'mais' clicado usando seletor: ${selector}`);
+                      return;
+                    }
+                  } catch (e) {
+                    continue;
+                  }
+                }
+                
+                // Fallback: busca por qualquer elemento clicável com "mais"
+                const allElements = document.querySelectorAll('span, button, a');
+                for (const element of allElements) {
+                  if (element.textContent.trim().includes('mais') && 
+                      (element.onclick || element.getAttribute('ng-click'))) {
+                    element.click();
+                    console.log('Botão "mais" clicado via fallback');
+                    return;
+                  }
+                }
+              });
+              
+              // Aguarda o texto expandir
+              console.log("⏳ Aguardando texto expandir...");
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              console.log("✅ Texto expandido com sucesso!");
+            } else {
+              console.log("ℹ️ Botão 'mais' não encontrado - texto pode já estar expandido ou não ter limite");
+            }
+          } catch (error) {
+            console.log(`⚠️ Erro ao expandir texto 'Sobre o Curso': ${error.message}`);
+            // Continua mesmo com erro - não deve interromper o processo
+          }
+        },
       },
       {
         internal: "Modalidade de Ensino",
@@ -750,6 +1069,116 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
         internal: "Programa e Metodologia",
         display: "Programa e Metodologia",
         selector: ".turma-wrapper-content",
+          action: async (page) => {
+            try {
+              // Aguarda o conteúdo carregar
+              await page.waitForSelector(".turma-wrapper-content", {
+                visible: true,
+                timeout: 10000,
+              });
+
+              // 🔍 Procurar e abrir o accordion "Disciplinas"
+              console.log("🔍 Procurando accordion 'Disciplinas' para expandir...");
+              
+              const accordionOpened = await page.evaluate(() => {
+                // Aguarda um pouco para garantir que o DOM está carregado
+                setTimeout(() => {}, 1000);
+                
+                // Múltiplas estratégias para encontrar o accordion
+                let accordionButton = null;
+                
+                // Estratégia 1: Seletor específico baseado no HTML fornecido
+                accordionButton = document.querySelector('button.accordion.template.campo[title="Disciplina"]');
+                if (accordionButton && accordionButton.textContent.includes('Disciplinas')) {
+                  console.log("✅ Estratégia 1: Botão encontrado pelo seletor específico");
+                } else {
+                  // Estratégia 2: Busca por classe accordion
+                  accordionButton = document.querySelector('button.accordion');
+                  if (accordionButton && accordionButton.textContent.includes('Disciplinas')) {
+                    console.log("✅ Estratégia 2: Botão encontrado pela classe accordion");
+                  } else {
+                    // Estratégia 3: Busca por qualquer botão com "Disciplinas"
+                    const allButtons = document.querySelectorAll('button');
+                    for (const button of allButtons) {
+                      if (button.textContent.trim().includes('Disciplinas')) {
+                        accordionButton = button;
+                        console.log("✅ Estratégia 3: Botão encontrado por texto 'Disciplinas'");
+                        break;
+                      }
+                    }
+                  }
+                }
+                
+                if (accordionButton) {
+                  console.log("🎯 Botão accordion encontrado:", accordionButton.textContent.trim());
+                  
+                  // Verifica se o painel está fechado antes de clicar
+                  const panel = accordionButton.nextElementSibling;
+                  const isClosed = panel && panel.style.display === 'none';
+                  
+                  if (isClosed) {
+                    console.log("📋 Accordion está fechado, clicando para abrir...");
+                    accordionButton.click();
+                    
+                    // Aguarda um pouco e verifica se abriu
+                    setTimeout(() => {
+                      const panelAfter = accordionButton.nextElementSibling;
+                      if (panelAfter && panelAfter.style.display !== 'none') {
+                        console.log("✅ Accordion 'Disciplinas' aberto com sucesso!");
+                      } else {
+                        console.log("⚠️ Accordion pode não ter aberto completamente");
+                      }
+                    }, 500);
+                    
+                    return true;
+                  } else {
+                    console.log("ℹ️ Accordion 'Disciplinas' já está aberto");
+                    return true;
+                  }
+                } else {
+                  console.log("❌ Accordion 'Disciplinas' não encontrado");
+                  return false;
+                }
+              });
+
+              if (accordionOpened) {
+                console.log("⏳ Aguardando accordion 'Disciplinas' expandir completamente...");
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Aumentado para 3 segundos
+              } else {
+                // Tentativa adicional com Puppeteer nativo se o evaluate não funcionou
+                console.log("🔄 Tentando método alternativo com Puppeteer...");
+                try {
+                  // Procura pelo botão usando Puppeteer
+                  const accordionButton = await page.$('button.accordion.template.campo[title="Disciplina"]');
+                  if (accordionButton) {
+                    const text = await page.evaluate(el => el.textContent, accordionButton);
+                    if (text.includes('Disciplinas')) {
+                      console.log("✅ Botão encontrado via Puppeteer, clicando...");
+                      await accordionButton.click();
+                      await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                  } else {
+                    // Fallback: busca por qualquer botão com "Disciplinas"
+                    const buttons = await page.$$('button');
+                    for (const button of buttons) {
+                      const text = await page.evaluate(el => el.textContent, button);
+                      if (text.includes('Disciplinas')) {
+                        console.log("✅ Botão 'Disciplinas' encontrado via fallback Puppeteer, clicando...");
+                        await button.click();
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        break;
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.log("⚠️ Erro no método alternativo:", error.message);
+                }
+              }
+
+            } catch (error) {
+              console.log("Erro ao preparar captura de Programa e Metodologia:", error.message);
+            }
+          },
       },
       {
         internal: "Objetivos e Qualificações",
@@ -760,6 +1189,246 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
         internal: "Corpo Docente",
         display: "Corpo Docente",
         selector: ".turma-wrapper-content",
+        action: async (page) => {
+          try {
+            console.log("🔍 Iniciando captura múltipla do Corpo Docente...");
+            
+            // Aguarda o conteúdo carregar
+            await page.waitForSelector(".turma-wrapper-content", {
+              visible: true,
+              timeout: 10000,
+            });
+
+            // Detecta quantos slides existem no carrossel
+            const slidesInfo = await page.evaluate(() => {
+              const dots = document.querySelectorAll('.slick-dots li');
+              const nextButton = document.querySelector('.paginator-buttons-next');
+              const prevButton = document.querySelector('.paginator-buttons-prev');
+              
+              return {
+                totalSlides: dots.length,
+                hasNextButton: nextButton && !nextButton.hasAttribute('aria-disabled'),
+                hasPrevButton: prevButton && !prevButton.hasAttribute('aria-disabled'),
+                currentSlide: Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1
+              };
+            });
+
+            console.log(`📊 Informações do carrossel:`, slidesInfo);
+
+            if (slidesInfo.totalSlides > 1) {
+              console.log(`🎠 Carrossel detectado com ${slidesInfo.totalSlides} slides`);
+              
+              // Captura todos os slides
+              for (let i = 0; i < slidesInfo.totalSlides; i++) {
+                console.log(`📸 Capturando slide ${i + 1} de ${slidesInfo.totalSlides}...`);
+                
+                // Aguarda um pouco para garantir que o slide está carregado
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Captura o screenshot do slide atual
+                const content = await page.$(".turma-wrapper-content");
+                if (content) {
+                  const filename = i === 0 
+                    ? "06_Corpo_Docente.png"
+                    : `06.${i}_Corpo_Docente.png`;
+                  
+                  try {
+                    await content.screenshot({ 
+                      path: path.join(outputFolder, filename) 
+                    });
+                    console.log(`✅ Screenshot salvo: ${filename}`);
+                  } catch (screenshotError) {
+                    console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
+                  }
+                }
+
+           // Se não é o último slide, tenta navegar para o próximo
+           if (i < slidesInfo.totalSlides - 1) {
+             console.log(`➡️ Navegando para o próximo slide...`);
+             
+             let navigationSuccess = false;
+             
+             // Estratégia 1: Clicar diretamente no dot do próximo slide usando IDs específicos
+             console.log("🎯 Estratégia 1: Clicando no dot específico do próximo slide...");
+             const dotClicked = await page.evaluate((targetSlideIndex) => {
+               console.log(`🔍 Tentando navegar para slide ${targetSlideIndex + 1}`);
+               
+               // Primeiro, tentar encontrar o dot pelo ID específico
+               const dotId = `slick-slide-control${50 + targetSlideIndex}`;
+               console.log(`🔍 Procurando dot com ID: ${dotId}`);
+               let dotButton = document.getElementById(dotId);
+               
+               if (dotButton) {
+                 console.log(`✅ Dot encontrado pelo ID: ${dotId}`);
+                 dotButton.click();
+                 return true;
+               } else {
+                 console.log(`⚠️ Dot não encontrado pelo ID: ${dotId}`);
+                 
+                 // Fallback: tentar pelo índice usando querySelectorAll
+                 const dots = document.querySelectorAll('.slick-dots li button');
+                 console.log(`🔍 Total de dots encontrados: ${dots.length}`);
+                 
+                 if (dots[targetSlideIndex]) {
+                   console.log(`✅ Dot encontrado pelo índice: ${targetSlideIndex}`);
+                   dots[targetSlideIndex].click();
+                   return true;
+                 } else {
+                   console.log(`⚠️ Dot não encontrado pelo índice: ${targetSlideIndex}`);
+                 }
+                 
+                 // Segundo fallback: tentar pelos li elements
+                 const liDots = document.querySelectorAll('.slick-dots li');
+                 console.log(`🔍 Total de li dots encontrados: ${liDots.length}`);
+                 
+                 if (liDots[targetSlideIndex]) {
+                   const button = liDots[targetSlideIndex].querySelector('button');
+                   if (button) {
+                     console.log(`✅ Dot encontrado via li[${targetSlideIndex}] button`);
+                     button.click();
+                     return true;
+                   }
+                 }
+               }
+               
+               console.log(`❌ Nenhum dot encontrado para slide ${targetSlideIndex + 1}`);
+               return false;
+             }, i + 1);
+
+             if (dotClicked) {
+               await new Promise(resolve => setTimeout(resolve, 2000));
+               const newSlideInfo = await page.evaluate(() => {
+                 const dots = document.querySelectorAll('.slick-dots li');
+                 return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+               });
+               console.log(`📍 Slide atual após clique no dot: ${newSlideInfo}`);
+               if (newSlideInfo === i + 2) {
+                 navigationSuccess = true;
+                 console.log("✅ Navegação via dot bem-sucedida!");
+               }
+             }
+
+             // Estratégia 2: Usar Puppeteer nativo para clicar no dot específico
+             if (!navigationSuccess) {
+               console.log("🔄 Estratégia 2: Puppeteer nativo no dot específico...");
+               try {
+                 const dotId = `slick-slide-control${50 + i + 1}`;
+                 const dotButton = await page.$(`#${dotId}`);
+                 if (dotButton) {
+                   await dotButton.click();
+                   console.log(`✅ Dot ${dotId} clicado via Puppeteer`);
+                   await new Promise(resolve => setTimeout(resolve, 2000));
+                   const newSlideInfo = await page.evaluate(() => {
+                     const dots = document.querySelectorAll('.slick-dots li');
+                     return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                   });
+                   console.log(`📍 Slide atual após Puppeteer dot: ${newSlideInfo}`);
+                   if (newSlideInfo === i + 2) {
+                     navigationSuccess = true;
+                     console.log("✅ Navegação via Puppeteer dot bem-sucedida!");
+                   }
+                 } else {
+                   // Fallback: tentar pelo índice
+                   const dots = await page.$$('.slick-dots li button');
+                   if (dots[i + 1]) {
+                     await dots[i + 1].click();
+                     console.log(`✅ Dot ${i + 2} clicado via Puppeteer (fallback)`);
+                     await new Promise(resolve => setTimeout(resolve, 2000));
+                     const newSlideInfo = await page.evaluate(() => {
+                       const dots = document.querySelectorAll('.slick-dots li');
+                       return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                     });
+                     console.log(`📍 Slide atual após Puppeteer dot fallback: ${newSlideInfo}`);
+                     if (newSlideInfo === i + 2) {
+                       navigationSuccess = true;
+                       console.log("✅ Navegação via Puppeteer dot fallback bem-sucedida!");
+                     }
+                   }
+                 }
+               } catch (error) {
+                 console.log("⚠️ Erro na estratégia Puppeteer dot:", error.message);
+               }
+             }
+
+             // Estratégia 3: Tentar clicar no botão "próximo" mesmo se parecer desabilitado
+             if (!navigationSuccess) {
+               console.log("🔄 Estratégia 3: Tentando botão 'próximo' mesmo desabilitado...");
+               const nextClicked = await page.evaluate(() => {
+                 const nextButton = document.querySelector('.paginator-buttons-next');
+                 if (nextButton) {
+                   console.log("🎯 Botão 'próximo' encontrado");
+                   console.log(`   - aria-disabled: ${nextButton.getAttribute('aria-disabled')}`);
+                   console.log(`   - disabled: ${nextButton.disabled}`);
+                   console.log(`   - style.display: ${nextButton.style.display}`);
+                   
+                   // Tentar clicar mesmo se parecer desabilitado
+                   nextButton.click();
+                   console.log("✅ Botão 'próximo' clicado (forçado)");
+                   return true;
+                 } else {
+                   console.log("⚠️ Botão 'próximo' não encontrado");
+                   return false;
+                 }
+               });
+
+               if (nextClicked) {
+                 await new Promise(resolve => setTimeout(resolve, 2000));
+                 const newSlideInfo = await page.evaluate(() => {
+                   const dots = document.querySelectorAll('.slick-dots li');
+                   return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                 });
+                 console.log(`📍 Slide atual após clique no botão: ${newSlideInfo}`);
+                 if (newSlideInfo > i + 1) {
+                   navigationSuccess = true;
+                   console.log("✅ Navegação via botão bem-sucedida!");
+                 }
+               }
+             }
+
+             // Estratégia 4: Usar Puppeteer nativo para clicar no botão próximo
+             if (!navigationSuccess) {
+               console.log("🔄 Estratégia 4: Puppeteer nativo no botão próximo...");
+               try {
+                 const nextButton = await page.$('.paginator-buttons-next');
+                 if (nextButton) {
+                   await nextButton.click();
+                   console.log("✅ Botão 'próximo' clicado via Puppeteer");
+                   await new Promise(resolve => setTimeout(resolve, 2000));
+                   const newSlideInfo = await page.evaluate(() => {
+                     const dots = document.querySelectorAll('.slick-dots li');
+                     return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                   });
+                   console.log(`📍 Slide atual após Puppeteer botão: ${newSlideInfo}`);
+                   if (newSlideInfo > i + 1) {
+                     navigationSuccess = true;
+                     console.log("✅ Navegação via Puppeteer botão bem-sucedida!");
+                   }
+                 }
+               } catch (error) {
+                 console.log("⚠️ Erro na estratégia Puppeteer botão:", error.message);
+               }
+             }
+
+             if (!navigationSuccess) {
+               console.log("❌ Não foi possível navegar para o próximo slide com nenhuma estratégia");
+               break;
+             } else {
+               console.log("✅ Navegação bem-sucedida!");
+             }
+           }
+              }
+              
+              console.log(`✅ Captura múltipla do Corpo Docente concluída!`);
+            } else {
+              console.log("ℹ️ Apenas 1 slide detectado, capturando normalmente...");
+              // Se só tem 1 slide, captura normalmente (será feito pelo sistema principal)
+            }
+
+          } catch (error) {
+            console.log(`⚠️ Erro ao capturar Corpo Docente: ${error.message}`);
+            // Continua mesmo com erro - não deve interromper o processo
+          }
+        },
       },
       {
         internal: "Cronograma de Aulas",
@@ -1011,6 +1680,96 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
         internal: "Sobre o Curso",
         display: "Sobre o Curso",
         selector: ".sobre-section",
+        action: async (page) => {
+          try {
+            console.log("🔍 Procurando botão 'mais' para expandir texto...");
+            
+            // Procura pelo span com "mais" que expande o texto
+            const expandButton = await page.evaluate(() => {
+              // Procura por diferentes seletores possíveis para o botão "mais"
+              const selectors = [
+                'span.btn-vermais',
+                'span[ng-click*="toggleAboutShowMoreText"]',
+                'span[class*="btn-vermais"]',
+                'span[class*="vermais"]',
+                'span:contains("mais")',
+                'button:contains("mais")',
+                'a:contains("mais")'
+              ];
+              
+              for (const selector of selectors) {
+                try {
+                  const element = document.querySelector(selector);
+                  if (element && element.textContent.includes('mais')) {
+                    return element;
+                  }
+                } catch (e) {
+                  continue;
+                }
+              }
+              
+              // Busca por qualquer elemento que contenha "mais" e seja clicável
+              const allElements = document.querySelectorAll('span, button, a');
+              for (const element of allElements) {
+                if (element.textContent.trim().includes('mais') && 
+                    (element.onclick || element.getAttribute('ng-click'))) {
+                  return element;
+                }
+              }
+              
+              return null;
+            });
+            
+            if (expandButton) {
+              console.log("✅ Botão 'mais' encontrado, clicando para expandir texto...");
+              
+              // Clica no botão para expandir o texto
+              await page.evaluate(() => {
+                const selectors = [
+                  'span.btn-vermais',
+                  'span[ng-click*="toggleAboutShowMoreText"]',
+                  'span[class*="btn-vermais"]',
+                  'span[class*="vermais"]'
+                ];
+                
+                for (const selector of selectors) {
+                  try {
+                    const element = document.querySelector(selector);
+                    if (element && element.textContent.includes('mais')) {
+                      element.click();
+                      console.log(`Botão 'mais' clicado usando seletor: ${selector}`);
+                      return;
+                    }
+                  } catch (e) {
+                    continue;
+                  }
+                }
+                
+                // Fallback: busca por qualquer elemento clicável com "mais"
+                const allElements = document.querySelectorAll('span, button, a');
+                for (const element of allElements) {
+                  if (element.textContent.trim().includes('mais') && 
+                      (element.onclick || element.getAttribute('ng-click'))) {
+                    element.click();
+                    console.log('Botão "mais" clicado via fallback');
+                    return;
+                  }
+                }
+              });
+              
+              // Aguarda o texto expandir
+              console.log("⏳ Aguardando texto expandir...");
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              console.log("✅ Texto expandido com sucesso!");
+            } else {
+              console.log("ℹ️ Botão 'mais' não encontrado - texto pode já estar expandido ou não ter limite");
+            }
+          } catch (error) {
+            console.log(`⚠️ Erro ao expandir texto 'Sobre o Curso': ${error.message}`);
+            // Continua mesmo com erro - não deve interromper o processo
+          }
+        },
       },
       {
         internal: "Modalidade de Ensino",
@@ -1032,6 +1791,116 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
         internal: "Programa e Metodologia",
         display: "Programa e Metodologia",
         selector: ".turma-wrapper-content",
+          action: async (page) => {
+            try {
+              // Aguarda o conteúdo carregar
+              await page.waitForSelector(".turma-wrapper-content", {
+                visible: true,
+                timeout: 10000,
+              });
+
+              // 🔍 Procurar e abrir o accordion "Disciplinas"
+              console.log("🔍 Procurando accordion 'Disciplinas' para expandir...");
+              
+              const accordionOpened = await page.evaluate(() => {
+                // Aguarda um pouco para garantir que o DOM está carregado
+                setTimeout(() => {}, 1000);
+                
+                // Múltiplas estratégias para encontrar o accordion
+                let accordionButton = null;
+                
+                // Estratégia 1: Seletor específico baseado no HTML fornecido
+                accordionButton = document.querySelector('button.accordion.template.campo[title="Disciplina"]');
+                if (accordionButton && accordionButton.textContent.includes('Disciplinas')) {
+                  console.log("✅ Estratégia 1: Botão encontrado pelo seletor específico");
+                } else {
+                  // Estratégia 2: Busca por classe accordion
+                  accordionButton = document.querySelector('button.accordion');
+                  if (accordionButton && accordionButton.textContent.includes('Disciplinas')) {
+                    console.log("✅ Estratégia 2: Botão encontrado pela classe accordion");
+                  } else {
+                    // Estratégia 3: Busca por qualquer botão com "Disciplinas"
+                    const allButtons = document.querySelectorAll('button');
+                    for (const button of allButtons) {
+                      if (button.textContent.trim().includes('Disciplinas')) {
+                        accordionButton = button;
+                        console.log("✅ Estratégia 3: Botão encontrado por texto 'Disciplinas'");
+                        break;
+                      }
+                    }
+                  }
+                }
+                
+                if (accordionButton) {
+                  console.log("🎯 Botão accordion encontrado:", accordionButton.textContent.trim());
+                  
+                  // Verifica se o painel está fechado antes de clicar
+                  const panel = accordionButton.nextElementSibling;
+                  const isClosed = panel && panel.style.display === 'none';
+                  
+                  if (isClosed) {
+                    console.log("📋 Accordion está fechado, clicando para abrir...");
+                    accordionButton.click();
+                    
+                    // Aguarda um pouco e verifica se abriu
+                    setTimeout(() => {
+                      const panelAfter = accordionButton.nextElementSibling;
+                      if (panelAfter && panelAfter.style.display !== 'none') {
+                        console.log("✅ Accordion 'Disciplinas' aberto com sucesso!");
+                      } else {
+                        console.log("⚠️ Accordion pode não ter aberto completamente");
+                      }
+                    }, 500);
+                    
+                    return true;
+                  } else {
+                    console.log("ℹ️ Accordion 'Disciplinas' já está aberto");
+                    return true;
+                  }
+                } else {
+                  console.log("❌ Accordion 'Disciplinas' não encontrado");
+                  return false;
+                }
+              });
+
+              if (accordionOpened) {
+                console.log("⏳ Aguardando accordion 'Disciplinas' expandir completamente...");
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Aumentado para 3 segundos
+              } else {
+                // Tentativa adicional com Puppeteer nativo se o evaluate não funcionou
+                console.log("🔄 Tentando método alternativo com Puppeteer...");
+                try {
+                  // Procura pelo botão usando Puppeteer
+                  const accordionButton = await page.$('button.accordion.template.campo[title="Disciplina"]');
+                  if (accordionButton) {
+                    const text = await page.evaluate(el => el.textContent, accordionButton);
+                    if (text.includes('Disciplinas')) {
+                      console.log("✅ Botão encontrado via Puppeteer, clicando...");
+                      await accordionButton.click();
+                      await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                  } else {
+                    // Fallback: busca por qualquer botão com "Disciplinas"
+                    const buttons = await page.$$('button');
+                    for (const button of buttons) {
+                      const text = await page.evaluate(el => el.textContent, button);
+                      if (text.includes('Disciplinas')) {
+                        console.log("✅ Botão 'Disciplinas' encontrado via fallback Puppeteer, clicando...");
+                        await button.click();
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        break;
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.log("⚠️ Erro no método alternativo:", error.message);
+                }
+              }
+
+            } catch (error) {
+              console.log("Erro ao preparar captura de Programa e Metodologia:", error.message);
+            }
+          },
       },
       {
         internal: "Objetivos e Qualificações",
@@ -1042,6 +1911,246 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
         internal: "Corpo Docente",
         display: "Corpo Docente",
         selector: ".turma-wrapper-content",
+        action: async (page) => {
+          try {
+            console.log("🔍 Iniciando captura múltipla do Corpo Docente...");
+            
+            // Aguarda o conteúdo carregar
+            await page.waitForSelector(".turma-wrapper-content", {
+              visible: true,
+              timeout: 10000,
+            });
+
+            // Detecta quantos slides existem no carrossel
+            const slidesInfo = await page.evaluate(() => {
+              const dots = document.querySelectorAll('.slick-dots li');
+              const nextButton = document.querySelector('.paginator-buttons-next');
+              const prevButton = document.querySelector('.paginator-buttons-prev');
+              
+              return {
+                totalSlides: dots.length,
+                hasNextButton: nextButton && !nextButton.hasAttribute('aria-disabled'),
+                hasPrevButton: prevButton && !prevButton.hasAttribute('aria-disabled'),
+                currentSlide: Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1
+              };
+            });
+
+            console.log(`📊 Informações do carrossel:`, slidesInfo);
+
+            if (slidesInfo.totalSlides > 1) {
+              console.log(`🎠 Carrossel detectado com ${slidesInfo.totalSlides} slides`);
+              
+              // Captura todos os slides
+              for (let i = 0; i < slidesInfo.totalSlides; i++) {
+                console.log(`📸 Capturando slide ${i + 1} de ${slidesInfo.totalSlides}...`);
+                
+                // Aguarda um pouco para garantir que o slide está carregado
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Captura o screenshot do slide atual
+                const content = await page.$(".turma-wrapper-content");
+                if (content) {
+                  const filename = i === 0 
+                    ? "06_Corpo_Docente.png"
+                    : `06.${i}_Corpo_Docente.png`;
+                  
+                  try {
+                    await content.screenshot({ 
+                      path: path.join(outputFolder, filename) 
+                    });
+                    console.log(`✅ Screenshot salvo: ${filename}`);
+                  } catch (screenshotError) {
+                    console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
+                  }
+                }
+
+           // Se não é o último slide, tenta navegar para o próximo
+           if (i < slidesInfo.totalSlides - 1) {
+             console.log(`➡️ Navegando para o próximo slide...`);
+             
+             let navigationSuccess = false;
+             
+             // Estratégia 1: Clicar diretamente no dot do próximo slide usando IDs específicos
+             console.log("🎯 Estratégia 1: Clicando no dot específico do próximo slide...");
+             const dotClicked = await page.evaluate((targetSlideIndex) => {
+               console.log(`🔍 Tentando navegar para slide ${targetSlideIndex + 1}`);
+               
+               // Primeiro, tentar encontrar o dot pelo ID específico
+               const dotId = `slick-slide-control${50 + targetSlideIndex}`;
+               console.log(`🔍 Procurando dot com ID: ${dotId}`);
+               let dotButton = document.getElementById(dotId);
+               
+               if (dotButton) {
+                 console.log(`✅ Dot encontrado pelo ID: ${dotId}`);
+                 dotButton.click();
+                 return true;
+               } else {
+                 console.log(`⚠️ Dot não encontrado pelo ID: ${dotId}`);
+                 
+                 // Fallback: tentar pelo índice usando querySelectorAll
+                 const dots = document.querySelectorAll('.slick-dots li button');
+                 console.log(`🔍 Total de dots encontrados: ${dots.length}`);
+                 
+                 if (dots[targetSlideIndex]) {
+                   console.log(`✅ Dot encontrado pelo índice: ${targetSlideIndex}`);
+                   dots[targetSlideIndex].click();
+                   return true;
+                 } else {
+                   console.log(`⚠️ Dot não encontrado pelo índice: ${targetSlideIndex}`);
+                 }
+                 
+                 // Segundo fallback: tentar pelos li elements
+                 const liDots = document.querySelectorAll('.slick-dots li');
+                 console.log(`🔍 Total de li dots encontrados: ${liDots.length}`);
+                 
+                 if (liDots[targetSlideIndex]) {
+                   const button = liDots[targetSlideIndex].querySelector('button');
+                   if (button) {
+                     console.log(`✅ Dot encontrado via li[${targetSlideIndex}] button`);
+                     button.click();
+                     return true;
+                   }
+                 }
+               }
+               
+               console.log(`❌ Nenhum dot encontrado para slide ${targetSlideIndex + 1}`);
+               return false;
+             }, i + 1);
+
+             if (dotClicked) {
+               await new Promise(resolve => setTimeout(resolve, 2000));
+               const newSlideInfo = await page.evaluate(() => {
+                 const dots = document.querySelectorAll('.slick-dots li');
+                 return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+               });
+               console.log(`📍 Slide atual após clique no dot: ${newSlideInfo}`);
+               if (newSlideInfo === i + 2) {
+                 navigationSuccess = true;
+                 console.log("✅ Navegação via dot bem-sucedida!");
+               }
+             }
+
+             // Estratégia 2: Usar Puppeteer nativo para clicar no dot específico
+             if (!navigationSuccess) {
+               console.log("🔄 Estratégia 2: Puppeteer nativo no dot específico...");
+               try {
+                 const dotId = `slick-slide-control${50 + i + 1}`;
+                 const dotButton = await page.$(`#${dotId}`);
+                 if (dotButton) {
+                   await dotButton.click();
+                   console.log(`✅ Dot ${dotId} clicado via Puppeteer`);
+                   await new Promise(resolve => setTimeout(resolve, 2000));
+                   const newSlideInfo = await page.evaluate(() => {
+                     const dots = document.querySelectorAll('.slick-dots li');
+                     return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                   });
+                   console.log(`📍 Slide atual após Puppeteer dot: ${newSlideInfo}`);
+                   if (newSlideInfo === i + 2) {
+                     navigationSuccess = true;
+                     console.log("✅ Navegação via Puppeteer dot bem-sucedida!");
+                   }
+                 } else {
+                   // Fallback: tentar pelo índice
+                   const dots = await page.$$('.slick-dots li button');
+                   if (dots[i + 1]) {
+                     await dots[i + 1].click();
+                     console.log(`✅ Dot ${i + 2} clicado via Puppeteer (fallback)`);
+                     await new Promise(resolve => setTimeout(resolve, 2000));
+                     const newSlideInfo = await page.evaluate(() => {
+                       const dots = document.querySelectorAll('.slick-dots li');
+                       return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                     });
+                     console.log(`📍 Slide atual após Puppeteer dot fallback: ${newSlideInfo}`);
+                     if (newSlideInfo === i + 2) {
+                       navigationSuccess = true;
+                       console.log("✅ Navegação via Puppeteer dot fallback bem-sucedida!");
+                     }
+                   }
+                 }
+               } catch (error) {
+                 console.log("⚠️ Erro na estratégia Puppeteer dot:", error.message);
+               }
+             }
+
+             // Estratégia 3: Tentar clicar no botão "próximo" mesmo se parecer desabilitado
+             if (!navigationSuccess) {
+               console.log("🔄 Estratégia 3: Tentando botão 'próximo' mesmo desabilitado...");
+               const nextClicked = await page.evaluate(() => {
+                 const nextButton = document.querySelector('.paginator-buttons-next');
+                 if (nextButton) {
+                   console.log("🎯 Botão 'próximo' encontrado");
+                   console.log(`   - aria-disabled: ${nextButton.getAttribute('aria-disabled')}`);
+                   console.log(`   - disabled: ${nextButton.disabled}`);
+                   console.log(`   - style.display: ${nextButton.style.display}`);
+                   
+                   // Tentar clicar mesmo se parecer desabilitado
+                   nextButton.click();
+                   console.log("✅ Botão 'próximo' clicado (forçado)");
+                   return true;
+                 } else {
+                   console.log("⚠️ Botão 'próximo' não encontrado");
+                   return false;
+                 }
+               });
+
+               if (nextClicked) {
+                 await new Promise(resolve => setTimeout(resolve, 2000));
+                 const newSlideInfo = await page.evaluate(() => {
+                   const dots = document.querySelectorAll('.slick-dots li');
+                   return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                 });
+                 console.log(`📍 Slide atual após clique no botão: ${newSlideInfo}`);
+                 if (newSlideInfo > i + 1) {
+                   navigationSuccess = true;
+                   console.log("✅ Navegação via botão bem-sucedida!");
+                 }
+               }
+             }
+
+             // Estratégia 4: Usar Puppeteer nativo para clicar no botão próximo
+             if (!navigationSuccess) {
+               console.log("🔄 Estratégia 4: Puppeteer nativo no botão próximo...");
+               try {
+                 const nextButton = await page.$('.paginator-buttons-next');
+                 if (nextButton) {
+                   await nextButton.click();
+                   console.log("✅ Botão 'próximo' clicado via Puppeteer");
+                   await new Promise(resolve => setTimeout(resolve, 2000));
+                   const newSlideInfo = await page.evaluate(() => {
+                     const dots = document.querySelectorAll('.slick-dots li');
+                     return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                   });
+                   console.log(`📍 Slide atual após Puppeteer botão: ${newSlideInfo}`);
+                   if (newSlideInfo > i + 1) {
+                     navigationSuccess = true;
+                     console.log("✅ Navegação via Puppeteer botão bem-sucedida!");
+                   }
+                 }
+               } catch (error) {
+                 console.log("⚠️ Erro na estratégia Puppeteer botão:", error.message);
+               }
+             }
+
+             if (!navigationSuccess) {
+               console.log("❌ Não foi possível navegar para o próximo slide com nenhuma estratégia");
+               break;
+             } else {
+               console.log("✅ Navegação bem-sucedida!");
+             }
+           }
+              }
+              
+              console.log(`✅ Captura múltipla do Corpo Docente concluída!`);
+            } else {
+              console.log("ℹ️ Apenas 1 slide detectado, capturando normalmente...");
+              // Se só tem 1 slide, captura normalmente (será feito pelo sistema principal)
+            }
+
+          } catch (error) {
+            console.log(`⚠️ Erro ao capturar Corpo Docente: ${error.message}`);
+            // Continua mesmo com erro - não deve interromper o processo
+          }
+        },
       },
       {
         internal: "Cronograma de Aulas",
@@ -1293,6 +2402,96 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
         internal: "Sobre o Curso",
         display: "Sobre o Curso",
         selector: ".sobre-section",
+        action: async (page) => {
+          try {
+            console.log("🔍 Procurando botão 'mais' para expandir texto...");
+            
+            // Procura pelo span com "mais" que expande o texto
+            const expandButton = await page.evaluate(() => {
+              // Procura por diferentes seletores possíveis para o botão "mais"
+              const selectors = [
+                'span.btn-vermais',
+                'span[ng-click*="toggleAboutShowMoreText"]',
+                'span[class*="btn-vermais"]',
+                'span[class*="vermais"]',
+                'span:contains("mais")',
+                'button:contains("mais")',
+                'a:contains("mais")'
+              ];
+              
+              for (const selector of selectors) {
+                try {
+                  const element = document.querySelector(selector);
+                  if (element && element.textContent.includes('mais')) {
+                    return element;
+                  }
+                } catch (e) {
+                  continue;
+                }
+              }
+              
+              // Busca por qualquer elemento que contenha "mais" e seja clicável
+              const allElements = document.querySelectorAll('span, button, a');
+              for (const element of allElements) {
+                if (element.textContent.trim().includes('mais') && 
+                    (element.onclick || element.getAttribute('ng-click'))) {
+                  return element;
+                }
+              }
+              
+              return null;
+            });
+            
+            if (expandButton) {
+              console.log("✅ Botão 'mais' encontrado, clicando para expandir texto...");
+              
+              // Clica no botão para expandir o texto
+              await page.evaluate(() => {
+                const selectors = [
+                  'span.btn-vermais',
+                  'span[ng-click*="toggleAboutShowMoreText"]',
+                  'span[class*="btn-vermais"]',
+                  'span[class*="vermais"]'
+                ];
+                
+                for (const selector of selectors) {
+                  try {
+                    const element = document.querySelector(selector);
+                    if (element && element.textContent.includes('mais')) {
+                      element.click();
+                      console.log(`Botão 'mais' clicado usando seletor: ${selector}`);
+                      return;
+                    }
+                  } catch (e) {
+                    continue;
+                  }
+                }
+                
+                // Fallback: busca por qualquer elemento clicável com "mais"
+                const allElements = document.querySelectorAll('span, button, a');
+                for (const element of allElements) {
+                  if (element.textContent.trim().includes('mais') && 
+                      (element.onclick || element.getAttribute('ng-click'))) {
+                    element.click();
+                    console.log('Botão "mais" clicado via fallback');
+                    return;
+                  }
+                }
+              });
+              
+              // Aguarda o texto expandir
+              console.log("⏳ Aguardando texto expandir...");
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              console.log("✅ Texto expandido com sucesso!");
+            } else {
+              console.log("ℹ️ Botão 'mais' não encontrado - texto pode já estar expandido ou não ter limite");
+            }
+          } catch (error) {
+            console.log(`⚠️ Erro ao expandir texto 'Sobre o Curso': ${error.message}`);
+            // Continua mesmo com erro - não deve interromper o processo
+          }
+        },
       },
       {
         internal: "Modalidade de Ensino",
@@ -1314,6 +2513,116 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
         internal: "Programa e Metodologia",
         display: "Programa e Metodologia",
         selector: ".turma-wrapper-content",
+          action: async (page) => {
+            try {
+              // Aguarda o conteúdo carregar
+              await page.waitForSelector(".turma-wrapper-content", {
+                visible: true,
+                timeout: 10000,
+              });
+
+              // 🔍 Procurar e abrir o accordion "Disciplinas"
+              console.log("🔍 Procurando accordion 'Disciplinas' para expandir...");
+              
+              const accordionOpened = await page.evaluate(() => {
+                // Aguarda um pouco para garantir que o DOM está carregado
+                setTimeout(() => {}, 1000);
+                
+                // Múltiplas estratégias para encontrar o accordion
+                let accordionButton = null;
+                
+                // Estratégia 1: Seletor específico baseado no HTML fornecido
+                accordionButton = document.querySelector('button.accordion.template.campo[title="Disciplina"]');
+                if (accordionButton && accordionButton.textContent.includes('Disciplinas')) {
+                  console.log("✅ Estratégia 1: Botão encontrado pelo seletor específico");
+                } else {
+                  // Estratégia 2: Busca por classe accordion
+                  accordionButton = document.querySelector('button.accordion');
+                  if (accordionButton && accordionButton.textContent.includes('Disciplinas')) {
+                    console.log("✅ Estratégia 2: Botão encontrado pela classe accordion");
+                  } else {
+                    // Estratégia 3: Busca por qualquer botão com "Disciplinas"
+                    const allButtons = document.querySelectorAll('button');
+                    for (const button of allButtons) {
+                      if (button.textContent.trim().includes('Disciplinas')) {
+                        accordionButton = button;
+                        console.log("✅ Estratégia 3: Botão encontrado por texto 'Disciplinas'");
+                        break;
+                      }
+                    }
+                  }
+                }
+                
+                if (accordionButton) {
+                  console.log("🎯 Botão accordion encontrado:", accordionButton.textContent.trim());
+                  
+                  // Verifica se o painel está fechado antes de clicar
+                  const panel = accordionButton.nextElementSibling;
+                  const isClosed = panel && panel.style.display === 'none';
+                  
+                  if (isClosed) {
+                    console.log("📋 Accordion está fechado, clicando para abrir...");
+                    accordionButton.click();
+                    
+                    // Aguarda um pouco e verifica se abriu
+                    setTimeout(() => {
+                      const panelAfter = accordionButton.nextElementSibling;
+                      if (panelAfter && panelAfter.style.display !== 'none') {
+                        console.log("✅ Accordion 'Disciplinas' aberto com sucesso!");
+                      } else {
+                        console.log("⚠️ Accordion pode não ter aberto completamente");
+                      }
+                    }, 500);
+                    
+                    return true;
+                  } else {
+                    console.log("ℹ️ Accordion 'Disciplinas' já está aberto");
+                    return true;
+                  }
+                } else {
+                  console.log("❌ Accordion 'Disciplinas' não encontrado");
+                  return false;
+                }
+              });
+
+              if (accordionOpened) {
+                console.log("⏳ Aguardando accordion 'Disciplinas' expandir completamente...");
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Aumentado para 3 segundos
+              } else {
+                // Tentativa adicional com Puppeteer nativo se o evaluate não funcionou
+                console.log("🔄 Tentando método alternativo com Puppeteer...");
+                try {
+                  // Procura pelo botão usando Puppeteer
+                  const accordionButton = await page.$('button.accordion.template.campo[title="Disciplina"]');
+                  if (accordionButton) {
+                    const text = await page.evaluate(el => el.textContent, accordionButton);
+                    if (text.includes('Disciplinas')) {
+                      console.log("✅ Botão encontrado via Puppeteer, clicando...");
+                      await accordionButton.click();
+                      await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                  } else {
+                    // Fallback: busca por qualquer botão com "Disciplinas"
+                    const buttons = await page.$$('button');
+                    for (const button of buttons) {
+                      const text = await page.evaluate(el => el.textContent, button);
+                      if (text.includes('Disciplinas')) {
+                        console.log("✅ Botão 'Disciplinas' encontrado via fallback Puppeteer, clicando...");
+                        await button.click();
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        break;
+                      }
+                    }
+                  }
+                } catch (error) {
+                  console.log("⚠️ Erro no método alternativo:", error.message);
+                }
+              }
+
+            } catch (error) {
+              console.log("Erro ao preparar captura de Programa e Metodologia:", error.message);
+            }
+          },
       },
       {
         internal: "Objetivos e Qualificações",
@@ -1324,6 +2633,246 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
         internal: "Corpo Docente",
         display: "Corpo Docente",
         selector: ".turma-wrapper-content",
+        action: async (page) => {
+          try {
+            console.log("🔍 Iniciando captura múltipla do Corpo Docente...");
+            
+            // Aguarda o conteúdo carregar
+            await page.waitForSelector(".turma-wrapper-content", {
+              visible: true,
+              timeout: 10000,
+            });
+
+            // Detecta quantos slides existem no carrossel
+            const slidesInfo = await page.evaluate(() => {
+              const dots = document.querySelectorAll('.slick-dots li');
+              const nextButton = document.querySelector('.paginator-buttons-next');
+              const prevButton = document.querySelector('.paginator-buttons-prev');
+              
+              return {
+                totalSlides: dots.length,
+                hasNextButton: nextButton && !nextButton.hasAttribute('aria-disabled'),
+                hasPrevButton: prevButton && !prevButton.hasAttribute('aria-disabled'),
+                currentSlide: Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1
+              };
+            });
+
+            console.log(`📊 Informações do carrossel:`, slidesInfo);
+
+            if (slidesInfo.totalSlides > 1) {
+              console.log(`🎠 Carrossel detectado com ${slidesInfo.totalSlides} slides`);
+              
+              // Captura todos os slides
+              for (let i = 0; i < slidesInfo.totalSlides; i++) {
+                console.log(`📸 Capturando slide ${i + 1} de ${slidesInfo.totalSlides}...`);
+                
+                // Aguarda um pouco para garantir que o slide está carregado
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Captura o screenshot do slide atual
+                const content = await page.$(".turma-wrapper-content");
+                if (content) {
+                  const filename = i === 0 
+                    ? "06_Corpo_Docente.png"
+                    : `06.${i}_Corpo_Docente.png`;
+                  
+                  try {
+                    await content.screenshot({ 
+                      path: path.join(outputFolder, filename) 
+                    });
+                    console.log(`✅ Screenshot salvo: ${filename}`);
+                  } catch (screenshotError) {
+                    console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
+                  }
+                }
+
+           // Se não é o último slide, tenta navegar para o próximo
+           if (i < slidesInfo.totalSlides - 1) {
+             console.log(`➡️ Navegando para o próximo slide...`);
+             
+             let navigationSuccess = false;
+             
+             // Estratégia 1: Clicar diretamente no dot do próximo slide usando IDs específicos
+             console.log("🎯 Estratégia 1: Clicando no dot específico do próximo slide...");
+             const dotClicked = await page.evaluate((targetSlideIndex) => {
+               console.log(`🔍 Tentando navegar para slide ${targetSlideIndex + 1}`);
+               
+               // Primeiro, tentar encontrar o dot pelo ID específico
+               const dotId = `slick-slide-control${50 + targetSlideIndex}`;
+               console.log(`🔍 Procurando dot com ID: ${dotId}`);
+               let dotButton = document.getElementById(dotId);
+               
+               if (dotButton) {
+                 console.log(`✅ Dot encontrado pelo ID: ${dotId}`);
+                 dotButton.click();
+                 return true;
+               } else {
+                 console.log(`⚠️ Dot não encontrado pelo ID: ${dotId}`);
+                 
+                 // Fallback: tentar pelo índice usando querySelectorAll
+                 const dots = document.querySelectorAll('.slick-dots li button');
+                 console.log(`🔍 Total de dots encontrados: ${dots.length}`);
+                 
+                 if (dots[targetSlideIndex]) {
+                   console.log(`✅ Dot encontrado pelo índice: ${targetSlideIndex}`);
+                   dots[targetSlideIndex].click();
+                   return true;
+                 } else {
+                   console.log(`⚠️ Dot não encontrado pelo índice: ${targetSlideIndex}`);
+                 }
+                 
+                 // Segundo fallback: tentar pelos li elements
+                 const liDots = document.querySelectorAll('.slick-dots li');
+                 console.log(`🔍 Total de li dots encontrados: ${liDots.length}`);
+                 
+                 if (liDots[targetSlideIndex]) {
+                   const button = liDots[targetSlideIndex].querySelector('button');
+                   if (button) {
+                     console.log(`✅ Dot encontrado via li[${targetSlideIndex}] button`);
+                     button.click();
+                     return true;
+                   }
+                 }
+               }
+               
+               console.log(`❌ Nenhum dot encontrado para slide ${targetSlideIndex + 1}`);
+               return false;
+             }, i + 1);
+
+             if (dotClicked) {
+               await new Promise(resolve => setTimeout(resolve, 2000));
+               const newSlideInfo = await page.evaluate(() => {
+                 const dots = document.querySelectorAll('.slick-dots li');
+                 return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+               });
+               console.log(`📍 Slide atual após clique no dot: ${newSlideInfo}`);
+               if (newSlideInfo === i + 2) {
+                 navigationSuccess = true;
+                 console.log("✅ Navegação via dot bem-sucedida!");
+               }
+             }
+
+             // Estratégia 2: Usar Puppeteer nativo para clicar no dot específico
+             if (!navigationSuccess) {
+               console.log("🔄 Estratégia 2: Puppeteer nativo no dot específico...");
+               try {
+                 const dotId = `slick-slide-control${50 + i + 1}`;
+                 const dotButton = await page.$(`#${dotId}`);
+                 if (dotButton) {
+                   await dotButton.click();
+                   console.log(`✅ Dot ${dotId} clicado via Puppeteer`);
+                   await new Promise(resolve => setTimeout(resolve, 2000));
+                   const newSlideInfo = await page.evaluate(() => {
+                     const dots = document.querySelectorAll('.slick-dots li');
+                     return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                   });
+                   console.log(`📍 Slide atual após Puppeteer dot: ${newSlideInfo}`);
+                   if (newSlideInfo === i + 2) {
+                     navigationSuccess = true;
+                     console.log("✅ Navegação via Puppeteer dot bem-sucedida!");
+                   }
+                 } else {
+                   // Fallback: tentar pelo índice
+                   const dots = await page.$$('.slick-dots li button');
+                   if (dots[i + 1]) {
+                     await dots[i + 1].click();
+                     console.log(`✅ Dot ${i + 2} clicado via Puppeteer (fallback)`);
+                     await new Promise(resolve => setTimeout(resolve, 2000));
+                     const newSlideInfo = await page.evaluate(() => {
+                       const dots = document.querySelectorAll('.slick-dots li');
+                       return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                     });
+                     console.log(`📍 Slide atual após Puppeteer dot fallback: ${newSlideInfo}`);
+                     if (newSlideInfo === i + 2) {
+                       navigationSuccess = true;
+                       console.log("✅ Navegação via Puppeteer dot fallback bem-sucedida!");
+                     }
+                   }
+                 }
+               } catch (error) {
+                 console.log("⚠️ Erro na estratégia Puppeteer dot:", error.message);
+               }
+             }
+
+             // Estratégia 3: Tentar clicar no botão "próximo" mesmo se parecer desabilitado
+             if (!navigationSuccess) {
+               console.log("🔄 Estratégia 3: Tentando botão 'próximo' mesmo desabilitado...");
+               const nextClicked = await page.evaluate(() => {
+                 const nextButton = document.querySelector('.paginator-buttons-next');
+                 if (nextButton) {
+                   console.log("🎯 Botão 'próximo' encontrado");
+                   console.log(`   - aria-disabled: ${nextButton.getAttribute('aria-disabled')}`);
+                   console.log(`   - disabled: ${nextButton.disabled}`);
+                   console.log(`   - style.display: ${nextButton.style.display}`);
+                   
+                   // Tentar clicar mesmo se parecer desabilitado
+                   nextButton.click();
+                   console.log("✅ Botão 'próximo' clicado (forçado)");
+                   return true;
+                 } else {
+                   console.log("⚠️ Botão 'próximo' não encontrado");
+                   return false;
+                 }
+               });
+
+               if (nextClicked) {
+                 await new Promise(resolve => setTimeout(resolve, 2000));
+                 const newSlideInfo = await page.evaluate(() => {
+                   const dots = document.querySelectorAll('.slick-dots li');
+                   return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                 });
+                 console.log(`📍 Slide atual após clique no botão: ${newSlideInfo}`);
+                 if (newSlideInfo > i + 1) {
+                   navigationSuccess = true;
+                   console.log("✅ Navegação via botão bem-sucedida!");
+                 }
+               }
+             }
+
+             // Estratégia 4: Usar Puppeteer nativo para clicar no botão próximo
+             if (!navigationSuccess) {
+               console.log("🔄 Estratégia 4: Puppeteer nativo no botão próximo...");
+               try {
+                 const nextButton = await page.$('.paginator-buttons-next');
+                 if (nextButton) {
+                   await nextButton.click();
+                   console.log("✅ Botão 'próximo' clicado via Puppeteer");
+                   await new Promise(resolve => setTimeout(resolve, 2000));
+                   const newSlideInfo = await page.evaluate(() => {
+                     const dots = document.querySelectorAll('.slick-dots li');
+                     return Array.from(dots).findIndex(dot => dot.classList.contains('slick-active')) + 1;
+                   });
+                   console.log(`📍 Slide atual após Puppeteer botão: ${newSlideInfo}`);
+                   if (newSlideInfo > i + 1) {
+                     navigationSuccess = true;
+                     console.log("✅ Navegação via Puppeteer botão bem-sucedida!");
+                   }
+                 }
+               } catch (error) {
+                 console.log("⚠️ Erro na estratégia Puppeteer botão:", error.message);
+               }
+             }
+
+             if (!navigationSuccess) {
+               console.log("❌ Não foi possível navegar para o próximo slide com nenhuma estratégia");
+               break;
+             } else {
+               console.log("✅ Navegação bem-sucedida!");
+             }
+           }
+              }
+              
+              console.log(`✅ Captura múltipla do Corpo Docente concluída!`);
+            } else {
+              console.log("ℹ️ Apenas 1 slide detectado, capturando normalmente...");
+              // Se só tem 1 slide, captura normalmente (será feito pelo sistema principal)
+            }
+
+          } catch (error) {
+            console.log(`⚠️ Erro ao capturar Corpo Docente: ${error.message}`);
+            // Continua mesmo com erro - não deve interromper o processo
+          }
+        },
       },
       {
         internal: "Cronograma de Aulas",

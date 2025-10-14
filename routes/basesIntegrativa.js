@@ -49,6 +49,96 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Sobre o Curso",
       display: "Sobre o Curso",
       selector: ".sobre-section",
+      action: async (page) => {
+        try {
+          console.log("🔍 Procurando botão 'mais' para expandir texto...");
+          
+          // Procura pelo span com "mais" que expande o texto
+          const expandButton = await page.evaluate(() => {
+            // Procura por diferentes seletores possíveis para o botão "mais"
+            const selectors = [
+              'span.btn-vermais',
+              'span[ng-click*="toggleAboutShowMoreText"]',
+              'span[class*="btn-vermais"]',
+              'span[class*="vermais"]',
+              'span:contains("mais")',
+              'button:contains("mais")',
+              'a:contains("mais")'
+            ];
+            
+            for (const selector of selectors) {
+              try {
+                const element = document.querySelector(selector);
+                if (element && element.textContent.includes('mais')) {
+                  return element;
+                }
+              } catch (e) {
+                continue;
+              }
+            }
+            
+            // Busca por qualquer elemento que contenha "mais" e seja clicável
+            const allElements = document.querySelectorAll('span, button, a');
+            for (const element of allElements) {
+              if (element.textContent.trim().includes('mais') && 
+                  (element.onclick || element.getAttribute('ng-click'))) {
+                return element;
+              }
+            }
+            
+            return null;
+          });
+          
+          if (expandButton) {
+            console.log("✅ Botão 'mais' encontrado, clicando para expandir texto...");
+            
+            // Clica no botão para expandir o texto
+            await page.evaluate(() => {
+              const selectors = [
+                'span.btn-vermais',
+                'span[ng-click*="toggleAboutShowMoreText"]',
+                'span[class*="btn-vermais"]',
+                'span[class*="vermais"]'
+              ];
+              
+              for (const selector of selectors) {
+                try {
+                  const element = document.querySelector(selector);
+                  if (element && element.textContent.includes('mais')) {
+                    element.click();
+                    console.log(`Botão 'mais' clicado usando seletor: ${selector}`);
+                    return;
+                  }
+                } catch (e) {
+                  continue;
+                }
+              }
+              
+              // Fallback: busca por qualquer elemento clicável com "mais"
+              const allElements = document.querySelectorAll('span, button, a');
+              for (const element of allElements) {
+                if (element.textContent.trim().includes('mais') && 
+                    (element.onclick || element.getAttribute('ng-click'))) {
+                  element.click();
+                  console.log('Botão "mais" clicado via fallback');
+                  return;
+                }
+              }
+            });
+            
+            // Aguarda o texto expandir
+            console.log("⏳ Aguardando texto expandir...");
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            console.log("✅ Texto expandido com sucesso!");
+          } else {
+            console.log("ℹ️ Botão 'mais' não encontrado - texto pode já estar expandido ou não ter limite");
+          }
+        } catch (error) {
+          console.log(`⚠️ Erro ao expandir texto 'Sobre o Curso': ${error.message}`);
+          // Continua mesmo com erro - não deve interromper o processo
+        }
+      },
     },
     {
       internal: "Modalidade de Ensino",
@@ -346,6 +436,104 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
             visible: true,
             timeout: 10000,
           });
+
+          // 🔍 Procurar e abrir o accordion "Disciplinas"
+          console.log("🔍 Procurando accordion 'Disciplinas' para expandir...");
+          
+          const accordionOpened = await page.evaluate(() => {
+            // Aguarda um pouco para garantir que o DOM está carregado
+            setTimeout(() => {}, 1000);
+            
+            // Múltiplas estratégias para encontrar o accordion
+            let accordionButton = null;
+            
+            // Estratégia 1: Seletor específico baseado no HTML fornecido
+            accordionButton = document.querySelector('button.accordion.template.campo[title="Disciplina"]');
+            if (accordionButton && accordionButton.textContent.includes('Disciplinas')) {
+              console.log("✅ Estratégia 1: Botão encontrado pelo seletor específico");
+            } else {
+              // Estratégia 2: Busca por classe accordion
+              accordionButton = document.querySelector('button.accordion');
+              if (accordionButton && accordionButton.textContent.includes('Disciplinas')) {
+                console.log("✅ Estratégia 2: Botão encontrado pela classe accordion");
+              } else {
+                // Estratégia 3: Busca por qualquer botão com "Disciplinas"
+                const allButtons = document.querySelectorAll('button');
+                for (const button of allButtons) {
+                  if (button.textContent.trim().includes('Disciplinas')) {
+                    accordionButton = button;
+                    console.log("✅ Estratégia 3: Botão encontrado por texto 'Disciplinas'");
+                    break;
+                  }
+                }
+              }
+            }
+            
+            if (accordionButton) {
+              console.log("🎯 Botão accordion encontrado:", accordionButton.textContent.trim());
+              
+              // Verifica se o painel está fechado antes de clicar
+              const panel = accordionButton.nextElementSibling;
+              const isClosed = panel && panel.style.display === 'none';
+              
+              if (isClosed) {
+                console.log("📋 Accordion está fechado, clicando para abrir...");
+                accordionButton.click();
+                
+                // Aguarda um pouco e verifica se abriu
+                setTimeout(() => {
+                  const panelAfter = accordionButton.nextElementSibling;
+                  if (panelAfter && panelAfter.style.display !== 'none') {
+                    console.log("✅ Accordion 'Disciplinas' aberto com sucesso!");
+                  } else {
+                    console.log("⚠️ Accordion pode não ter aberto completamente");
+                  }
+                }, 500);
+                
+                return true;
+              } else {
+                console.log("ℹ️ Accordion 'Disciplinas' já está aberto");
+                return true;
+              }
+            } else {
+              console.log("❌ Accordion 'Disciplinas' não encontrado");
+              return false;
+            }
+          });
+
+          if (accordionOpened) {
+            console.log("⏳ Aguardando accordion 'Disciplinas' expandir completamente...");
+            await new Promise(resolve => setTimeout(resolve, 3000)); // Aumentado para 3 segundos
+          } else {
+            // Tentativa adicional com Puppeteer nativo se o evaluate não funcionou
+            console.log("🔄 Tentando método alternativo com Puppeteer...");
+            try {
+              // Procura pelo botão usando Puppeteer
+              const accordionButton = await page.$('button.accordion.template.campo[title="Disciplina"]');
+              if (accordionButton) {
+                const text = await page.evaluate(el => el.textContent, accordionButton);
+                if (text.includes('Disciplinas')) {
+                  console.log("✅ Botão encontrado via Puppeteer, clicando...");
+                  await accordionButton.click();
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+              } else {
+                // Fallback: busca por qualquer botão com "Disciplinas"
+                const buttons = await page.$$('button');
+                for (const button of buttons) {
+                  const text = await page.evaluate(el => el.textContent, button);
+                  if (text.includes('Disciplinas')) {
+                    console.log("✅ Botão 'Disciplinas' encontrado via fallback Puppeteer, clicando...");
+                    await button.click();
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    break;
+                  }
+                }
+              }
+            } catch (error) {
+              console.log("⚠️ Erro no método alternativo:", error.message);
+            }
+          }
 
           // Faz scroll para garantir que todo o conteúdo seja visível, mas evita completamente o header
           await page.evaluate(() => {

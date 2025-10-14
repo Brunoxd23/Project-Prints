@@ -33,21 +33,114 @@ app.use("/api", basesIntegrativaRouter);
 // Endpoint para listar semestres disponíveis para um curso específico
 app.get("/listar-semestres/:pasta", (req, res) => {
   const { pasta } = req.params;
-  const publicDir = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
+  const baseDir = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
 
   try {
-    // Lista todos os diretórios na pasta de rede
-    const allDirs = fs
-      .readdirSync(publicDir)
-      .filter((f) => fs.statSync(path.join(publicDir, f)).isDirectory());
+    // Mapear pasta para curso e subcurso
+    const getRouteMapping = (routePath) => {
+      const routeMap = {
+        'CP_Quinzenal_Pratica': { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Quinzenal Prática Estendida' },
+        'CP_Pratica_Estendida': { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Quinzenal Prática Estendida' },
+        'CP_Quinzenal': { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Quinzenal' },
+        'CP_Semanal': { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Semanal' },
+        'CP_RJ_Mensal': { course: 'Cuidados Paliativos', subcourse: 'Unidade Rio de Janeiro | Mensal' },
+        'CP_GO_Mensal': { course: 'Cuidados Paliativos', subcourse: 'Unidade Goiânia | Mensal' },
+        'DQ_Mensal': { course: 'Dependência Química', subcourse: 'Unidade Paulista | Mensal' },
+        'BSI_Mensal': { course: 'Bases da Saúde Integrativa e Bem-Estar', subcourse: 'Unidade Paulista | Mensal' },
+        'IFS_Mensal': { course: 'Gestão de Infraestrutura e Facilities em Saúde', subcourse: 'Unidade Paulista | Mensal' },
+        'PM_Mensal': { course: 'Psiquiatria Multiprofissional', subcourse: 'Unidade Paulista | Mensal' },
+        'SI_Mensal': { course: 'Sustentabilidade: Liderança e Inovação em ESG', subcourse: 'Unidade Paulista | Mensal' }
+      };
+      return routeMap[routePath] || { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Quinzenal' };
+    };
 
-    // Filtra apenas os diretórios que começam com o nome da pasta e têm o padrão de semestre
+    const getCourseFolderName = (courseName, subcourseName) => {
+      const courseMap = {
+        "Cuidados Paliativos": "Pós-graduação em Cuidados Paliativos",
+        "Bases da Saúde Integrativa e Bem-Estar": "Pós-graduação em Bases da Saúde Integrativa e Bem-Estar",
+        "Dependência Química": "Pós-graduação em Dependência Química",
+        "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
+        "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
+        "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade - Liderança e Inovação em ESG"
+      };
+
+      const subcourseMap = {
+        "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
+        "Unidade Paulista | Quinzenal": "Quinzenal",
+        "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
+        "Unidade Goiânia | Mensal": "GO-Mensal",
+        "Unidade Paulista | Semanal": "Semanal",
+        "Unidade Paulista | Mensal": "Mensal"
+      };
+
+      const fullCourseName = courseMap[courseName] || courseName;
+      const fullSubcourseName = subcourseMap[subcourseName] || subcourseName;
+      
+      return {
+        courseFolder: fullCourseName,
+        subcourseFolder: fullSubcourseName
+      };
+    };
+
+    console.log(`🔍 DEBUG - pasta recebida: "${pasta}"`);
+    const routeMapping = getRouteMapping(pasta);
+    console.log(`🔍 DEBUG - routeMapping:`, routeMapping);
+    const courseInfo = getCourseFolderName(routeMapping.course, routeMapping.subcourse);
+    console.log(`🔍 DEBUG - courseInfo:`, courseInfo);
+    const courseDir = path.join(baseDir, courseInfo.courseFolder);
+
+    console.log(`🔍 Procurando semestres em: ${courseDir}`);
+    console.log(`🔍 DEBUG - Diretório existe? ${fs.existsSync(courseDir)}`);
+
+    // Verificar se o diretório do curso existe
+    if (!fs.existsSync(courseDir)) {
+      console.log(`❌ Diretório do curso não encontrado: ${courseDir}`);
+      return res.json({ semesters: [] });
+    }
+
+    // Lista todos os diretórios na pasta do curso
+    const allDirs = fs
+      .readdirSync(courseDir)
+      .filter((f) => fs.statSync(path.join(courseDir, f)).isDirectory());
+
+    console.log(`📁 Diretórios encontrados:`, allDirs);
+
+    // Filtra apenas os diretórios que começam com o nome do subcurso e têm o padrão de semestre
     const semesterDirs = allDirs
-      .filter((dir) => dir.startsWith(`${pasta}_`))
+      .filter((dir) => {
+        const startsWithSubcourse = dir.startsWith(`${courseInfo.subcourseFolder} `);
+        console.log(`🔍 Verificando pasta: "${dir}"`);
+        console.log(`   - Começa com "${courseInfo.subcourseFolder} "? ${startsWithSubcourse}`);
+        return startsWithSubcourse;
+      })
       .map((dir) => {
-        // Extrai o semestre (YYYY-S) do nome da pasta
-        const match = dir.match(new RegExp(`${pasta}_(\\d{4}-[12])$`));
-        return match ? match[1] : null;
+        // Extrai o semestre (YYYY-N) do nome da pasta
+        console.log(`🔍 Processando pasta: "${dir}"`);
+        console.log(`   - Subcourse folder: "${courseInfo.subcourseFolder}"`);
+        
+        // Verificar se a pasta começa com o nome do subcurso + espaço
+        const expectedPrefix = `${courseInfo.subcourseFolder} `;
+        console.log(`   - Prefixo esperado: "${expectedPrefix}"`);
+        
+        if (dir.startsWith(expectedPrefix)) {
+          const semesterPart = dir.substring(expectedPrefix.length);
+          console.log(`   - Parte do semestre extraída: "${semesterPart}"`);
+          
+          // Verificar se corresponde ao padrão YYYY-N
+          const semesterMatch = semesterPart.match(/^(\d{4}-\d+)$/);
+          console.log(`   - Match do semestre:`, semesterMatch);
+          
+          if (semesterMatch) {
+            console.log(`   ✅ Semestre encontrado: ${semesterMatch[1]}`);
+            return semesterMatch[1];
+          } else {
+            console.log(`   ❌ Parte "${semesterPart}" não corresponde ao padrão YYYY-N`);
+          }
+        } else {
+          console.log(`   ❌ Pasta não começa com "${expectedPrefix}"`);
+        }
+        
+        return null;
       })
       .filter(Boolean)
       .sort((a, b) => {
@@ -56,6 +149,8 @@ app.get("/listar-semestres/:pasta", (req, res) => {
         const [yearB, semB] = b.split("-").map(Number);
         return yearB - yearA || semB - semA;
       });
+
+    console.log(`📅 Semestres encontrados:`, semesterDirs);
 
     res.json({ semesters: semesterDirs });
   } catch (error) {
@@ -68,14 +163,104 @@ app.get("/listar-semestres/:pasta", (req, res) => {
 app.get("/listar-prints", (req, res) => {
   const pasta = req.query.pasta;
   if (!pasta) return res.status(400).json({ error: "Pasta não informada" });
-  const pastaPath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação", pasta);
-  if (!fs.existsSync(pastaPath) || !fs.statSync(pastaPath).isDirectory()) {
+  
+  console.log(`🔍 DEBUG - listar-prints chamado com pasta: "${pasta}"`);
+  
+  // Mapear pasta para curso e subcurso (mesmo mapeamento da rota listar-semestres)
+  const getRouteMapping = (routePath) => {
+    const routeMap = {
+      'CP_Quinzenal_Pratica': { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Quinzenal Prática Estendida' },
+      'CP_Pratica_Estendida': { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Quinzenal Prática Estendida' },
+      'CP_Quinzenal': { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Quinzenal' },
+      'CP_Semanal': { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Semanal' },
+      'CP_RJ_Mensal': { course: 'Cuidados Paliativos', subcourse: 'Unidade Rio de Janeiro | Mensal' },
+      'CP_GO_Mensal': { course: 'Cuidados Paliativos', subcourse: 'Unidade Goiânia | Mensal' },
+      'DQ_Mensal': { course: 'Dependência Química', subcourse: 'Unidade Paulista | Mensal' },
+      'BSI_Mensal': { course: 'Bases da Saúde Integrativa e Bem-Estar', subcourse: 'Unidade Paulista | Mensal' },
+      'IFS_Mensal': { course: 'Gestão de Infraestrutura e Facilities em Saúde', subcourse: 'Unidade Paulista | Mensal' },
+      'PM_Mensal': { course: 'Psiquiatria Multiprofissional', subcourse: 'Unidade Paulista | Mensal' },
+      'SI_Mensal': { course: 'Sustentabilidade: Liderança e Inovação em ESG', subcourse: 'Unidade Paulista | Mensal' }
+    };
+    return routeMap[routePath] || { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Quinzenal' };
+  };
+
+  const getCourseFolderName = (courseName, subcourseName) => {
+    const courseMap = {
+      "Cuidados Paliativos": "Pós-graduação em Cuidados Paliativos",
+      "Bases da Saúde Integrativa e Bem-Estar": "Pós-graduação em Bases da Saúde Integrativa e Bem-Estar",
+      "Dependência Química": "Pós-graduação em Dependência Química",
+      "Gestão de Infraestrutura e Facilities em Saúde": "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
+      "Psiquiatria Multiprofissional": "Pós-graduação em Psiquiatria Multiprofissional",
+      "Sustentabilidade: Liderança e Inovação em ESG": "Pós-graduação em Sustentabilidade - Liderança e Inovação em ESG"
+    };
+
+    const subcourseMap = {
+      "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
+      "Unidade Paulista | Quinzenal": "Quinzenal",
+      "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
+      "Unidade Goiânia | Mensal": "GO-Mensal",
+      "Unidade Paulista | Semanal": "Semanal",
+      "Unidade Paulista | Mensal": "Mensal"
+    };
+
+    const fullCourseName = courseMap[courseName] || courseName;
+    const fullSubcourseName = subcourseMap[subcourseName] || subcourseName;
+    
+    return {
+      courseFolder: fullCourseName,
+      subcourseFolder: fullSubcourseName
+    };
+  };
+
+  // Extrair curso e semestre da pasta (formato: CP_Pratica_Estendida_2025-6)
+  const parts = pasta.split('_');
+  console.log(`🔍 DEBUG - parts:`, parts);
+  
+  if (parts.length < 3) {
+    console.log(`❌ Formato de pasta inválido: "${pasta}"`);
+    return res.status(400).json({ error: "Formato de pasta inválido" });
+  }
+  
+  const cursoPart = parts.slice(0, -1).join('_'); // CP_Pratica_Estendida
+  const semesterPart = parts[parts.length - 1]; // 2025-6
+  
+  console.log(`🔍 DEBUG - cursoPart: "${cursoPart}", semesterPart: "${semesterPart}"`);
+  
+  const routeMapping = getRouteMapping(cursoPart);
+  console.log(`🔍 DEBUG - routeMapping:`, routeMapping);
+  
+  const courseInfo = getCourseFolderName(routeMapping.course, routeMapping.subcourse);
+  console.log(`🔍 DEBUG - courseInfo:`, courseInfo);
+  
+  const baseDir = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação");
+  const courseDir = path.join(baseDir, courseInfo.courseFolder);
+  const semesterFolderPath = path.join(courseDir, `${courseInfo.subcourseFolder} ${semesterPart}`);
+  
+  console.log(`🔍 DEBUG - baseDir: ${baseDir}`);
+  console.log(`🔍 DEBUG - courseDir: ${courseDir}`);
+  console.log(`🔍 DEBUG - semesterFolderPath: ${semesterFolderPath}`);
+  console.log(`🔍 DEBUG - Diretório existe? ${fs.existsSync(semesterFolderPath)}`);
+  
+  if (!fs.existsSync(semesterFolderPath) || !fs.statSync(semesterFolderPath).isDirectory()) {
+    console.log(`❌ Pasta não encontrada: ${semesterFolderPath}`);
     return res.status(404).json({ error: "Pasta não encontrada" });
   }
+  
   const prints = fs
-    .readdirSync(pastaPath)
+    .readdirSync(semesterFolderPath)
     .filter((f) => f.endsWith(".png"))
-    .map((f) => `/prints/${pasta}/${f}`);
+    .map((f) => {
+      // Criar um caminho relativo simples
+      const courseFolder = courseInfo.courseFolder;
+      const semesterFolder = `${courseInfo.subcourseFolder} ${semesterPart}`;
+      const printPath = `/prints/${courseFolder}/${semesterFolder}/${f}`;
+      console.log(`🔍 DEBUG - Print path gerado: ${printPath}`);
+      return printPath;
+    });
+    
+  console.log(`🔍 DEBUG - Prints encontrados: ${prints.length}`);
+  console.log(`🔍 DEBUG - Prints:`, prints);
+  
   res.json(prints);
 });
 // Endpoint para listar todas as pastas de prints disponíveis

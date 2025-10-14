@@ -49,6 +49,96 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Sobre o Curso",
       display: "Sobre o Curso",
       selector: ".sobre-section",
+      action: async (page) => {
+        try {
+          console.log("🔍 Procurando botão 'mais' para expandir texto...");
+          
+          // Procura pelo span com "mais" que expande o texto
+          const expandButton = await page.evaluate(() => {
+            // Procura por diferentes seletores possíveis para o botão "mais"
+            const selectors = [
+              'span.btn-vermais',
+              'span[ng-click*="toggleAboutShowMoreText"]',
+              'span[class*="btn-vermais"]',
+              'span[class*="vermais"]',
+              'span:contains("mais")',
+              'button:contains("mais")',
+              'a:contains("mais")'
+            ];
+            
+            for (const selector of selectors) {
+              try {
+                const element = document.querySelector(selector);
+                if (element && element.textContent.includes('mais')) {
+                  return element;
+                }
+              } catch (e) {
+                continue;
+              }
+            }
+            
+            // Busca por qualquer elemento que contenha "mais" e seja clicável
+            const allElements = document.querySelectorAll('span, button, a');
+            for (const element of allElements) {
+              if (element.textContent.trim().includes('mais') && 
+                  (element.onclick || element.getAttribute('ng-click'))) {
+                return element;
+              }
+            }
+            
+            return null;
+          });
+          
+          if (expandButton) {
+            console.log("✅ Botão 'mais' encontrado, clicando para expandir texto...");
+            
+            // Clica no botão para expandir o texto
+            await page.evaluate(() => {
+              const selectors = [
+                'span.btn-vermais',
+                'span[ng-click*="toggleAboutShowMoreText"]',
+                'span[class*="btn-vermais"]',
+                'span[class*="vermais"]'
+              ];
+              
+              for (const selector of selectors) {
+                try {
+                  const element = document.querySelector(selector);
+                  if (element && element.textContent.includes('mais')) {
+                    element.click();
+                    console.log(`Botão 'mais' clicado usando seletor: ${selector}`);
+                    return;
+                  }
+                } catch (e) {
+                  continue;
+                }
+              }
+              
+              // Fallback: busca por qualquer elemento clicável com "mais"
+              const allElements = document.querySelectorAll('span, button, a');
+              for (const element of allElements) {
+                if (element.textContent.trim().includes('mais') && 
+                    (element.onclick || element.getAttribute('ng-click'))) {
+                  element.click();
+                  console.log('Botão "mais" clicado via fallback');
+                  return;
+                }
+              }
+            });
+            
+            // Aguarda o texto expandir
+            console.log("⏳ Aguardando texto expandir...");
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            console.log("✅ Texto expandido com sucesso!");
+          } else {
+            console.log("ℹ️ Botão 'mais' não encontrado - texto pode já estar expandido ou não ter limite");
+          }
+        } catch (error) {
+          console.log(`⚠️ Erro ao expandir texto 'Sobre o Curso': ${error.message}`);
+          // Continua mesmo com erro - não deve interromper o processo
+        }
+      },
     },
     {
       internal: "Modalidade de Ensino",

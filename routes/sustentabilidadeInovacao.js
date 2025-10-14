@@ -49,6 +49,96 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Sobre o Curso",
       display: "Sobre o Curso",
       selector: ".sobre-section",
+      action: async (page) => {
+        try {
+          console.log("🔍 Procurando botão 'mais' para expandir texto...");
+          
+          // Procura pelo span com "mais" que expande o texto
+          const expandButton = await page.evaluate(() => {
+            // Procura por diferentes seletores possíveis para o botão "mais"
+            const selectors = [
+              'span.btn-vermais',
+              'span[ng-click*="toggleAboutShowMoreText"]',
+              'span[class*="btn-vermais"]',
+              'span[class*="vermais"]',
+              'span:contains("mais")',
+              'button:contains("mais")',
+              'a:contains("mais")'
+            ];
+            
+            for (const selector of selectors) {
+              try {
+                const element = document.querySelector(selector);
+                if (element && element.textContent.includes('mais')) {
+                  return element;
+                }
+              } catch (e) {
+                continue;
+              }
+            }
+            
+            // Busca por qualquer elemento que contenha "mais" e seja clicável
+            const allElements = document.querySelectorAll('span, button, a');
+            for (const element of allElements) {
+              if (element.textContent.trim().includes('mais') && 
+                  (element.onclick || element.getAttribute('ng-click'))) {
+                return element;
+              }
+            }
+            
+            return null;
+          });
+          
+          if (expandButton) {
+            console.log("✅ Botão 'mais' encontrado, clicando para expandir texto...");
+            
+            // Clica no botão para expandir o texto
+            await page.evaluate(() => {
+              const selectors = [
+                'span.btn-vermais',
+                'span[ng-click*="toggleAboutShowMoreText"]',
+                'span[class*="btn-vermais"]',
+                'span[class*="vermais"]'
+              ];
+              
+              for (const selector of selectors) {
+                try {
+                  const element = document.querySelector(selector);
+                  if (element && element.textContent.includes('mais')) {
+                    element.click();
+                    console.log(`Botão 'mais' clicado usando seletor: ${selector}`);
+                    return;
+                  }
+                } catch (e) {
+                  continue;
+                }
+              }
+              
+              // Fallback: busca por qualquer elemento clicável com "mais"
+              const allElements = document.querySelectorAll('span, button, a');
+              for (const element of allElements) {
+                if (element.textContent.trim().includes('mais') && 
+                    (element.onclick || element.getAttribute('ng-click'))) {
+                  element.click();
+                  console.log('Botão "mais" clicado via fallback');
+                  return;
+                }
+              }
+            });
+            
+            // Aguarda o texto expandir
+            console.log("⏳ Aguardando texto expandir...");
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            console.log("✅ Texto expandido com sucesso!");
+          } else {
+            console.log("ℹ️ Botão 'mais' não encontrado - texto pode já estar expandido ou não ter limite");
+          }
+        } catch (error) {
+          console.log(`⚠️ Erro ao expandir texto 'Sobre o Curso': ${error.message}`);
+          // Continua mesmo com erro - não deve interromper o processo
+        }
+      },
     },
     {
       internal: "Modalidade de Ensino",
@@ -388,6 +478,114 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Corpo Docente",
       display: "Corpo Docente",
       selector: ".turma-wrapper-content",
+      action: async (page) => {
+        try {
+          console.log("🔍 Iniciando captura múltipla do Corpo Docente...");
+          await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+          
+          // Detectar número de slides
+          const totalSlides = await page.evaluate(() => {
+            const dots = document.querySelectorAll('.slick-dots li');
+            return dots.length;
+          });
+          
+          console.log(`🎠 Carrossel detectado com ${totalSlides} slides`);
+          
+          if (totalSlides > 1) {
+            // Capturar cada slide
+            for (let i = 0; i < totalSlides; i++) {
+              console.log(`📸 Capturando slide ${i + 1} de ${totalSlides}...`);
+              
+              // Aguardar um pouco antes de capturar
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              
+              // Capturar screenshot
+              const content = await page.$(".turma-wrapper-content");
+              if (content) {
+                const filename = i === 0 ? "06_Corpo_Docente.png" : `06.${i}_Corpo_Docente.png`;
+                try {
+                  await content.screenshot({ path: path.join(outputFolder, filename) });
+                  console.log(`✅ Screenshot salvo: ${filename}`);
+                } catch (screenshotError) {
+                  console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
+                }
+              }
+              
+              // Navegar para o próximo slide (exceto no último)
+              if (i < totalSlides - 1) {
+                console.log(`➡️ Navegando para o slide ${i + 2}...`);
+                
+                // Estratégia melhorada: clicar diretamente no dot do próximo slide
+                const navigationSuccess = await page.evaluate((targetSlideIndex) => {
+                  console.log(`🎯 Tentando navegar para slide ${targetSlideIndex + 1}...`);
+                  
+                  // Primeiro: tentar pelo ID específico (Sustentabilidade usa IDs 10, 11, 12)
+                  const dotId = `slick-slide-control${10 + targetSlideIndex}`;
+                  let dotButton = document.getElementById(dotId);
+                  
+                  if (dotButton) {
+                    console.log(`✅ Dot encontrado pelo ID: ${dotId}`);
+                    dotButton.click();
+                    return true;
+                  }
+                  
+                  // Segundo: tentar pelo índice dos dots
+                  const dots = document.querySelectorAll('.slick-dots li button');
+                  console.log(`🔍 Total de dots encontrados: ${dots.length}`);
+                  
+                  if (dots[targetSlideIndex]) {
+                    console.log(`✅ Dot encontrado pelo índice: ${targetSlideIndex}`);
+                    dots[targetSlideIndex].click();
+                    return true;
+                  }
+                  
+                  // Terceiro: tentar pelo botão "next"
+                  const nextButton = document.querySelector('.paginator-buttons-next');
+                  if (nextButton && !nextButton.classList.contains('slick-disabled')) {
+                    console.log(`✅ Usando botão next`);
+                    nextButton.click();
+                    return true;
+                  }
+                  
+                  console.log(`❌ Nenhum método de navegação funcionou para slide ${targetSlideIndex + 1}`);
+                  return false;
+                }, i + 1);
+                
+                if (navigationSuccess) {
+                  // Aguardar a transição e verificar se mudou
+                  await new Promise(resolve => setTimeout(resolve, 2500));
+                  
+                  // Verificar se realmente mudou de slide
+                  const currentSlide = await page.evaluate(() => {
+                    const activeDot = document.querySelector('.slick-dots li.slick-active');
+                    if (activeDot) {
+                      const button = activeDot.querySelector('button');
+                      return button ? button.getAttribute('aria-label') : null;
+                    }
+                    return null;
+                  });
+                  
+                  console.log(`📍 Slide atual após navegação: ${currentSlide}`);
+                  
+                  if (currentSlide && currentSlide.includes(`${i + 2} of ${totalSlides}`)) {
+                    console.log(`✅ Navegação confirmada para slide ${i + 2}!`);
+                  } else {
+                    console.log(`⚠️ Navegação pode não ter funcionado corretamente`);
+                  }
+                } else {
+                  console.log(`❌ Falha na navegação para slide ${i + 2}`);
+                  break;
+                }
+              }
+            }
+            console.log(`✅ Captura múltipla do Corpo Docente concluída!`);
+          } else {
+            console.log("ℹ️ Apenas 1 slide detectado, capturando normalmente...");
+          }
+        } catch (error) {
+          console.log(`⚠️ Erro ao capturar Corpo Docente: ${error.message}`);
+        }
+      },
     },
     {
       internal: "Cronograma de Aulas",
@@ -470,6 +668,11 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
         } catch (actionError) {
           console.log(`⚠️ Erro na ação específica para ${section.internal}: ${actionError.message}`);
           // Continua mesmo com erro na ação específica
+        }
+        // Se for Corpo Docente, pular a captura automática pois já foi feita pela action
+        if (section.internal === "Corpo Docente") {
+          console.log("ℹ️ Corpo Docente já foi capturado pela action personalizada, pulando captura automática");
+          continue;
         }
       }
 

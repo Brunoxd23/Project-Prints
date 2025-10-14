@@ -7,6 +7,10 @@ import {
 import { showToast } from "./utils.js";
 
 export function createSemesterView(curso) {
+  console.log('🔍 DEBUG - createSemesterView chamado com curso:', curso);
+  console.log('🔍 DEBUG - curso.pasta:', curso.pasta);
+  console.log('🔍 DEBUG - curso.nome:', curso.nome);
+  
   // Salvar estado atual - encontrar o curso principal
   if (typeof window.saveCurrentState === 'function') {
     // Encontrar o curso principal que contém este subcurso
@@ -16,6 +20,8 @@ export function createSemesterView(curso) {
         c.subcursos && c.subcursos.some(s => s.pasta === curso.pasta)
       );
     }
+    
+    console.log('🔍 DEBUG - cursoPrincipal encontrado:', cursoPrincipal);
     
     window.saveCurrentState({
       view: 'semesters',
@@ -196,9 +202,13 @@ export function createSemesterView(curso) {
 
 async function loadSemesters(curso, grid) {
   try {
+    console.log('🔍 DEBUG - loadSemesters chamado com curso:', curso);
+    console.log('🔍 DEBUG - curso.pasta:', curso.pasta);
+    
     const semesters = await listSemesters(curso.pasta);
+    console.log('🔍 DEBUG - semesters retornados:', semesters);
+    
     // Não criar mais semestres automaticamente, apenas mostrar os existentes
-
     renderSemesters(curso, semesters, grid);
   } catch (error) {
     console.error("Erro ao carregar semestres:", error);
@@ -207,10 +217,12 @@ async function loadSemesters(curso, grid) {
 }
 
 function renderSemesters(curso, semesters, grid) {
+  console.log('🔍 DEBUG - renderSemesters chamado com:', { curso, semesters, grid });
   grid.innerHTML = "";
 
   // Se não houver semestres, mostrar mensagem com botão
   if (!semesters || semesters.length === 0) {
+    console.log('❌ DEBUG - Nenhum semestre encontrado, mostrando mensagem');
     const noDataContainer = document.createElement("div");
     noDataContainer.className = "no-data-container";
 
@@ -228,6 +240,8 @@ function renderSemesters(curso, semesters, grid) {
     grid.appendChild(noDataContainer);
     return;
   }
+
+  console.log('✅ DEBUG - Semestres encontrados, renderizando:', semesters);
 
   semesters.forEach((semester, index) => {
     const card = document.createElement("div");

@@ -172,6 +172,9 @@ O fluxograma do projeto está disponível em `fluxograma_profissional_drawio.xml
 ## Funcionalidades Implementadas
 
 - **Automação Inteligente**: Captura automática de screenshots com tratamento de erros
+- **Expansão Automática de Texto**: Detecta e clica automaticamente no botão "mais" para expandir texto completo antes de tirar prints
+- **Abertura Automática de Accordions**: Detecta e abre automaticamente accordions fechados (ex: "Disciplinas" em Programa e Metodologia) antes de capturar screenshots
+- **Navegação Automática de Carrosséis**: Detecta e navega automaticamente por todos os slides de carrosséis (ex: "Corpo Docente") capturando múltiplos prints sequenciais
 - **Modal de Confirmação**: Validação antes de executar scripts para evitar execuções acidentais
 - **Toast Notifications**: Notificações discretas com animação slide
 - **Layout Padronizado**: Botões e elementos com design consistente
