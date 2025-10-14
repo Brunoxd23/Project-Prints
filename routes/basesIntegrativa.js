@@ -576,6 +576,104 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Corpo Docente",
       display: "Corpo Docente",
       selector: ".turma-wrapper-content",
+      action: async (page) => {
+        try {
+          console.log("🔍 Iniciando captura múltipla do Corpo Docente...");
+          await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+          
+          // Detectar número de slides (sempre 4 para Bases da Saúde)
+          const totalSlides = 4;
+          console.log(`🎠 Carrossel detectado com ${totalSlides} slides (fixo para Bases da Saúde)`);
+          
+          if (totalSlides > 1) {
+            // Primeiro, garantir que estamos no slide 1
+            console.log(`🎯 Garantindo que estamos no primeiro slide...`);
+            await page.evaluate(() => {
+              const firstDot = document.getElementById('slick-slide-control20');
+              if (firstDot && !firstDot.closest('li').classList.contains('slick-active')) {
+                console.log('🔄 Navegando para o primeiro slide...');
+                firstDot.click();
+              }
+            });
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const filenames = ['06_Corpo_Docente.png', '06.1_Corpo_Docente.png', '06.2_Corpo_Docente.png', '06.3_Corpo_Docente.png'];
+            
+            // Capturar slide 1 (já estamos nele)
+            console.log(`📸 Capturando slide 1 de 4...`);
+            const content = await page.$(".turma-wrapper-content");
+            if (content) {
+              try {
+                await content.screenshot({ path: path.join(outputFolder, filenames[0]) });
+                console.log(`✅ Screenshot salvo: ${filenames[0]}`);
+              } catch (screenshotError) {
+                console.error(`❌ Erro ao salvar screenshot ${filenames[0]}:`, screenshotError.message);
+              }
+            }
+            
+            // Navegar pelos slides usando as setas
+            for (let i = 1; i < 4; i++) {
+              console.log(`📸 Capturando slide ${i + 1} de 4...`);
+              
+              // Usar a seta "next" para navegar
+              const nextClicked = await page.evaluate(() => {
+                const nextButton = document.querySelector('.paginator-buttons-next.slick-arrow');
+                if (nextButton && !nextButton.classList.contains('slick-disabled')) {
+                  console.log('➡️ Clicando na seta "next"...');
+                  nextButton.click();
+                  return true;
+                } else {
+                  console.log('❌ Botão next não encontrado ou desabilitado');
+                  return false;
+                }
+              });
+              
+              if (nextClicked) {
+                // Aguardar transição
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Verificar se mudou
+                const currentSlide = await page.evaluate(() => {
+                  const activeDot = document.querySelector('.slick-dots li.slick-active');
+                  if (activeDot) {
+                    const button = activeDot.querySelector('button');
+                    if (button) {
+                      const ariaLabel = button.getAttribute('aria-label');
+                      console.log(`📍 Slide atual: ${ariaLabel}`);
+                      return ariaLabel;
+                    }
+                  }
+                  return null;
+                });
+                
+                console.log(`📍 Slide após navegação: ${currentSlide}`);
+                
+                // Aguardar estabilização
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Capturar screenshot
+                const content = await page.$(".turma-wrapper-content");
+                if (content) {
+                  try {
+                    await content.screenshot({ path: path.join(outputFolder, filenames[i]) });
+                    console.log(`✅ Screenshot salvo: ${filenames[i]}`);
+                  } catch (screenshotError) {
+                    console.error(`❌ Erro ao salvar screenshot ${filenames[i]}:`, screenshotError.message);
+                  }
+                }
+              } else {
+                console.log(`❌ Falha ao navegar para slide ${i + 1}`);
+                break;
+              }
+            }
+            console.log(`✅ Captura múltipla do Corpo Docente concluída!`);
+          } else {
+            console.log("ℹ️ Apenas 1 slide detectado, capturando normalmente...");
+          }
+        } catch (error) {
+          console.log(`⚠️ Erro ao capturar Corpo Docente: ${error.message}`);
+        }
+      },
     },
     {
       internal: "Cronograma de Aulas",
@@ -658,6 +756,11 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
         } catch (actionError) {
           console.log(`⚠️ Erro na ação específica para ${section.internal}: ${actionError.message}`);
           // Continua mesmo com erro na ação específica
+        }
+        // Se for Corpo Docente, pular a captura automática pois já foi feita pela action
+        if (section.internal === "Corpo Docente") {
+          console.log("ℹ️ Corpo Docente já foi capturado pela action personalizada, pulando captura automática");
+          continue;
         }
       }
 

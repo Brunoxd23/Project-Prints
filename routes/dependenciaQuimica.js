@@ -478,6 +478,130 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Corpo Docente",
       display: "Corpo Docente",
       selector: ".turma-wrapper-content",
+      action: async (page) => {
+        try {
+          console.log("🔍 Iniciando captura múltipla do Corpo Docente...");
+          await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+          
+          // Detectar número de slides
+          const totalSlides = await page.evaluate(() => {
+            const dots = document.querySelectorAll('.slick-dots li');
+            return dots.length;
+          });
+          
+          console.log(`🎠 Carrossel detectado com ${totalSlides} slides`);
+          
+          if (totalSlides > 1) {
+            // Capturar cada slide
+            for (let i = 0; i < totalSlides; i++) {
+              console.log(`📸 Capturando slide ${i + 1} de ${totalSlides}...`);
+              
+              // Aguardar um pouco antes de capturar
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              
+              // Capturar screenshot
+              const content = await page.$(".turma-wrapper-content");
+              if (content) {
+                const filename = i === 0 ? "06_Corpo_Docente.png" : `06.${i}_Corpo_Docente.png`;
+                try {
+                  await content.screenshot({ path: path.join(outputFolder, filename) });
+                  console.log(`✅ Screenshot salvo: ${filename}`);
+                } catch (screenshotError) {
+                  console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
+                }
+              }
+              
+              // Navegar para o próximo slide (exceto no último)
+              if (i < totalSlides - 1) {
+                console.log(`➡️ Navegando para o slide ${i + 2}...`);
+                
+                // Estratégia melhorada: usar múltiplas tentativas de navegação
+                let navigationSuccess = false;
+                let attempts = 0;
+                const maxAttempts = 3;
+                
+                while (!navigationSuccess && attempts < maxAttempts) {
+                  attempts++;
+                  console.log(`🔄 Tentativa ${attempts} de navegação para slide ${i + 2}...`);
+                  
+                  navigationSuccess = await page.evaluate((targetSlideIndex) => {
+                    console.log(`🎯 Tentando navegar para slide ${targetSlideIndex}...`);
+                    
+                    // Método 1: tentar pelo índice dos dots (mais confiável)
+                    const dots = document.querySelectorAll('.slick-dots li button');
+                    console.log(`🔍 Total de dots encontrados: ${dots.length}`);
+                    
+                    if (dots[targetSlideIndex - 1]) {
+                      console.log(`✅ Dot encontrado pelo índice: ${targetSlideIndex - 1}`);
+                      dots[targetSlideIndex - 1].click();
+                      return true;
+                    }
+                    
+                    // Método 2: tentar pelo ID específico (Dependência Química usa IDs 10, 11)
+                    const dotId = `slick-slide-control${10 + targetSlideIndex - 1}`;
+                    let dotButton = document.getElementById(dotId);
+                    
+                    if (dotButton) {
+                      console.log(`✅ Dot encontrado pelo ID: ${dotId}`);
+                      dotButton.click();
+                      return true;
+                    }
+                    
+                    // Método 3: tentar pelo botão "next"
+                    const nextButton = document.querySelector('.paginator-buttons-next');
+                    if (nextButton && !nextButton.classList.contains('slick-disabled')) {
+                      console.log(`✅ Usando botão next`);
+                      nextButton.click();
+                      return true;
+                    }
+                    
+                    console.log(`❌ Nenhum método de navegação funcionou para slide ${targetSlideIndex}`);
+                    return false;
+                  }, i + 1);
+                  
+                  if (navigationSuccess) {
+                    // Aguardar a transição
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    
+                    // Verificar se realmente mudou de slide
+                    const currentSlide = await page.evaluate(() => {
+                      const activeDot = document.querySelector('.slick-dots li.slick-active');
+                      if (activeDot) {
+                        const button = activeDot.querySelector('button');
+                        return button ? button.getAttribute('aria-label') : null;
+                      }
+                      return null;
+                    });
+                    
+                    console.log(`📍 Slide atual após navegação: ${currentSlide}`);
+                    
+                    if (currentSlide && currentSlide.includes(`${i + 2} of ${totalSlides}`)) {
+                      console.log(`✅ Navegação confirmada para slide ${i + 2}!`);
+                      break;
+                    } else {
+                      console.log(`⚠️ Navegação não confirmada, tentando novamente...`);
+                      navigationSuccess = false;
+                    }
+                  } else {
+                    console.log(`❌ Falha na tentativa ${attempts}, tentando novamente...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                  }
+                }
+                
+                if (!navigationSuccess) {
+                  console.log(`❌ Falha na navegação para slide ${i + 2} após ${maxAttempts} tentativas`);
+                  break;
+                }
+              }
+            }
+            console.log(`✅ Captura múltipla do Corpo Docente concluída!`);
+          } else {
+            console.log("ℹ️ Apenas 1 slide detectado, capturando normalmente...");
+          }
+        } catch (error) {
+          console.log(`⚠️ Erro ao capturar Corpo Docente: ${error.message}`);
+        }
+      },
     },
     {
       internal: "Cronograma de Aulas",
@@ -560,6 +684,11 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
         } catch (actionError) {
           console.log(`⚠️ Erro na ação específica para ${section.internal}: ${actionError.message}`);
           // Continua mesmo com erro na ação específica
+        }
+        // Se for Corpo Docente, pular a captura automática pois já foi feita pela action
+        if (section.internal === "Corpo Docente") {
+          console.log("ℹ️ Corpo Docente já foi capturado pela action personalizada, pulando captura automática");
+          continue;
         }
       }
 
