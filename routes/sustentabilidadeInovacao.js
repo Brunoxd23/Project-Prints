@@ -611,6 +611,85 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Processo Seletivo",
       display: "Processo Seletivo",
       selector: ".turma-wrapper-content",
+      action: async (page) => {
+        try {
+          console.log("🔍 Iniciando captura múltipla do Processo Seletivo...");
+          await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+          
+          // Aguardar carregamento dos accordions
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          const accordionTitles = [
+            "1 - INSCRIÇÃO",
+            "2 - PROCESSO SELETIVO", 
+            "3 - DIVULGAÇÃO DO RESULTADO",
+            "4 - MATRÍCULA"
+          ];
+          
+          const filenames = [
+            "11_Processo_Seletivo.png",
+            "11.1_Processo_Seletivo.png", 
+            "11.2_Processo_Seletivo.png",
+            "11.3_Processo_Seletivo.png"
+          ];
+          
+          for (let i = 0; i < accordionTitles.length; i++) {
+            console.log(`📸 Capturando accordion ${i + 1}: ${accordionTitles[i]}...`);
+            
+            // Encontrar e clicar no accordion (método mais direto)
+            const accordionClicked = await page.evaluate((index) => {
+              const accordions = document.querySelectorAll('.accordion-title.grupo.template');
+              console.log(`🔍 Total de accordions encontrados: ${accordions.length}`);
+              
+              if (accordions[index]) {
+                const h4 = accordions[index].querySelector('h4');
+                const textContent = h4 ? h4.textContent.trim() : 'Sem texto';
+                console.log(`🎯 Clicando no accordion ${index + 1}: "${textContent}"`);
+                accordions[index].click();
+                return true;
+              }
+              console.log(`❌ Accordion índice ${index} não encontrado`);
+              return false;
+            }, i);
+            
+            if (accordionClicked) {
+              // Aguardar abertura do accordion
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              
+              // Capturar screenshot
+              const content = await page.$(".turma-wrapper-content");
+              if (content) {
+                try {
+                  await content.screenshot({ path: path.join(outputFolder, filenames[i]) });
+                  console.log(`✅ Screenshot salvo: ${filenames[i]}`);
+                } catch (screenshotError) {
+                  console.error(`❌ Erro ao salvar screenshot ${filenames[i]}:`, screenshotError.message);
+                }
+              }
+              
+              // Fechar o accordion (clicar novamente)
+              await page.evaluate((index) => {
+                const accordions = document.querySelectorAll('.accordion-title.grupo.template');
+                if (accordions[index]) {
+                  console.log(`🔒 Fechando accordion índice ${index}`);
+                  accordions[index].click();
+                  return true;
+                }
+                return false;
+              }, i);
+              
+              // Aguardar fechamento
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+              console.log(`❌ Falha ao clicar no accordion: ${accordionTitles[i]}`);
+            }
+          }
+          
+          console.log(`✅ Captura múltipla do Processo Seletivo concluída!`);
+        } catch (error) {
+          console.log(`⚠️ Erro ao capturar Processo Seletivo: ${error.message}`);
+        }
+      },
     },
     {
       internal: "Perguntas frequentes (FAQ)",

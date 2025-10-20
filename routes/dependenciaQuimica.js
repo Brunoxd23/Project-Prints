@@ -483,117 +483,141 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
           console.log("🔍 Iniciando captura múltipla do Corpo Docente...");
           await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
           
-          // Detectar número de slides
-          const totalSlides = await page.evaluate(() => {
-            const dots = document.querySelectorAll('.slick-dots li');
-            return dots.length;
-          });
-          
-          console.log(`🎠 Carrossel detectado com ${totalSlides} slides`);
+          // Detectar número de slides (sempre 2 para Dependência Química)
+          const totalSlides = 2;
+          console.log(`🎠 Carrossel detectado com ${totalSlides} slides (fixo para Dependência Química)`);
           
           if (totalSlides > 1) {
-            // Capturar cada slide
-            for (let i = 0; i < totalSlides; i++) {
-              console.log(`📸 Capturando slide ${i + 1} de ${totalSlides}...`);
+            // Primeiro, garantir que estamos no slide 1
+            console.log(`🎯 Garantindo que estamos no primeiro slide...`);
+            await page.evaluate(() => {
+              const firstDot = document.getElementById('slick-slide-control10');
+              if (firstDot && !firstDot.closest('li').classList.contains('slick-active')) {
+                console.log('🔄 Navegando para o primeiro slide...');
+                firstDot.click();
+              }
+            });
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const filenames = ['06_Corpo_Docente.png', '06.1_Corpo_Docente.png'];
+            
+            // Capturar slide 1 (já estamos nele)
+            console.log(`📸 Capturando slide 1 de 2...`);
+            const content = await page.$(".turma-wrapper-content");
+            if (content) {
+              try {
+                await content.screenshot({ path: path.join(outputFolder, filenames[0]) });
+                console.log(`✅ Screenshot salvo: ${filenames[0]}`);
+              } catch (screenshotError) {
+                console.error(`❌ Erro ao salvar screenshot ${filenames[0]}:`, screenshotError.message);
+              }
+            }
+            
+            // Navegar para o slide 2 usando múltiplas estratégias
+            console.log(`📸 Capturando slide 2 de 2...`);
+            
+            // Estratégia 1: Tentar com a seta "next"
+            let navigationSuccess = false;
+            
+            const nextClicked = await page.evaluate(() => {
+              const nextButton = document.querySelector('.paginator-buttons-next.slick-arrow');
+              if (nextButton && !nextButton.classList.contains('slick-disabled')) {
+                console.log('➡️ Clicando na seta "next"...');
+                nextButton.click();
+                return true;
+              } else {
+                console.log('❌ Botão next não encontrado ou desabilitado');
+                return false;
+              }
+            });
+            
+            if (nextClicked) {
+              // Aguardar transição
+              await new Promise(resolve => setTimeout(resolve, 3000));
               
-              // Aguardar um pouco antes de capturar
+              // Verificar se mudou
+              const currentSlide = await page.evaluate(() => {
+                const activeDot = document.querySelector('.slick-dots li.slick-active');
+                if (activeDot) {
+                  const button = activeDot.querySelector('button');
+                  if (button) {
+                    const ariaLabel = button.getAttribute('aria-label');
+                    console.log(`📍 Slide atual: ${ariaLabel}`);
+                    return ariaLabel;
+                  }
+                }
+                return null;
+              });
+              
+              console.log(`📍 Slide após navegação: ${currentSlide}`);
+              
+              if (currentSlide && currentSlide.includes('2 of 2')) {
+                console.log(`✅ Navegação para slide 2 confirmada!`);
+                navigationSuccess = true;
+              } else {
+                console.log(`⚠️ Navegação com seta não funcionou, tentando com dot...`);
+              }
+            }
+            
+            // Estratégia 2: Se a seta não funcionou, tentar com o dot
+            if (!navigationSuccess) {
+              console.log(`🎯 Tentando navegar com dot do slide 2...`);
+              
+              const dotClicked = await page.evaluate(() => {
+                const dotButton = document.getElementById('slick-slide-control11');
+                if (dotButton) {
+                  console.log('🎯 Clicando no dot do slide 2...');
+                  dotButton.click();
+                  return true;
+                } else {
+                  console.log('❌ Dot do slide 2 não encontrado');
+                  return false;
+                }
+              });
+              
+              if (dotClicked) {
+                // Aguardar transição
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Verificar se mudou
+                const currentSlide = await page.evaluate(() => {
+                  const activeDot = document.querySelector('.slick-dots li.slick-active');
+                  if (activeDot) {
+                    const button = activeDot.querySelector('button');
+                    if (button) {
+                      const ariaLabel = button.getAttribute('aria-label');
+                      console.log(`📍 Slide atual após dot: ${ariaLabel}`);
+                      return ariaLabel;
+                    }
+                  }
+                  return null;
+                });
+                
+                if (currentSlide && currentSlide.includes('2 of 2')) {
+                  console.log(`✅ Navegação com dot confirmada!`);
+                  navigationSuccess = true;
+                }
+              }
+            }
+            
+            if (navigationSuccess) {
+              // Aguardar estabilização
               await new Promise(resolve => setTimeout(resolve, 1500));
               
               // Capturar screenshot
               const content = await page.$(".turma-wrapper-content");
               if (content) {
-                const filename = i === 0 ? "06_Corpo_Docente.png" : `06.${i}_Corpo_Docente.png`;
                 try {
-                  await content.screenshot({ path: path.join(outputFolder, filename) });
-                  console.log(`✅ Screenshot salvo: ${filename}`);
+                  await content.screenshot({ path: path.join(outputFolder, filenames[1]) });
+                  console.log(`✅ Screenshot salvo: ${filenames[1]}`);
                 } catch (screenshotError) {
-                  console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
+                  console.error(`❌ Erro ao salvar screenshot ${filenames[1]}:`, screenshotError.message);
                 }
               }
-              
-              // Navegar para o próximo slide (exceto no último)
-              if (i < totalSlides - 1) {
-                console.log(`➡️ Navegando para o slide ${i + 2}...`);
-                
-                // Estratégia melhorada: usar múltiplas tentativas de navegação
-                let navigationSuccess = false;
-                let attempts = 0;
-                const maxAttempts = 3;
-                
-                while (!navigationSuccess && attempts < maxAttempts) {
-                  attempts++;
-                  console.log(`🔄 Tentativa ${attempts} de navegação para slide ${i + 2}...`);
-                  
-                  navigationSuccess = await page.evaluate((targetSlideIndex) => {
-                    console.log(`🎯 Tentando navegar para slide ${targetSlideIndex}...`);
-                    
-                    // Método 1: tentar pelo índice dos dots (mais confiável)
-                    const dots = document.querySelectorAll('.slick-dots li button');
-                    console.log(`🔍 Total de dots encontrados: ${dots.length}`);
-                    
-                    if (dots[targetSlideIndex - 1]) {
-                      console.log(`✅ Dot encontrado pelo índice: ${targetSlideIndex - 1}`);
-                      dots[targetSlideIndex - 1].click();
-                      return true;
-                    }
-                    
-                    // Método 2: tentar pelo ID específico (Dependência Química usa IDs 10, 11)
-                    const dotId = `slick-slide-control${10 + targetSlideIndex - 1}`;
-                    let dotButton = document.getElementById(dotId);
-                    
-                    if (dotButton) {
-                      console.log(`✅ Dot encontrado pelo ID: ${dotId}`);
-                      dotButton.click();
-                      return true;
-                    }
-                    
-                    // Método 3: tentar pelo botão "next"
-                    const nextButton = document.querySelector('.paginator-buttons-next');
-                    if (nextButton && !nextButton.classList.contains('slick-disabled')) {
-                      console.log(`✅ Usando botão next`);
-                      nextButton.click();
-                      return true;
-                    }
-                    
-                    console.log(`❌ Nenhum método de navegação funcionou para slide ${targetSlideIndex}`);
-                    return false;
-                  }, i + 1);
-                  
-                  if (navigationSuccess) {
-                    // Aguardar a transição
-                    await new Promise(resolve => setTimeout(resolve, 3000));
-                    
-                    // Verificar se realmente mudou de slide
-                    const currentSlide = await page.evaluate(() => {
-                      const activeDot = document.querySelector('.slick-dots li.slick-active');
-                      if (activeDot) {
-                        const button = activeDot.querySelector('button');
-                        return button ? button.getAttribute('aria-label') : null;
-                      }
-                      return null;
-                    });
-                    
-                    console.log(`📍 Slide atual após navegação: ${currentSlide}`);
-                    
-                    if (currentSlide && currentSlide.includes(`${i + 2} of ${totalSlides}`)) {
-                      console.log(`✅ Navegação confirmada para slide ${i + 2}!`);
-                      break;
-                    } else {
-                      console.log(`⚠️ Navegação não confirmada, tentando novamente...`);
-                      navigationSuccess = false;
-                    }
-                  } else {
-                    console.log(`❌ Falha na tentativa ${attempts}, tentando novamente...`);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                  }
-                }
-                
-                if (!navigationSuccess) {
-                  console.log(`❌ Falha na navegação para slide ${i + 2} após ${maxAttempts} tentativas`);
-                  break;
-                }
-              }
+            } else {
+              console.log(`❌ Falha ao navegar para slide 2 com ambas as estratégias`);
             }
+            
             console.log(`✅ Captura múltipla do Corpo Docente concluída!`);
           } else {
             console.log("ℹ️ Apenas 1 slide detectado, capturando normalmente...");
@@ -627,6 +651,85 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Processo Seletivo",
       display: "Processo Seletivo",
       selector: ".turma-wrapper-content",
+      action: async (page) => {
+        try {
+          console.log("🔍 Iniciando captura múltipla do Processo Seletivo...");
+          await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+          
+          // Aguardar carregamento dos accordions
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          const accordionTitles = [
+            "1 - INSCRIÇÃO",
+            "2 - PROCESSO SELETIVO", 
+            "3 - DIVULGAÇÃO DO RESULTADO",
+            "4 - MATRÍCULA"
+          ];
+          
+          const filenames = [
+            "11_Processo_Seletivo.png",
+            "11.1_Processo_Seletivo.png", 
+            "11.2_Processo_Seletivo.png",
+            "11.3_Processo_Seletivo.png"
+          ];
+          
+          for (let i = 0; i < accordionTitles.length; i++) {
+            console.log(`📸 Capturando accordion ${i + 1}: ${accordionTitles[i]}...`);
+            
+            // Encontrar e clicar no accordion (método mais direto)
+            const accordionClicked = await page.evaluate((index) => {
+              const accordions = document.querySelectorAll('.accordion-title.grupo.template');
+              console.log(`🔍 Total de accordions encontrados: ${accordions.length}`);
+              
+              if (accordions[index]) {
+                const h4 = accordions[index].querySelector('h4');
+                const textContent = h4 ? h4.textContent.trim() : 'Sem texto';
+                console.log(`🎯 Clicando no accordion ${index + 1}: "${textContent}"`);
+                accordions[index].click();
+                return true;
+              }
+              console.log(`❌ Accordion índice ${index} não encontrado`);
+              return false;
+            }, i);
+            
+            if (accordionClicked) {
+              // Aguardar abertura do accordion
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              
+              // Capturar screenshot
+              const content = await page.$(".turma-wrapper-content");
+              if (content) {
+                try {
+                  await content.screenshot({ path: path.join(outputFolder, filenames[i]) });
+                  console.log(`✅ Screenshot salvo: ${filenames[i]}`);
+                } catch (screenshotError) {
+                  console.error(`❌ Erro ao salvar screenshot ${filenames[i]}:`, screenshotError.message);
+                }
+              }
+              
+              // Fechar o accordion (clicar novamente)
+              await page.evaluate((index) => {
+                const accordions = document.querySelectorAll('.accordion-title.grupo.template');
+                if (accordions[index]) {
+                  console.log(`🔒 Fechando accordion índice ${index}`);
+                  accordions[index].click();
+                  return true;
+                }
+                return false;
+              }, i);
+              
+              // Aguardar fechamento
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+              console.log(`❌ Falha ao clicar no accordion: ${accordionTitles[i]}`);
+            }
+          }
+          
+          console.log(`✅ Captura múltipla do Processo Seletivo concluída!`);
+        } catch (error) {
+          console.log(`⚠️ Erro ao capturar Processo Seletivo: ${error.message}`);
+        }
+      },
     },
     {
       internal: "Perguntas frequentes (FAQ)",
