@@ -597,10 +597,13 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
             });
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            const filenames = ['06_Corpo_Docente.png', '06.1_Corpo_Docente.png', '06.2_Corpo_Docente.png', '06.3_Corpo_Docente.png'];
+            const filenames = [];
+            for (let j = 1; j <= totalSlides; j++) {
+              filenames.push(`06.${j}_Corpo_Docente.png`);
+            }
             
             // Capturar slide 1 (já estamos nele)
-            console.log(`📸 Capturando slide 1 de 4...`);
+            console.log(`📸 Capturando slide 1 de ${totalSlides}...`);
             const content = await page.$(".turma-wrapper-content");
             if (content) {
               try {
@@ -612,8 +615,8 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
             }
             
             // Navegar pelos slides usando as setas
-            for (let i = 1; i < 4; i++) {
-              console.log(`📸 Capturando slide ${i + 1} de 4...`);
+            for (let i = 1; i < totalSlides; i++) {
+              console.log(`📸 Capturando slide ${i + 1} de ${totalSlides}...`);
               
               // Usar a seta "next" para navegar
               const nextClicked = await page.evaluate(() => {
@@ -715,42 +718,80 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
           ];
           
           const filenames = [
-            "11_Processo_Seletivo.png",
-            "11.1_Processo_Seletivo.png", 
-            "11.2_Processo_Seletivo.png",
-            "11.3_Processo_Seletivo.png"
+            "11.1_Inscricao.png",
+            "11.2_Processo_Seletivo.png", 
+            "11.3_Divulgacao_do_Resultado.png",
+            "11.4_Matricula.png"
           ];
           
           for (let i = 0; i < accordionTitles.length; i++) {
             console.log(`📸 Capturando accordion ${i + 1}: ${accordionTitles[i]}...`);
             
-            // Encontrar e clicar no accordion
+            // Encontrar e clicar no accordion (método mais direto e robusto)
             const accordionClicked = await page.evaluate((title) => {
               const accordions = document.querySelectorAll('.accordion-title.grupo.template');
               console.log(`🔍 Total de accordions encontrados: ${accordions.length}`);
-              
+
+              let targetAccordion = null;
               for (let j = 0; j < accordions.length; j++) {
                 const accordion = accordions[j];
                 const h4 = accordion.querySelector('h4');
-                if (h4) {
-                  const textContent = h4.textContent.trim();
-                  console.log(`🔍 Accordion ${j + 1}: "${textContent}"`);
-                  
-                  // Verificar se contém o título (mais flexível)
-                  if (textContent.includes(title) || title.includes(textContent.split(' - ')[1])) {
-                    console.log(`🎯 Clicando no accordion: ${title} (encontrado: "${textContent}")`);
-                    accordion.click();
-                    return true;
-                  }
+                if (!h4) continue;
+                const textContent = h4.textContent.trim();
+                console.log(`🔍 Accordion ${j + 1}: "${textContent}"`);
+                if (textContent.includes(title) || title.includes(textContent.split(' - ')[1])) {
+                  targetAccordion = accordion;
+                  break;
                 }
               }
-              console.log(`❌ Accordion não encontrado: ${title}`);
-              return false;
+
+              if (!targetAccordion) {
+                console.log(`❌ Accordion não encontrado: ${title}`);
+                return false;
+              }
+
+              // Fechar todos os accordions primeiro
+              console.log('🔒 Fechando todos os accordions primeiro...');
+              accordions.forEach(el => {
+                if (el.classList.contains('active')) {
+                  el.click();
+                }
+              });
+
+              // Aguardar um pouco para o fechamento
+              setTimeout(() => {}, 500);
+
+              // Agora clicar no accordion alvo
+              console.log(`🎯 Clicando no accordion alvo: ${title}`);
+              targetAccordion.click();
+
+              // Verificar se abriu e tentar novamente se necessário
+              setTimeout(() => {
+                const panel = targetAccordion.nextElementSibling;
+                if (!panel || panel.style.display === 'none') {
+                  console.log('🔄 Accordion não abriu, tentando novamente...');
+                  targetAccordion.click();
+                  
+                  // Se ainda não abriu, tentar clicar diretamente no h4
+                  setTimeout(() => {
+                    const panel2 = targetAccordion.nextElementSibling;
+                    if (!panel2 || panel2.style.display === 'none') {
+                      const h4 = targetAccordion.querySelector('h4');
+                      if (h4) {
+                        console.log('🔁 Tentando clicar no h4 do accordion');
+                        h4.click();
+                      }
+                    }
+                  }, 200);
+                }
+              }, 300);
+
+              return true;
             }, accordionTitles[i]);
             
             if (accordionClicked) {
-              // Aguardar abertura do accordion
-              await new Promise(resolve => setTimeout(resolve, 2000));
+              // Aguardar abertura do accordion com mais tempo
+              await new Promise(resolve => setTimeout(resolve, 3000));
               
               // Verificar se o accordion realmente abriu
               const accordionOpened = await page.evaluate((title) => {
@@ -773,11 +814,19 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
               
               if (accordionOpened) {
                 // Aguardar mais um pouco para estabilização
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 1500));
+              } else {
+                console.log(`⚠️ Accordion ${accordionTitles[i]} pode não ter aberto, mas continuando...`);
               }
               
-              // Capturar screenshot
-              const content = await page.$(".turma-wrapper-content");
+              // Rolagem para garantir visibilidade do conteúdo completo
+              await page.evaluate(() => {
+                const container = document.querySelector('.turma-wrapper-content');
+                if (container) container.scrollIntoView({ behavior: 'instant', block: 'start' });
+              });
+
+              // Capturar screenshot do conteúdo completo da turma
+              const content = await page.$('.turma-wrapper-content');
               if (content) {
                 try {
                   await content.screenshot({ path: path.join(outputFolder, filenames[i]) });
