@@ -867,6 +867,162 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Perguntas frequentes (FAQ)",
       display: "Perguntas frequentes FAQ",
       selector: ".turma-wrapper-content",
+      action: async (page) => {
+        try {
+          console.log("🔍 Iniciando captura múltipla das Perguntas Frequentes (FAQ)...");
+          
+          // Selecionar a aba FAQ
+          await page.evaluate(() => {
+            const faqDiv = Array.from(document.querySelectorAll('.menu-item button')).find(button => {
+              return button.innerText.trim().toLowerCase().includes("perguntas frequentes");
+            });
+            if (faqDiv) faqDiv.click();
+          });
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+          
+          // Aguardar mais tempo para o conteúdo FAQ carregar completamente
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
+          // Tentar encontrar os accordions FAQ com seletor mais específico
+          await page.waitForSelector("#faq button.accordion.template.campo", { visible: true, timeout: 10000 });
+          
+          // Verificar se encontrou os accordions FAQ
+          const faqAccordions = await page.$$('#faq button.accordion.template.campo');
+          console.log(`🔍 Accordions FAQ encontrados: ${faqAccordions.length}`);
+          
+          if (faqAccordions.length === 0) {
+            console.error("❌ Nenhum accordion FAQ encontrado!");
+            return;
+          }
+          
+          // Aguardar carregamento dos accordions
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Detectar número de accordions (sempre 11 para Dependência Química FAQ)
+          const totalAccordions = 11;
+          console.log(`🎠 Accordions FAQ detectados: ${totalAccordions} (fixo para Dependência Química)`);
+          
+          const filenames = [
+            "12.1_Perguntas_frequentes_FAQ.png",
+            "12.2_Perguntas_frequentes_FAQ.png", 
+            "12.3_Perguntas_frequentes_FAQ.png",
+            "12.4_Perguntas_frequentes_FAQ.png",
+            "12.5_Perguntas_frequentes_FAQ.png",
+            "12.6_Perguntas_frequentes_FAQ.png",
+            "12.7_Perguntas_frequentes_FAQ.png",
+            "12.8_Perguntas_frequentes_FAQ.png",
+            "12.9_Perguntas_frequentes_FAQ.png",
+            "12.10_Perguntas_frequentes_FAQ.png",
+            "12.11_Perguntas_frequentes_FAQ.png"
+          ];
+          
+          for (let i = 0; i < totalAccordions; i++) {
+            console.log(`📸 Capturando FAQ accordion ${i + 1} de ${totalAccordions}...`);
+            
+            // Encontrar e clicar no accordion (método mais direto e robusto)
+            const accordionClicked = await page.evaluate((index) => {
+              const accordions = document.querySelectorAll('#faq .accordion.template.campo');
+              console.log(`🔍 Total de accordions FAQ encontrados: ${accordions.length}`);
+
+              if (index >= accordions.length) {
+                console.log(`❌ Índice ${index} maior que número de accordions disponíveis`);
+                return false;
+              }
+
+              const targetAccordion = accordions[index];
+              if (!targetAccordion) {
+                console.log(`❌ Accordion FAQ no índice ${index} não encontrado`);
+                return false;
+              }
+
+              // Fechar todos os accordions primeiro
+              console.log('🔒 Fechando todos os accordions FAQ primeiro...');
+              accordions.forEach(el => {
+                const panel = el.nextElementSibling;
+                if (panel && panel.style.display !== 'none') {
+                  el.click();
+                }
+              });
+
+              // Aguardar um pouco para o fechamento
+              setTimeout(() => {}, 500);
+
+              // Agora clicar no accordion alvo
+              console.log(`🎯 Clicando no accordion FAQ ${index + 1}...`);
+              targetAccordion.click();
+
+              // Verificar se abriu e tentar novamente se necessário
+              setTimeout(() => {
+                const panel = targetAccordion.nextElementSibling;
+                if (!panel || panel.style.display === 'none') {
+                  console.log('🔄 Accordion FAQ não abriu, tentando novamente...');
+                  targetAccordion.click();
+                  
+                  // Se ainda não abriu, tentar clicar diretamente no texto
+                  setTimeout(() => {
+                    const panel2 = targetAccordion.nextElementSibling;
+                    if (!panel2 || panel2.style.display === 'none') {
+                      console.log('🔁 Tentando clicar no texto do accordion FAQ');
+                      targetAccordion.click();
+                    }
+                  }, 200);
+                }
+              }, 300);
+
+              return true;
+            }, i);
+            
+            if (accordionClicked) {
+              // Aguardar abertura do accordion com mais tempo
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              
+              // Verificar se o accordion realmente abriu
+              const accordionOpened = await page.evaluate((index) => {
+                const accordions = document.querySelectorAll('#faq .accordion.template.campo');
+                if (index >= accordions.length) return false;
+                
+                const accordion = accordions[index];
+                const content = accordion.nextElementSibling;
+                if (content && content.style.display !== 'none') {
+                  console.log(`✅ Accordion FAQ ${index + 1} está aberto`);
+                  return true;
+                } else {
+                  console.log(`⚠️ Accordion FAQ ${index + 1} pode não ter aberto`);
+                  return false;
+                }
+              }, i);
+              
+              if (accordionOpened) {
+                // Aguardar um pouco mais para garantir que o conteúdo está totalmente carregado
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Capturar screenshot
+                const content = await page.$('.turma-wrapper-content');
+                if (content) {
+                  const filename = filenames[i];
+                  await content.screenshot({ path: path.join(outputFolder, filename) });
+                  console.log(`✅ Screenshot FAQ salvo: ${filename}`);
+                } else {
+                  console.warn(`⚠️ Conteúdo FAQ não encontrado para accordion ${i + 1}`);
+                }
+              } else {
+                console.warn(`⚠️ Accordion FAQ ${i + 1} não abriu corretamente, pulando...`);
+              }
+            } else {
+              console.warn(`⚠️ Não foi possível clicar no accordion FAQ ${i + 1}`);
+            }
+            
+            // Aguardar entre capturas
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          
+          console.log(`✅ Captura múltipla do FAQ concluída!`);
+        } catch (error) {
+          console.error(`⚠️ Erro ao capturar FAQ: ${error.message}`);
+        }
+      },
     },
   ];
 
@@ -920,10 +1076,10 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
           console.log(`⚠️ Erro na ação específica para ${section.internal}: ${actionError.message}`);
           // Continua mesmo com erro na ação específica
         }
-        // Se for Corpo Docente ou Processo Seletivo, pular a captura automática pois já foi feita pela action
-        if (section.internal === "Corpo Docente" || section.internal === "Processo Seletivo") {
-          console.log(`ℹ️ ${section.internal} já foi capturado pela action personalizada, pulando captura automática`);
-          continue;
+       // Se for Corpo Docente, Processo Seletivo, Programa e Metodologia ou FAQ, pular a captura automática pois já foi feita pela action
+       if (section.internal === "Corpo Docente" || section.internal === "Processo Seletivo" || section.internal === "Programa e Metodologia" || section.internal === "Perguntas frequentes (FAQ)") {
+        console.log(`ℹ️ ${section.internal} já foi capturado pela action personalizada, pulando captura automática`);
+        continue;
         }
       }
 

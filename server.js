@@ -48,8 +48,10 @@ app.get("/listar-semestres/:pasta", (req, res) => {
         'DQ_Mensal': { course: 'Dependência Química', subcourse: 'Unidade Paulista | Mensal' },
         'BSI_Mensal': { course: 'Bases da Saúde Integrativa e Bem-Estar', subcourse: 'Unidade Paulista | Mensal' },
         'IFS_Mensal': { course: 'Gestão de Infraestrutura e Facilities em Saúde', subcourse: 'Unidade Paulista | Mensal' },
+        'GIF_Mensal': { course: 'Gestão de Infraestrutura e Facilities em Saúde', subcourse: 'Unidade Paulista II | Mensal' },
         'PM_Mensal': { course: 'Psiquiatria Multiprofissional', subcourse: 'Unidade Paulista | Mensal' },
-        'SI_Mensal': { course: 'Sustentabilidade: Liderança e Inovação em ESG', subcourse: 'Unidade Paulista | Mensal' }
+        'SI_Mensal': { course: 'Sustentabilidade: Liderança e Inovação em ESG', subcourse: 'Unidade Paulista | Mensal' },
+        'SLI_Quinzenal': { course: 'Sustentabilidade: Liderança e Inovação em ESG', subcourse: 'Unidade Paulista II | Quinzenal' }
       };
       return routeMap[routePath] || { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Quinzenal' };
     };
@@ -67,10 +69,12 @@ app.get("/listar-semestres/:pasta", (req, res) => {
       const subcourseMap = {
         "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
         "Unidade Paulista | Quinzenal": "Quinzenal",
+        "Unidade Paulista II | Quinzenal": "Quinzenal",
         "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
         "Unidade Goiânia | Mensal": "GO-Mensal",
         "Unidade Paulista | Semanal": "Semanal",
-        "Unidade Paulista | Mensal": "Mensal"
+        "Unidade Paulista | Mensal": "Mensal",
+        "Unidade Paulista II | Mensal": "Mensal"
       };
 
       const fullCourseName = courseMap[courseName] || courseName;
@@ -178,8 +182,10 @@ app.get("/listar-prints", (req, res) => {
       'DQ_Mensal': { course: 'Dependência Química', subcourse: 'Unidade Paulista | Mensal' },
       'BSI_Mensal': { course: 'Bases da Saúde Integrativa e Bem-Estar', subcourse: 'Unidade Paulista | Mensal' },
       'IFS_Mensal': { course: 'Gestão de Infraestrutura e Facilities em Saúde', subcourse: 'Unidade Paulista | Mensal' },
+      'GIF_Mensal': { course: 'Gestão de Infraestrutura e Facilities em Saúde', subcourse: 'Unidade Paulista II | Mensal' },
       'PM_Mensal': { course: 'Psiquiatria Multiprofissional', subcourse: 'Unidade Paulista | Mensal' },
-      'SI_Mensal': { course: 'Sustentabilidade: Liderança e Inovação em ESG', subcourse: 'Unidade Paulista | Mensal' }
+      'SI_Mensal': { course: 'Sustentabilidade: Liderança e Inovação em ESG', subcourse: 'Unidade Paulista | Mensal' },
+      'SLI_Quinzenal': { course: 'Sustentabilidade: Liderança e Inovação em ESG', subcourse: 'Unidade Paulista II | Quinzenal' }
     };
     return routeMap[routePath] || { course: 'Cuidados Paliativos', subcourse: 'Unidade Paulista | Quinzenal' };
   };
@@ -197,10 +203,12 @@ app.get("/listar-prints", (req, res) => {
     const subcourseMap = {
       "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
       "Unidade Paulista | Quinzenal": "Quinzenal",
+      "Unidade Paulista II | Quinzenal": "Quinzenal",
       "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
       "Unidade Goiânia | Mensal": "GO-Mensal",
       "Unidade Paulista | Semanal": "Semanal",
-      "Unidade Paulista | Mensal": "Mensal"
+      "Unidade Paulista | Mensal": "Mensal",
+      "Unidade Paulista II | Mensal": "Mensal"
     };
 
     const fullCourseName = courseMap[courseName] || courseName;
@@ -1001,50 +1009,196 @@ app.post("/update-all-prints/:pasta/:semester", async (req, res) => {
             console.log(`⚠️ Erro ao clicar no botão ${sectionName}:`, navError.message);
           }
           
-          // Aguardar conteúdo carregar e expandir seções se necessário
+          // Aguardar conteúdo carregar
           try {
             console.log(`🔄 Aguardando conteúdo de ${sectionName} carregar...`);
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // Tentar expandir seções colapsáveis (como "Disciplinas")
-            await page.evaluate(() => {
-              const expandableSelectors = [
-                '.disciplinas',
-                '.collapsible',
-                '.expandable',
-                '[data-toggle="collapse"]',
-                '.accordion-toggle'
-              ];
+            // Detectar número de accordions disponíveis
+            const totalAccordions = await page.evaluate(() => {
+              // Tentar diferentes seletores para encontrar os accordions
+              let accordions = document.querySelectorAll('.accordion.template.campo');
+              console.log(`🔍 Detecção - Accordions encontrados com '.accordion.template.campo': ${accordions.length}`);
               
-              for (const selector of expandableSelectors) {
-                const element = document.querySelector(selector);
-                if (element && element.textContent.toLowerCase().includes('disciplina')) {
-                  console.log(`Expandindo seção: ${selector}`);
-                  element.click();
-                  return true;
-                }
+              if (accordions.length === 0) {
+                accordions = document.querySelectorAll('.accordion-title.grupo.template');
+                console.log(`🔍 Detecção - Accordions encontrados com '.accordion-title.grupo.template': ${accordions.length}`);
               }
               
-              // Tentar clicar em elementos que contenham "Disciplinas"
-              const allElements = Array.from(document.querySelectorAll('*'));
-              const disciplinaElement = allElements.find(el => 
-                el.textContent.trim().toLowerCase().includes('disciplinas') && 
-                el.tagName !== 'SCRIPT' && 
-                el.tagName !== 'STYLE'
-              );
-              
-              if (disciplinaElement) {
-                console.log('Clicando em elemento que contém "Disciplinas"');
-                disciplinaElement.click();
-                return true;
+              if (accordions.length === 0) {
+                accordions = document.querySelectorAll('[class*="accordion"]');
+                console.log(`🔍 Detecção - Accordions encontrados com '[class*="accordion"]': ${accordions.length}`);
               }
               
-              return false;
+              return accordions.length;
             });
             
-            // Aguardar expansão
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            console.log(`✅ Conteúdo de ${sectionName} preparado`);
+            console.log(`🎯 Total de accordions detectados: ${totalAccordions}`);
+            
+            // Determinar número esperado de accordions baseado no curso
+            let expectedAccordions = 6; // padrão
+            if (pasta.includes("SLI_Quinzenal") || pasta.includes("GIF_Mensal")) {
+              expectedAccordions = 16; // Sustentabilidade e Infraestrutura têm 16 accordions
+            } else if (pasta.includes("DQ_Mensal")) {
+              expectedAccordions = 6; // Dependência Química tem 6 accordions
+            }
+            
+            const accordionsToProcess = Math.min(totalAccordions, expectedAccordions);
+            console.log(`📋 Processando ${accordionsToProcess} accordions...`);
+            
+            // Capturar cada accordion individualmente
+            for (let i = 0; i < accordionsToProcess; i++) {
+              console.log(`📸 Capturando accordion ${i + 1} de ${accordionsToProcess}...`);
+              
+              // Encontrar e clicar no accordion específico
+              const accordionClicked = await page.evaluate((index) => {
+                // Tentar diferentes seletores para encontrar os accordions
+                let accordions = document.querySelectorAll('.accordion.template.campo');
+                console.log(`🔍 Tentativa 1 - Accordions encontrados com '.accordion.template.campo': ${accordions.length}`);
+                
+                if (accordions.length === 0) {
+                  accordions = document.querySelectorAll('.accordion-title.grupo.template');
+                  console.log(`🔍 Tentativa 2 - Accordions encontrados com '.accordion-title.grupo.template': ${accordions.length}`);
+                }
+                
+                if (accordions.length === 0) {
+                  accordions = document.querySelectorAll('[class*="accordion"]');
+                  console.log(`🔍 Tentativa 3 - Accordions encontrados com '[class*="accordion"]': ${accordions.length}`);
+                }
+
+                if (index >= accordions.length) {
+                  console.log(`❌ Índice ${index} fora do range (${accordions.length} accordions disponíveis)`);
+                  return false;
+                }
+
+                const targetAccordion = accordions[index];
+                if (!targetAccordion) {
+                  console.log(`❌ Accordion no índice ${index} não encontrado`);
+                  return false;
+                }
+
+                const title = targetAccordion.textContent ? targetAccordion.textContent.trim().substring(0, 50) : `Accordion ${index + 1}`;
+                console.log(`🎯 Processando accordion ${index + 1}: "${title}"`);
+
+                // Fechar todos os accordions primeiro
+                console.log('🔒 Fechando todos os accordions primeiro...');
+                accordions.forEach(el => {
+                  const panel = el.nextElementSibling;
+                  if (panel && panel.style.display !== 'none') {
+                    el.click();
+                  }
+                });
+
+                // Aguardar um pouco para o fechamento
+                setTimeout(() => {}, 500);
+
+                // Scroll especial para o primeiro accordion para evitar sobreposição do botão "Inscreva-se"
+                if (index === 0) {
+                  console.log('📜 Fazendo scroll especial para o primeiro accordion...');
+                  window.scrollBy(0, 200);
+                  setTimeout(() => {}, 300);
+                }
+
+                // Agora clicar no accordion alvo
+                console.log(`🎯 Clicando no accordion ${index + 1}...`);
+                targetAccordion.click();
+
+                // Verificar se abriu e tentar novamente se necessário
+                setTimeout(() => {
+                  const panel = targetAccordion.nextElementSibling;
+                  if (!panel || panel.style.display === 'none') {
+                    console.log('🔄 Accordion não abriu, tentando novamente...');
+                    targetAccordion.click();
+                    
+                    // Se ainda não abriu, tentar clicar diretamente no texto
+                    setTimeout(() => {
+                      const panel2 = targetAccordion.nextElementSibling;
+                      if (!panel2 || panel2.style.display === 'none') {
+                        console.log('🔁 Tentando clicar no texto do accordion');
+                        targetAccordion.click();
+                      }
+                    }, 200);
+                  }
+                }, 300);
+
+                return true;
+              }, i);
+              
+              if (accordionClicked) {
+                // Aguardar abertura do accordion com mais tempo
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Verificar se o accordion realmente abriu
+                const accordionOpened = await page.evaluate((index) => {
+                  // Usar os mesmos seletores da detecção
+                  let accordions = document.querySelectorAll('.accordion.template.campo');
+                  if (accordions.length === 0) {
+                    accordions = document.querySelectorAll('.accordion-title.grupo.template');
+                  }
+                  if (accordions.length === 0) {
+                    accordions = document.querySelectorAll('[class*="accordion"]');
+                  }
+                  
+                  if (index >= accordions.length) return false;
+                  
+                  const accordion = accordions[index];
+                  const content = accordion.nextElementSibling;
+                  if (content && content.style.display !== 'none') {
+                    console.log(`✅ Accordion ${index + 1} está aberto`);
+                    return true;
+                  } else {
+                    console.log(`⚠️ Accordion ${index + 1} pode não ter aberto`);
+                    return false;
+                  }
+                }, i);
+                
+                if (accordionOpened) {
+                  // Aguardar mais um pouco para estabilização
+                  await new Promise(resolve => setTimeout(resolve, 1500));
+                } else {
+                  console.log(`⚠️ Accordion ${i + 1} pode não ter aberto, mas continuando...`);
+                }
+                
+                // Capturar screenshot
+                const nextNumber = getNextSequentialNumber(sectionNumber, outputFolder);
+                const filename = `${sectionNumber}.${i + 1} - Atualizado ${dateStr} - ${sectionName}.png`;
+                
+                try {
+                  await page.screenshot({ path: path.join(outputFolder, filename), fullPage: true });
+                  console.log(`✅ Screenshot salvo: ${filename}`);
+                } catch (screenshotError) {
+                  console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
+                }
+                
+                // Fechar o accordion (clicar novamente)
+                await page.evaluate((index) => {
+                  // Usar os mesmos seletores da detecção
+                  let accordions = document.querySelectorAll('.accordion.template.campo');
+                  if (accordions.length === 0) {
+                    accordions = document.querySelectorAll('.accordion-title.grupo.template');
+                  }
+                  if (accordions.length === 0) {
+                    accordions = document.querySelectorAll('[class*="accordion"]');
+                  }
+                  
+                  if (index >= accordions.length) return false;
+                  
+                  const accordion = accordions[index];
+                  console.log(`🔒 Fechando accordion ${index + 1}`);
+                  accordion.click();
+                  return true;
+                }, i);
+                
+                // Aguardar fechamento
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              } else {
+                console.log(`❌ Falha ao clicar no accordion ${i + 1}`);
+              }
+            }
+            
+            console.log(`✅ Captura múltipla do Programa e Metodologia concluída!`);
+            return `${accordionsToProcess} accordions capturados`;
           } catch (expandError) {
             console.log(`⚠️ Erro ao expandir conteúdo:`, expandError.message);
           }

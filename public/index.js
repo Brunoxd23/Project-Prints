@@ -217,6 +217,56 @@ if (cardHibrida) {
   };
 }
 
+// Função para ir aos cursos (usada pela logo Einstein)
+function goToCourses() {
+  console.log('🏠 Logo Einstein clicada - indo para cursos');
+  
+  // Salvar estado atual
+  saveCurrentState({
+    view: 'cursos'
+  });
+  
+  // Esconder todas as outras views
+  document.getElementById("folder-view").style.display = "none";
+  document.getElementById("cards-container").style.display = "none";
+  
+  // Mostrar cursos
+  cursosContainer.style.display = "flex";
+  renderCursos(window.cursosHibrida, cursosContainer, cardsContainer);
+  
+  // Mostrar barra de pesquisa de cursos
+  const coursesSearchContainer = document.getElementById('search-courses-container');
+  if (coursesSearchContainer) {
+    coursesSearchContainer.style.display = 'block';
+  }
+  
+  // Esconder barra de pesquisa de prints se existir
+  const printsSearchContainer = document.getElementById('search-prints-container');
+  if (printsSearchContainer) {
+    printsSearchContainer.style.display = 'none';
+  }
+  
+  // Limpar qualquer visualização de semestre
+  const semesterViews = document.querySelectorAll(".semester-view");
+  semesterViews.forEach((view) => {
+    document.body.removeChild(view);
+  });
+  
+  console.log('✅ Navegação para cursos concluída');
+}
+
+// Tornar função global
+window.goToCourses = goToCourses;
+
+// Adicionar evento de clique na logo Einstein
+document.addEventListener('DOMContentLoaded', () => {
+  const einsteinLogo = document.getElementById('einstein-logo');
+  if (einsteinLogo) {
+    einsteinLogo.addEventListener('click', goToCourses);
+    console.log('🎯 Evento de clique adicionado à logo Einstein');
+  }
+});
+
 // Adiciona zeros à esquerda nos nomes dos prints
 function addLeadingZerosToPrints(prints) {
   return prints.map((img) => {
@@ -290,14 +340,37 @@ window.abrirViewCurso = function (curso, semester) {
 
       // Ordena os prints para garantir a sequência correta (ordem numérica)
       prints.sort((a, b) => {
-        const getNumber = (name) => {
-          const match = name.match(/(\d+)/);
-          if (!match) return 0;
-          const num = parseInt(match[1], 10);
-          // Adiciona zeros à esquerda para garantir ordenação correta
-          return num.toString().padStart(2, "0");
+        const getSortKey = (name) => {
+          // Extrair o nome do arquivo
+          const filename = name.split("/").pop().replace(".png", "");
+          
+          // Tentar encontrar padrão de número principal e subnúmero (ex: 04.1, 11.2)
+          const decimalMatch = filename.match(/^(\d+)\.(\d+)_/);
+          if (decimalMatch) {
+            const mainNum = parseInt(decimalMatch[1], 10);
+            const subNum = parseInt(decimalMatch[2], 10);
+            // Criar chave de ordenação: mainNum * 1000 + subNum para manter ordem correta
+            return (mainNum * 1000 + subNum).toString().padStart(6, "0");
+          }
+          
+          // Para arquivos sem subnúmero (ex: 01_, 02_, etc.)
+          const simpleMatch = filename.match(/^(\d+)_/);
+          if (simpleMatch) {
+            const num = parseInt(simpleMatch[1], 10);
+            return (num * 1000).toString().padStart(6, "0"); // Multiplicar por 1000 para ficar antes dos decimais
+          }
+          
+          // Fallback: usar primeiro número encontrado
+          const match = filename.match(/(\d+)/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            return (num * 1000).toString().padStart(6, "0");
+          }
+          
+          return "999999"; // Arquivos sem número ficam por último
         };
-        return getNumber(a).localeCompare(getNumber(b));
+        
+        return getSortKey(a).localeCompare(getSortKey(b));
       });
 
       html += `<div class='prints-grid'>`;

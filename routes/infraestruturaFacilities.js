@@ -431,41 +431,192 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       selector: ".turma-wrapper-content",
       action: async (page) => {
         try {
-          // Aguarda o conteúdo carregar
-          await page.waitForSelector(".turma-wrapper-content", {
-            visible: true,
-            timeout: 10000,
-          });
-
-          // Faz scroll para garantir que todo o conteúdo seja visível, mas evita completamente o header
-          await page.evaluate(() => {
-            const content = document.querySelector(".turma-wrapper-content");
-            if (content) {
-              // Scroll para o início do conteúdo, com margem muito maior para evitar header
-              const rect = content.getBoundingClientRect();
-              const scrollTo = rect.top + window.scrollY - 400; // 400px acima do conteúdo para evitar header
-              window.scrollTo({ top: scrollTo, behavior: 'smooth' });
-            }
-          });
-
-          // Aguarda um pouco para o scroll terminar
+          console.log("🔍 Iniciando captura múltipla do Programa e Metodologia...");
+          await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+          
+          // Aguardar carregamento dos accordions
           await new Promise(resolve => setTimeout(resolve, 2000));
-
-          // Faz scroll adicional para baixo para capturar todo o conteúdo, mas sem voltar ao header
-          await page.evaluate(() => {
-            const content = document.querySelector(".turma-wrapper-content");
-            if (content) {
-              const rect = content.getBoundingClientRect();
-              const scrollAmount = rect.height * 0.1; // Scroll muito menos para evitar header
-              window.scrollBy(0, scrollAmount);
+          
+          // Detectar número de accordions disponíveis
+          const totalAccordions = await page.evaluate(() => {
+            // Tentar diferentes seletores para encontrar os accordions
+            let accordions = document.querySelectorAll('.accordion.template.campo');
+            console.log(`🔍 Detecção - Accordions encontrados com '.accordion.template.campo': ${accordions.length}`);
+            
+            if (accordions.length === 0) {
+              accordions = document.querySelectorAll('.accordion-title.grupo.template');
+              console.log(`🔍 Detecção - Accordions encontrados com '.accordion-title.grupo.template': ${accordions.length}`);
             }
+            
+            if (accordions.length === 0) {
+              accordions = document.querySelectorAll('[class*="accordion"]');
+              console.log(`🔍 Detecção - Accordions encontrados com '[class*="accordion"]': ${accordions.length}`);
+            }
+            
+            return accordions.length;
           });
+          
+          console.log(`🎯 Total de accordions detectados: ${totalAccordions}`);
+          
+          // Para Infraestrutura e Facilities, esperamos 16 accordions
+          const expectedAccordions = 16;
+          const accordionsToProcess = Math.min(totalAccordions, expectedAccordions);
+          
+          console.log(`📋 Processando ${accordionsToProcess} accordions...`);
+          
+          for (let i = 0; i < accordionsToProcess; i++) {
+            console.log(`📸 Capturando accordion ${i + 1} de ${accordionsToProcess}...`);
+            
+            // Encontrar e clicar no accordion específico
+            const accordionClicked = await page.evaluate((index) => {
+              // Tentar diferentes seletores para encontrar os accordions
+              let accordions = document.querySelectorAll('.accordion.template.campo');
+              console.log(`🔍 Tentativa 1 - Accordions encontrados com '.accordion.template.campo': ${accordions.length}`);
+              
+              if (accordions.length === 0) {
+                accordions = document.querySelectorAll('.accordion-title.grupo.template');
+                console.log(`🔍 Tentativa 2 - Accordions encontrados com '.accordion-title.grupo.template': ${accordions.length}`);
+              }
+              
+              if (accordions.length === 0) {
+                accordions = document.querySelectorAll('[class*="accordion"]');
+                console.log(`🔍 Tentativa 3 - Accordions encontrados com '[class*="accordion"]': ${accordions.length}`);
+              }
 
-          // Aguarda o scroll adicional terminar
-          await new Promise(resolve => setTimeout(resolve, 1000));
+              if (index >= accordions.length) {
+                console.log(`❌ Índice ${index} fora do range (${accordions.length} accordions disponíveis)`);
+                return false;
+              }
 
+              const targetAccordion = accordions[index];
+              if (!targetAccordion) {
+                console.log(`❌ Accordion no índice ${index} não encontrado`);
+                return false;
+              }
+
+              const title = targetAccordion.textContent ? targetAccordion.textContent.trim().substring(0, 50) : `Accordion ${index + 1}`;
+              console.log(`🎯 Processando accordion ${index + 1}: "${title}"`);
+
+              // Fechar todos os accordions primeiro
+              console.log('🔒 Fechando todos os accordions primeiro...');
+              accordions.forEach(el => {
+                const panel = el.nextElementSibling;
+                if (panel && panel.style.display !== 'none') {
+                  el.click();
+                }
+              });
+
+              // Aguardar um pouco para o fechamento
+              setTimeout(() => {}, 500);
+
+              // Scroll especial para o primeiro accordion para evitar sobreposição do botão "Inscreva-se"
+              if (index === 0) {
+                console.log('📜 Fazendo scroll especial para o primeiro accordion...');
+                window.scrollBy(0, 200);
+                setTimeout(() => {}, 300);
+              }
+
+              // Agora clicar no accordion alvo
+              console.log(`🎯 Clicando no accordion ${index + 1}...`);
+              targetAccordion.click();
+
+              // Verificar se abriu e tentar novamente se necessário
+              setTimeout(() => {
+                const panel = targetAccordion.nextElementSibling;
+                if (!panel || panel.style.display === 'none') {
+                  console.log('🔄 Accordion não abriu, tentando novamente...');
+                  targetAccordion.click();
+                  
+                  // Se ainda não abriu, tentar clicar diretamente no texto
+                  setTimeout(() => {
+                    const panel2 = targetAccordion.nextElementSibling;
+                    if (!panel2 || panel2.style.display === 'none') {
+                      console.log('🔁 Tentando clicar no texto do accordion');
+                      targetAccordion.click();
+                    }
+                  }, 200);
+                }
+              }, 300);
+
+              return true;
+            }, i);
+            
+            if (accordionClicked) {
+              // Aguardar abertura do accordion com mais tempo
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              
+              // Verificar se o accordion realmente abriu
+              const accordionOpened = await page.evaluate((index) => {
+                // Usar os mesmos seletores da detecção
+                let accordions = document.querySelectorAll('.accordion.template.campo');
+                if (accordions.length === 0) {
+                  accordions = document.querySelectorAll('.accordion-title.grupo.template');
+                }
+                if (accordions.length === 0) {
+                  accordions = document.querySelectorAll('[class*="accordion"]');
+                }
+                
+                if (index >= accordions.length) return false;
+                
+                const accordion = accordions[index];
+                const content = accordion.nextElementSibling;
+                if (content && content.style.display !== 'none') {
+                  console.log(`✅ Accordion ${index + 1} está aberto`);
+                  return true;
+                } else {
+                  console.log(`⚠️ Accordion ${index + 1} pode não ter aberto`);
+                  return false;
+                }
+              }, i);
+              
+              if (accordionOpened) {
+                // Aguardar mais um pouco para estabilização
+                await new Promise(resolve => setTimeout(resolve, 1500));
+              } else {
+                console.log(`⚠️ Accordion ${i + 1} pode não ter aberto, mas continuando...`);
+              }
+              
+              // Capturar screenshot
+              const content = await page.$(".turma-wrapper-content");
+              if (content) {
+                const filename = `04.${i + 1}_Programa_e_Metodologia.png`;
+                try {
+                  await content.screenshot({ path: path.join(outputFolder, filename) });
+                  console.log(`✅ Screenshot salvo: ${filename}`);
+                } catch (screenshotError) {
+                  console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
+                }
+              }
+              
+              // Fechar o accordion (clicar novamente)
+              await page.evaluate((index) => {
+                // Usar os mesmos seletores da detecção
+                let accordions = document.querySelectorAll('.accordion.template.campo');
+                if (accordions.length === 0) {
+                  accordions = document.querySelectorAll('.accordion-title.grupo.template');
+                }
+                if (accordions.length === 0) {
+                  accordions = document.querySelectorAll('[class*="accordion"]');
+                }
+                
+                if (index >= accordions.length) return false;
+                
+                const accordion = accordions[index];
+                console.log(`🔒 Fechando accordion ${index + 1}`);
+                accordion.click();
+                return true;
+              }, i);
+              
+              // Aguardar fechamento
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+              console.log(`❌ Falha ao clicar no accordion ${i + 1}`);
+            }
+          }
+          
+          console.log(`✅ Captura múltipla do Programa e Metodologia concluída!`);
         } catch (error) {
-          console.log("Erro ao preparar captura de Programa e Metodologia:", error.message);
+          console.log(`⚠️ Erro ao capturar Programa e Metodologia: ${error.message}`);
         }
       },
     },
@@ -483,10 +634,37 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
           console.log("🔍 Iniciando captura múltipla do Corpo Docente...");
           await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
           
-          // Detectar número de slides
+          // Aguardar carregamento do carrossel
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Detectar número de slides de forma mais robusta
           const totalSlides = await page.evaluate(() => {
+            // Método 1: contar dots
             const dots = document.querySelectorAll('.slick-dots li');
-            return dots.length;
+            console.log(`🔍 Dots encontrados: ${dots.length}`);
+            
+            // Método 2: contar slides diretos
+            const slides = document.querySelectorAll('.slide-coordenador');
+            console.log(`🔍 Slides encontrados: ${slides.length}`);
+            
+            // Método 3: verificar aria-label dos dots
+            let maxSlide = 0;
+            dots.forEach(dot => {
+              const button = dot.querySelector('button');
+              if (button) {
+                const ariaLabel = button.getAttribute('aria-label');
+                if (ariaLabel) {
+                  const match = ariaLabel.match(/(\d+) of (\d+)/);
+                  if (match) {
+                    maxSlide = Math.max(maxSlide, parseInt(match[2]));
+                  }
+                }
+              }
+            });
+            console.log(`🔍 Máximo de slides detectado: ${maxSlide}`);
+            
+            // Retornar o maior valor encontrado
+            return Math.max(dots.length, slides.length, maxSlide);
           });
           
           console.log(`🎠 Carrossel detectado com ${totalSlides} slides`);
@@ -496,8 +674,85 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
             for (let i = 0; i < totalSlides; i++) {
               console.log(`📸 Capturando slide ${i + 1} de ${totalSlides}...`);
               
-              // Aguardar um pouco antes de capturar
-              await new Promise(resolve => setTimeout(resolve, 1500));
+              // Navegar para o slide específico ANTES de capturar
+              console.log(`🎯 Navegando para o slide ${i + 1}...`);
+              
+              const navigationSuccess = await page.evaluate((targetSlideIndex) => {
+                console.log(`🎯 Tentando navegar para slide ${targetSlideIndex}...`);
+                
+                // Método mais direto: clicar diretamente no dot pelo ID específico
+                const dotId = `slick-slide-control${10 + targetSlideIndex - 1}`;
+                const dotButton = document.getElementById(dotId);
+                
+                if (dotButton) {
+                  console.log(`✅ Clicando no dot pelo ID: ${dotId}`);
+                  dotButton.click();
+                  return true;
+                }
+                
+                // Fallback: usar dots pelo índice
+                const dots = document.querySelectorAll('.slick-dots li button');
+                console.log(`🔍 Total de dots encontrados: ${dots.length}`);
+                
+                if (dots[targetSlideIndex - 1]) {
+                  console.log(`✅ Clicando no dot ${targetSlideIndex - 1}`);
+                  dots[targetSlideIndex - 1].click();
+                  return true;
+                }
+                
+                // Fallback: usar botões de navegação
+                if (targetSlideIndex === 1) {
+                  // Para ir ao slide 1, usar botão prev
+                  const prevButton = document.querySelector('.paginator-buttons-prev');
+                  if (prevButton && !prevButton.classList.contains('slick-disabled')) {
+                    console.log(`✅ Usando botão prev para slide 1`);
+                    prevButton.click();
+                    return true;
+                  }
+                } else {
+                  // Para outros slides, usar botão next
+                  const nextButton = document.querySelector('.paginator-buttons-next');
+                  if (nextButton && !nextButton.classList.contains('slick-disabled')) {
+                    console.log(`✅ Usando botão next`);
+                    nextButton.click();
+                    return true;
+                  }
+                }
+                
+                console.log(`❌ Nenhum método de navegação funcionou`);
+                return false;
+              }, i + 1);
+              
+              if (navigationSuccess) {
+                // Aguardar transição completa
+                console.log(`⏳ Aguardando transição para slide ${i + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, 5000)); // Aumentado para 5 segundos
+                
+                // Verificar se realmente mudou de slide
+                const currentSlideInfo = await page.evaluate(() => {
+                  const activeDot = document.querySelector('.slick-dots li.slick-active');
+                  if (activeDot) {
+                    const button = activeDot.querySelector('button');
+                    return button ? button.getAttribute('aria-label') : null;
+                  }
+                  return null;
+                });
+                
+                console.log(`📍 Slide atual após navegação: ${currentSlideInfo}`);
+                
+                // Verificar se está no slide correto
+                const expectedSlide = `${i + 1} of ${totalSlides}`;
+                if (currentSlideInfo && currentSlideInfo.includes(expectedSlide)) {
+                  console.log(`✅ Confirmação: estamos no slide ${i + 1}!`);
+                } else {
+                  console.log(`⚠️ Aviso: pode não estar no slide correto. Esperado: ${expectedSlide}, Atual: ${currentSlideInfo}`);
+                }
+              } else {
+                console.log(`❌ Falha na navegação para slide ${i + 1}`);
+              }
+              
+              // Aguardar estabilização antes de capturar
+              await new Promise(resolve => setTimeout(resolve, 2000));
               
               // Capturar screenshot
               const content = await page.$(".turma-wrapper-content");
@@ -509,94 +764,23 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
                 } catch (screenshotError) {
                   console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
                 }
-              }
-              
-              // Navegar para o próximo slide (exceto no último)
-              if (i < totalSlides - 1) {
-                console.log(`➡️ Navegando para o slide ${i + 2}...`);
-                
-                // Estratégia melhorada: usar múltiplas tentativas de navegação
-                let navigationSuccess = false;
-                let attempts = 0;
-                const maxAttempts = 3;
-                
-                while (!navigationSuccess && attempts < maxAttempts) {
-                  attempts++;
-                  console.log(`🔄 Tentativa ${attempts} de navegação para slide ${i + 2}...`);
-                  
-                  navigationSuccess = await page.evaluate((targetSlideIndex) => {
-                    console.log(`🎯 Tentando navegar para slide ${targetSlideIndex}...`);
-                    
-                    // Método 1: tentar pelo índice dos dots (mais confiável)
-                    const dots = document.querySelectorAll('.slick-dots li button');
-                    console.log(`🔍 Total de dots encontrados: ${dots.length}`);
-                    
-                    if (dots[targetSlideIndex - 1]) {
-                      console.log(`✅ Dot encontrado pelo índice: ${targetSlideIndex - 1}`);
-                      dots[targetSlideIndex - 1].click();
-                      return true;
-                    }
-                    
-                    // Método 2: tentar pelo ID específico (Infraestrutura usa IDs 10, 11)
-                    const dotId = `slick-slide-control${10 + targetSlideIndex - 1}`;
-                    let dotButton = document.getElementById(dotId);
-                    
-                    if (dotButton) {
-                      console.log(`✅ Dot encontrado pelo ID: ${dotId}`);
-                      dotButton.click();
-                      return true;
-                    }
-                    
-                    // Método 3: tentar pelo botão "next"
-                    const nextButton = document.querySelector('.paginator-buttons-next');
-                    if (nextButton && !nextButton.classList.contains('slick-disabled')) {
-                      console.log(`✅ Usando botão next`);
-                      nextButton.click();
-                      return true;
-                    }
-                    
-                    console.log(`❌ Nenhum método de navegação funcionou para slide ${targetSlideIndex}`);
-                    return false;
-                  }, i + 1);
-                  
-                  if (navigationSuccess) {
-                    // Aguardar a transição
-                    await new Promise(resolve => setTimeout(resolve, 3000));
-                    
-                    // Verificar se realmente mudou de slide
-                    const currentSlide = await page.evaluate(() => {
-                      const activeDot = document.querySelector('.slick-dots li.slick-active');
-                      if (activeDot) {
-                        const button = activeDot.querySelector('button');
-                        return button ? button.getAttribute('aria-label') : null;
-                      }
-                      return null;
-                    });
-                    
-                    console.log(`📍 Slide atual após navegação: ${currentSlide}`);
-                    
-                    if (currentSlide && currentSlide.includes(`${i + 2} of ${totalSlides}`)) {
-                      console.log(`✅ Navegação confirmada para slide ${i + 2}!`);
-                      break;
-                    } else {
-                      console.log(`⚠️ Navegação não confirmada, tentando novamente...`);
-                      navigationSuccess = false;
-                    }
-                  } else {
-                    console.log(`❌ Falha na tentativa ${attempts}, tentando novamente...`);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                  }
-                }
-                
-                if (!navigationSuccess) {
-                  console.log(`❌ Falha na navegação para slide ${i + 2} após ${maxAttempts} tentativas`);
-                  break;
-                }
+              } else {
+                console.log(`❌ Conteúdo não encontrado para slide ${i + 1}`);
               }
             }
             console.log(`✅ Captura múltipla do Corpo Docente concluída!`);
           } else {
             console.log("ℹ️ Apenas 1 slide detectado, capturando normalmente...");
+            const content = await page.$(".turma-wrapper-content");
+            if (content) {
+              const filename = `06.1_Corpo_Docente.png`;
+              try {
+                await content.screenshot({ path: path.join(outputFolder, filename) });
+                console.log(`✅ Screenshot salvo: ${filename}`);
+              } catch (screenshotError) {
+                console.error(`❌ Erro ao salvar screenshot ${filename}:`, screenshotError.message);
+              }
+            }
           }
         } catch (error) {
           console.log(`⚠️ Erro ao capturar Corpo Docente: ${error.message}`);
@@ -786,6 +970,162 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       internal: "Perguntas frequentes (FAQ)",
       display: "Perguntas frequentes FAQ",
       selector: ".turma-wrapper-content",
+      action: async (page) => {
+        try {
+          console.log("🔍 Iniciando captura múltipla das Perguntas Frequentes (FAQ)...");
+          
+          // Selecionar a aba FAQ
+          await page.evaluate(() => {
+            const faqDiv = Array.from(document.querySelectorAll('.menu-item button')).find(button => {
+              return button.innerText.trim().toLowerCase().includes("perguntas frequentes");
+            });
+            if (faqDiv) faqDiv.click();
+          });
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+          
+          // Aguardar mais tempo para o conteúdo FAQ carregar completamente
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
+          // Tentar encontrar os accordions FAQ com seletor mais específico
+          await page.waitForSelector("button.accordion.template.campo", { visible: true, timeout: 10000 });
+          
+          // Verificar se encontrou os accordions FAQ
+          const faqAccordions = await page.$$('button.accordion.template.campo');
+          console.log(`🔍 Accordions FAQ encontrados: ${faqAccordions.length}`);
+          
+          if (faqAccordions.length === 0) {
+            console.error("❌ Nenhum accordion FAQ encontrado!");
+            return;
+          }
+          
+          // Aguardar carregamento dos accordions
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Detectar número de accordions (sempre 11 para Cuidados Paliativos FAQ)
+          const totalAccordions = 11;
+          console.log(`🎠 Accordions FAQ detectados: ${totalAccordions} (fixo para Infraestrutura/Facilities)`);
+          
+          const filenames = [
+            "12.1_Perguntas_frequentes_FAQ.png",
+            "12.2_Perguntas_frequentes_FAQ.png", 
+            "12.3_Perguntas_frequentes_FAQ.png",
+            "12.4_Perguntas_frequentes_FAQ.png",
+            "12.5_Perguntas_frequentes_FAQ.png",
+            "12.6_Perguntas_frequentes_FAQ.png",
+            "12.7_Perguntas_frequentes_FAQ.png",
+            "12.8_Perguntas_frequentes_FAQ.png",
+            "12.9_Perguntas_frequentes_FAQ.png",
+            "12.10_Perguntas_frequentes_FAQ.png",
+            "12.11_Perguntas_frequentes_FAQ.png"
+          ];
+          
+          for (let i = 0; i < totalAccordions; i++) {
+            console.log(`📸 Capturando FAQ accordion ${i + 1} de ${totalAccordions}...`);
+            
+            // Encontrar e clicar no accordion (método mais direto e robusto)
+            const accordionClicked = await page.evaluate((index) => {
+              const accordions = document.querySelectorAll('.accordion.template.campo');
+              console.log(`🔍 Total de accordions FAQ encontrados: ${accordions.length}`);
+
+              if (index >= accordions.length) {
+                console.log(`❌ Índice ${index} maior que número de accordions disponíveis`);
+                return false;
+              }
+
+              const targetAccordion = accordions[index];
+              if (!targetAccordion) {
+                console.log(`❌ Accordion FAQ no índice ${index} não encontrado`);
+                return false;
+              }
+
+              // Fechar todos os accordions primeiro
+              console.log('🔒 Fechando todos os accordions FAQ primeiro...');
+              accordions.forEach(el => {
+                const panel = el.nextElementSibling;
+                if (panel && panel.style.display !== 'none') {
+                  el.click();
+                }
+              });
+
+              // Aguardar um pouco para o fechamento
+              setTimeout(() => {}, 500);
+
+              // Agora clicar no accordion alvo
+              console.log(`🎯 Clicando no accordion FAQ ${index + 1}...`);
+              targetAccordion.click();
+
+              // Verificar se abriu e tentar novamente se necessário
+              setTimeout(() => {
+                const panel = targetAccordion.nextElementSibling;
+                if (!panel || panel.style.display === 'none') {
+                  console.log('🔄 Accordion FAQ não abriu, tentando novamente...');
+                  targetAccordion.click();
+                  
+                  // Se ainda não abriu, tentar clicar diretamente no texto
+                  setTimeout(() => {
+                    const panel2 = targetAccordion.nextElementSibling;
+                    if (!panel2 || panel2.style.display === 'none') {
+                      console.log('🔁 Tentando clicar no texto do accordion FAQ');
+                      targetAccordion.click();
+                    }
+                  }, 200);
+                }
+              }, 300);
+
+              return true;
+            }, i);
+            
+            if (accordionClicked) {
+              // Aguardar abertura do accordion com mais tempo
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              
+              // Verificar se o accordion realmente abriu
+              const accordionOpened = await page.evaluate((index) => {
+                const accordions = document.querySelectorAll('.accordion.template.campo');
+                if (index >= accordions.length) return false;
+                
+                const accordion = accordions[index];
+                const content = accordion.nextElementSibling;
+                if (content && content.style.display !== 'none') {
+                  console.log(`✅ Accordion FAQ ${index + 1} está aberto`);
+                  return true;
+                } else {
+                  console.log(`⚠️ Accordion FAQ ${index + 1} pode não ter aberto`);
+                  return false;
+                }
+              }, i);
+              
+              if (accordionOpened) {
+                // Aguardar um pouco mais para garantir que o conteúdo está totalmente carregado
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Capturar screenshot
+                const content = await page.$('.turma-wrapper-content');
+                if (content) {
+                  const filename = filenames[i];
+                  await content.screenshot({ path: path.join(outputFolder, filename) });
+                  console.log(`✅ Screenshot FAQ salvo: ${filename}`);
+                } else {
+                  console.warn(`⚠️ Conteúdo FAQ não encontrado para accordion ${i + 1}`);
+                }
+              } else {
+                console.warn(`⚠️ Accordion FAQ ${i + 1} não abriu corretamente, pulando...`);
+              }
+            } else {
+              console.warn(`⚠️ Não foi possível clicar no accordion FAQ ${i + 1}`);
+            }
+            
+            // Aguardar entre capturas
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          
+          console.log(`✅ Captura múltipla do FAQ concluída!`);
+        } catch (error) {
+          console.error(`⚠️ Erro ao capturar FAQ: ${error.message}`);
+        }
+      },
     },
   ];
 
@@ -803,7 +1143,7 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       }
 
       // Clica no botão da seção com tratamento de erro melhorado
-      try {
+    try {
       const [navigation] = await Promise.all([
         page
           .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
@@ -839,8 +1179,8 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
           console.log(`⚠️ Erro na ação específica para ${section.internal}: ${actionError.message}`);
           // Continua mesmo com erro na ação específica
         }
-        // Se for Corpo Docente ou Processo Seletivo, pular a captura automática pois já foi feita pela action
-        if (section.internal === "Corpo Docente" || section.internal === "Processo Seletivo") {
+        // Se for Corpo Docente, Processo Seletivo, Programa e Metodologia ou FAQ, pular a captura automática pois já foi feita pela action
+        if (section.internal === "Corpo Docente" || section.internal === "Processo Seletivo" || section.internal === "Programa e Metodologia" || section.internal === "Perguntas frequentes (FAQ)") {
           console.log(`ℹ️ ${section.internal} já foi capturado pela action personalizada, pulando captura automática`);
           continue;
         }
@@ -918,39 +1258,38 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
   return finalScreenshots;
 }
 
+
 // 1. Unidade Paulista | Quinzenal Prática Estendida
 router.post("/run-script-infraestrutura-mensal", async (req, res) => {
   try {
     const url =
       "https://ensino.einstein.br/pos_gt_infraestrutura_facilities_saude_p14827/p?sku=10906&cidade=sp";
-    // Importar funções de manipulação de semestre
-    const semesterUtils = require("../utils/semester");
+      const semesterUtils = require("../utils/semester");
 
-    // Usar semestre personalizado se fornecido, senão usar semestre atual
-    let semesterFolder;
-    if (req.body && req.body.semester) {
-      const customSemester = req.body.semester.trim();
-      // Validar formato do semestre (YYYY-N onde N pode ser qualquer número)
-      const semesterRegex = /^\d{4}-\d+$/;
-      
-      if (!semesterRegex.test(customSemester)) {
-        console.log(`❌ Semestre inválido fornecido: ${customSemester}`);
-        return res.status(400).json({ 
-          error: "Semestre inválido. Use o formato YYYY-N (ex: 2025-1, 2025-81, 2025-92)" 
-        });
-      }
-      
-      semesterFolder = customSemester;
-      console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
-    } else {
-      // Get current semester (2025-2)
+      // Usar semestre personalizado se fornecido, senão usar semestre atual
+      let semesterFolder;
+      if (req.body && req.body.semester) {
+        const customSemester = req.body.semester.trim();
+        // Validar formato do semestre (YYYY-N onde N pode ser qualquer número)
+        const semesterRegex = /^\d{4}-\d+$/;
+        
+        if (!semesterRegex.test(customSemester)) {
+          console.log(`❌ Semestre inválido fornecido: ${customSemester}`);
+          return res.status(400).json({ 
+            error: "Semestre inválido. Use o formato YYYY-N (ex: 2025-1, 2025-81, 2025-92)" 
+          });
+        }
+        
+        semesterFolder = customSemester;
+        console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
+      } else {
       const today = new Date();
       const year = today.getFullYear();
-      const month = today.getMonth() + 1; // 0-11 to 1-12
+      const month = today.getMonth() + 1;
       const semester = month <= 6 ? "1" : "2";
-      semesterFolder = `${year}-${semester}`;
-      console.log(`📅 Usando semestre automático: ${semesterFolder}`);
-    }
+        semesterFolder = `${year}-${semester}`;
+        console.log(`📅 Usando semestre automático: ${semesterFolder}`);
+      }
 
     // Função auxiliar para verificar se existe pasta para um determinado semestre e se tem prints
     const checkSemesterHasPrints = (folder) => {
@@ -995,36 +1334,11 @@ router.post("/run-script-infraestrutura-mensal", async (req, res) => {
     const courseInfo = getCourseFolderName("Gestão de Infraestrutura e Facilities em Saúde", "Unidade Paulista | Mensal");
     let courseFolder = path.join(basePath, courseInfo.courseFolder);
     let semesterFolderPath = path.join(courseFolder, `${courseInfo.subcourseFolder} ${semesterFolder}`);
-    
-    let foundEmptyFolder = false;
-
-    // Se a pasta atual não existir ou estiver vazia, use-a
-    if (!checkSemesterHasPrints(semesterFolderPath)) {
-      console.log(
-        `Usando pasta do semestre atual ${courseInfo.subcourseFolder} ${semesterFolder.replace(
-          "-",
-          "/"
-        )}, pois não existe ou não contém prints ainda`
-      );
-      foundEmptyFolder = true;
+    if (!fs.existsSync(semesterFolderPath)) {
+      fs.mkdirSync(semesterFolderPath, { recursive: true });
     }
-    // Se a pasta atual tiver prints, retornar erro informando que já existe
-    else {
-      console.log(
-        `❌ Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace(
-          "-",
-          "/"
-        )} já possui prints. Não será criado um novo semestre automaticamente.`
-      );
-      return res.status(400).json({ 
-        error: `Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace("-", "/")} já possui prints. Escolha outro semestre ou atualize os prints existentes.` 
-      });
-    }
-
     const outputFolder = semesterFolderPath;
-    if (!fs.existsSync(outputFolder)) {
-      fs.mkdirSync(outputFolder, { recursive: true });
-    }
+
     const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
@@ -1078,102 +1392,11 @@ router.post("/run-script-infraestrutura-mensal", async (req, res) => {
       outputFolder
     );
 
-    // Ensure correct content is captured for each section
-    const sections = [
-      {
-        internal: "Sobre o Curso",
-        display: "Sobre o Curso",
-        selector: ".sobre-section",
-      },
-      {
-        internal: "Modalidade de Ensino",
-        display: "Modalidade de Ensino",
-        selector: ".modalidade-front",
-        action: async (page) => {
-          await page.click(".modalidade-front");
-          await page.waitForSelector(".modalidade-front-modal", {
-            visible: true,
-          });
-        },
-      },
-      {
-        internal: "Selecionar uma Turma",
-        display: "Selecionar uma Turma",
-        selector: ".seletor-container.turma-selecionada",
-      },
-      {
-        internal: "Programa e Metodologia",
-        display: "Programa e Metodologia",
-        selector: ".turma-wrapper-content",
-      },
-      {
-        internal: "Objetivos e Qualificações",
-        display: "Objetivos e Qualificacoes",
-        selector: ".turma-wrapper-content",
-      },
-      {
-        internal: "Corpo Docente",
-        display: "Corpo Docente",
-        selector: ".turma-wrapper-content",
-      },
-      {
-        internal: "Cronograma de Aulas",
-        display: "Cronograma de Aulas",
-        selector: ".turma-wrapper-content",
-      },
-      {
-        internal: "Local e Horário",
-        display: "Local e Horario",
-        selector: ".turma-wrapper-content",
-      },
-      {
-        internal: "Valor do Curso",
-        display: "Valor do Curso",
-        selector: ".turma-wrapper-content",
-      },
-      {
-        internal: "Perfil do Aluno",
-        display: "Perfil do Aluno",
-        selector: ".turma-wrapper-content",
-      },
-      {
-        internal: "Processo Seletivo",
-        display: "Processo Seletivo",
-        selector: ".turma-wrapper-content",
-      },
-      {
-        internal: "Perguntas frequentes (FAQ)",
-        display: "Perguntas frequentes FAQ",
-        selector: ".turma-wrapper-content",
-      },
-    ];
-
-    screenshotFiles.forEach((screenshot, index) => {
-      const orderedFilename =
-        `${index + 1}_${sections[index].display}`
-          .replace(/[^\\w\s]/gi, "")
-          .replace(/\s+/g, "_")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/_+/g, "_")
-          .replace(/_$/, "") + ".png";
-
-      const oldPath = path.join(outputFolder, screenshot.filename);
-      const newPath = path.join(outputFolder, orderedFilename);
-
-      if (fs.existsSync(oldPath)) {
-        fs.renameSync(oldPath, newPath);
-        screenshot.filename = orderedFilename;
-      } else {
-        console.error(`❌ File not found for renaming: ${oldPath}`);
-      }
-    });
-
     await browser.close();
 
     // Map the ordered screenshot filenames to their full paths
     const files = screenshotFiles.map(
-      (filename) => `/GIF_Mensal_${semesterFolder}/${filename}`
+      (filename) => `/${courseInfo.courseFolder}/${courseInfo.subcourseFolder} ${semesterFolder}/${filename}`
     );
 
     return res.json(files);

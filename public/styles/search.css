@@ -52,6 +52,7 @@
   box-shadow: 0 2px 12px rgba(0, 114, 255, 0.1);
   border: 2px solid transparent;
   transition: all 0.3s ease;
+  margin-top: -8px;
 }
 
 .search-box:focus-within {

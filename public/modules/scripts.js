@@ -44,16 +44,33 @@ export async function showPrints(pasta, folderOutput) {
       const updatedFilename = filename.replace(/^(\d)_/, "0$1_");
       return [...parts, updatedFilename].join("/");
     });
-    // Ordena os prints para garantir a sequência correta (ordem numérica)
+    // Ordena os prints para garantir a sequência correta (ordem numérica com suporte a decimais)
     prints.sort((a, b) => {
-      const getNumber = (name) => {
-        const match = name.match(/(\d+)/);
-        if (!match) return 0;
-        const num = parseInt(match[1], 10);
-        // Adiciona zeros à esquerda para garantir ordenação correta
-        return num.toString().padStart(2, "0");
+      const getSortKey = (name) => {
+        // Extrai o nome do arquivo da URL
+        const filename = name.split('/').pop();
+        
+        // Procura por padrões como "04.1_", "12.11_", etc.
+        const decimalMatch = filename.match(/^(\d+)\.(\d+)_/);
+        if (decimalMatch) {
+          const mainNum = parseInt(decimalMatch[1], 10);
+          const subNum = parseInt(decimalMatch[2], 10);
+          // Retorna uma string ordenável: mainNum com 2 dígitos + subNum com 2 dígitos
+          return `${mainNum.toString().padStart(2, "0")}.${subNum.toString().padStart(2, "0")}`;
+        }
+        
+        // Fallback para números simples como "01_", "02_", etc.
+        const simpleMatch = filename.match(/^(\d+)_/);
+        if (simpleMatch) {
+          const num = parseInt(simpleMatch[1], 10);
+          return `${num.toString().padStart(2, "0")}.00`;
+        }
+        
+        // Se não encontrar padrão numérico, retorna 0
+        return "00.00";
       };
-      return getNumber(a).localeCompare(getNumber(b));
+      
+      return getSortKey(a).localeCompare(getSortKey(b));
     });
     html += `<div class='prints-grid'>`;
     html += prints

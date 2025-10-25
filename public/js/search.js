@@ -5,6 +5,7 @@ class SearchManager {
     console.log('🔍 SearchManager inicializado');
     this.initCoursesSearch();
     this.initPrintsSearch();
+    this.initScrollToTop();
     // Remover initSubcursosSearch daqui pois está em arquivo separado
     
     // Definir funções globais para uso externo
@@ -67,10 +68,21 @@ class SearchManager {
 
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // Event listeners
+    // Event listeners com debounce para busca em tempo real
+    let searchTimeout;
     searchInput.addEventListener('input', (e) => {
-      this.searchCourses(e.target.value, resultsInfo);
+      // Limpar timeout anterior
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+      
+      // Mostrar/esconder botão de limpar
       clearBtn.style.display = e.target.value ? 'flex' : 'none';
+      
+      // Debounce de 300ms para busca em tempo real
+      searchTimeout = setTimeout(() => {
+        this.searchCourses(e.target.value, resultsInfo);
+      }, 300);
     });
 
     clearBtn.addEventListener('click', () => {
@@ -146,10 +158,21 @@ class SearchManager {
 
       observer.observe(document.body, { childList: true, subtree: true });
 
-      // Event listeners
+      // Event listeners com debounce para busca em tempo real
+      let searchTimeout;
       searchInput.addEventListener('input', (e) => {
-        this.searchPrints(e.target.value, resultsInfo);
+        // Limpar timeout anterior
+        if (searchTimeout) {
+          clearTimeout(searchTimeout);
+        }
+        
+        // Mostrar/esconder botão de limpar
         clearBtn.style.display = e.target.value ? 'flex' : 'none';
+        
+        // Debounce de 300ms para busca em tempo real
+        searchTimeout = setTimeout(() => {
+          this.searchPrints(e.target.value, resultsInfo);
+        }, 300);
       });
 
       clearBtn.addEventListener('click', () => {
@@ -250,6 +273,11 @@ class SearchManager {
         card.style.display = 'flex';
         visibleCount++;
         console.log(`✅ Card ${index} visível`);
+        
+        // Destacar texto encontrado
+        if (searchTerm) {
+          this.highlightText(card, searchTerm);
+        }
       } else {
         card.classList.add('filtered-out');
         card.style.display = 'none';
@@ -318,6 +346,11 @@ class SearchManager {
         item.style.display = 'flex';
         visibleCount++;
         console.log(`✅ Print ${index} visível`);
+        
+        // Destacar texto encontrado
+        if (searchTerm) {
+          this.highlightText(item, searchTerm);
+        }
       } else {
         item.classList.add('filtered-out');
         item.style.display = 'none';
@@ -437,6 +470,72 @@ class SearchManager {
       parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
       parent.normalize();
     });
+  }
+
+  // Inicializar botão "Ir ao Topo"
+  initScrollToTop() {
+    console.log('⬆️ Inicializando botão "Ir ao Topo"...');
+    
+    // Criar botão se não existir
+    let scrollToTopBtn = document.getElementById('scroll-to-top-btn');
+    if (!scrollToTopBtn) {
+      scrollToTopBtn = document.createElement('button');
+      scrollToTopBtn.id = 'scroll-to-top-btn';
+      scrollToTopBtn.className = 'scroll-to-top';
+      scrollToTopBtn.innerHTML = '<span class="scroll-icon">↑</span><span class="scroll-text">Subir ao topo</span>';
+      scrollToTopBtn.title = 'Ir ao topo da página';
+      scrollToTopBtn.setAttribute('aria-label', 'Ir ao topo da página');
+      document.body.appendChild(scrollToTopBtn);
+    }
+
+    // Event listener para scroll
+    let isScrolling = false;
+    window.addEventListener('scroll', () => {
+      if (!isScrolling) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const windowHeight = window.innerHeight;
+          
+          // Mostrar botão quando descer mais de 300px
+          if (scrollY > 300) {
+            scrollToTopBtn.classList.add('show');
+          } else {
+            scrollToTopBtn.classList.remove('show');
+          }
+          
+          isScrolling = false;
+        });
+        isScrolling = true;
+      }
+    });
+
+    // Event listener para clique
+    scrollToTopBtn.addEventListener('click', () => {
+      // Scroll suave para o topo
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+      
+      // Feedback visual
+      scrollToTopBtn.style.transform = 'scale(0.9)';
+      setTimeout(() => {
+        scrollToTopBtn.style.transform = '';
+      }, 150);
+    });
+
+    // Atalho de teclado (Ctrl + Home)
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Home') {
+        e.preventDefault();
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      }
+    });
+
+    console.log('✅ Botão "Ir ao Topo" inicializado');
   }
 }
 

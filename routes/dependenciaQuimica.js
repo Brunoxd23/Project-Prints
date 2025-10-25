@@ -431,41 +431,150 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
       selector: ".turma-wrapper-content",
       action: async (page) => {
         try {
-          // Aguarda o conteúdo carregar
-          await page.waitForSelector(".turma-wrapper-content", {
-            visible: true,
-            timeout: 10000,
-          });
-
-          // Faz scroll para garantir que todo o conteúdo seja visível, mas evita completamente o header
-          await page.evaluate(() => {
-            const content = document.querySelector(".turma-wrapper-content");
-            if (content) {
-              // Scroll para o início do conteúdo, com margem muito maior para evitar header
-              const rect = content.getBoundingClientRect();
-              const scrollTo = rect.top + window.scrollY - 400; // 400px acima do conteúdo para evitar header
-              window.scrollTo({ top: scrollTo, behavior: 'smooth' });
-            }
-          });
-
-          // Aguarda um pouco para o scroll terminar
+          console.log("🔍 Iniciando captura múltipla do Programa e Metodologia...");
+          await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+          
+          // Aguardar carregamento dos accordions
           await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Detectar número de accordions (sempre 6 para Dependência Química)
+          const totalAccordions = 6;
+          console.log(`🎠 Accordions detectados: ${totalAccordions} (fixo para Dependência Química)`);
+          
+          const filenames = [
+            "4.1_Programa_e_Metodologia.png",
+            "4.2_Programa_e_Metodologia.png", 
+            "4.3_Programa_e_Metodologia.png",
+            "4.4_Programa_e_Metodologia.png",
+            "4.5_Programa_e_Metodologia.png",
+            "4.6_Programa_e_Metodologia.png"
+          ];
+          
+          for (let i = 0; i < totalAccordions; i++) {
+            console.log(`📸 Capturando accordion ${i + 1} de ${totalAccordions}...`);
+            
+            // Encontrar e clicar no accordion (método mais direto e robusto)
+            const accordionClicked = await page.evaluate((index) => {
+              const accordions = document.querySelectorAll('.accordion.template.campo');
+              console.log(`🔍 Total de accordions encontrados: ${accordions.length}`);
 
-          // Faz scroll adicional para baixo para capturar todo o conteúdo, mas sem voltar ao header
-          await page.evaluate(() => {
-            const content = document.querySelector(".turma-wrapper-content");
-            if (content) {
-              const rect = content.getBoundingClientRect();
-              const scrollAmount = rect.height * 0.1; // Scroll muito menos para evitar header
-              window.scrollBy(0, scrollAmount);
+              if (index >= accordions.length) {
+                console.log(`❌ Índice ${index} maior que número de accordions disponíveis`);
+                return false;
+              }
+
+              const targetAccordion = accordions[index];
+              if (!targetAccordion) {
+                console.log(`❌ Accordion no índice ${index} não encontrado`);
+                return false;
+              }
+
+              // Fechar todos os accordions primeiro
+              console.log('🔒 Fechando todos os accordions primeiro...');
+              accordions.forEach(el => {
+                const panel = el.nextElementSibling;
+                if (panel && panel.style.display !== 'none') {
+                  el.click();
+                }
+              });
+
+              // Aguardar um pouco para o fechamento
+              setTimeout(() => {}, 500);
+
+              // Agora clicar no accordion alvo
+              console.log(`🎯 Clicando no accordion ${index + 1}...`);
+              targetAccordion.click();
+
+              // Verificar se abriu e tentar novamente se necessário
+              setTimeout(() => {
+                const panel = targetAccordion.nextElementSibling;
+                if (!panel || panel.style.display === 'none') {
+                  console.log('🔄 Accordion não abriu, tentando novamente...');
+                  targetAccordion.click();
+                  
+                  // Se ainda não abriu, tentar clicar diretamente no texto
+                  setTimeout(() => {
+                    const panel2 = targetAccordion.nextElementSibling;
+                    if (!panel2 || panel2.style.display === 'none') {
+                      console.log('🔁 Tentando clicar no texto do accordion');
+                      targetAccordion.click();
+                    }
+                  }, 200);
+                }
+              }, 300);
+
+              return true;
+            }, i);
+            
+            if (accordionClicked) {
+              // Aguardar abertura do accordion com mais tempo
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              
+              // Verificar se o accordion realmente abriu
+              const accordionOpened = await page.evaluate((index) => {
+                const accordions = document.querySelectorAll('.accordion.template.campo');
+                if (index >= accordions.length) return false;
+                
+                const accordion = accordions[index];
+                const content = accordion.nextElementSibling;
+                if (content && content.style.display !== 'none') {
+                  console.log(`✅ Accordion ${index + 1} está aberto`);
+                  return true;
+                } else {
+                  console.log(`⚠️ Accordion ${index + 1} pode não ter aberto`);
+                  return false;
+                }
+              }, i);
+              
+              if (accordionOpened) {
+                // Aguardar mais um pouco para estabilização
+                await new Promise(resolve => setTimeout(resolve, 1500));
+              } else {
+                console.log(`⚠️ Accordion ${i + 1} pode não ter aberto, mas continuando...`);
+              }
+              
+              // Capturar screenshot
+              const content = await page.$(".turma-wrapper-content");
+              if (content) {
+                try {
+                  // Para o primeiro accordion (4.1), fazer scroll adicional para garantir que todo conteúdo seja visível
+                  if (i === 0) {
+                    console.log("📏 Fazendo scroll adicional para o primeiro accordion (4.1)...");
+                    await page.evaluate(() => {
+                      // Scroll para baixo para garantir que o conteúdo não seja cortado pelo botão de inscrição
+                      window.scrollBy(0, 200);
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                  }
+                  
+                  await content.screenshot({ path: path.join(outputFolder, filenames[i]) });
+                  console.log(`✅ Screenshot salvo: ${filenames[i]}`);
+                } catch (screenshotError) {
+                  console.error(`❌ Erro ao salvar screenshot ${filenames[i]}:`, screenshotError.message);
+                }
+              }
+              
+              // Fechar o accordion (clicar novamente)
+              await page.evaluate((index) => {
+                const accordions = document.querySelectorAll('.accordion.template.campo');
+                if (index < accordions.length) {
+                  console.log(`🔒 Fechando accordion ${index + 1}...`);
+                  accordions[index].click();
+                  return true;
+                }
+                return false;
+              }, i);
+              
+              // Aguardar fechamento
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+              console.log(`❌ Falha ao clicar no accordion ${i + 1}`);
             }
-          });
-
-          // Aguarda o scroll adicional terminar
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
+          }
+          
+          console.log(`✅ Captura múltipla do Programa e Metodologia concluída!`);
         } catch (error) {
-          console.log("Erro ao preparar captura de Programa e Metodologia:", error.message);
+          console.log(`⚠️ Erro ao capturar Programa e Metodologia: ${error.message}`);
         }
       },
     },
@@ -806,10 +915,166 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
         }
       },
     },
-    {
+     {
       internal: "Perguntas frequentes (FAQ)",
       display: "Perguntas frequentes FAQ",
       selector: ".turma-wrapper-content",
+      action: async (page) => {
+        try {
+          console.log("🔍 Iniciando captura múltipla das Perguntas Frequentes (FAQ)...");
+          
+          // Selecionar a aba FAQ
+          await page.evaluate(() => {
+            const faqDiv = Array.from(document.querySelectorAll('.menu-item button')).find(button => {
+              return button.innerText.trim().toLowerCase().includes("perguntas frequentes");
+            });
+            if (faqDiv) faqDiv.click();
+          });
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          await page.waitForSelector(".turma-wrapper-content", { visible: true, timeout: 10000 });
+          
+          // Aguardar mais tempo para o conteúdo FAQ carregar completamente
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
+          // Tentar encontrar os accordions FAQ com seletor mais específico
+          await page.waitForSelector("#faq button.accordion.template.campo", { visible: true, timeout: 10000 });
+          
+          // Verificar se encontrou os accordions FAQ
+          const faqAccordions = await page.$$('#faq button.accordion.template.campo');
+          console.log(`🔍 Accordions FAQ encontrados: ${faqAccordions.length}`);
+          
+          if (faqAccordions.length === 0) {
+            console.error("❌ Nenhum accordion FAQ encontrado!");
+            return;
+          }
+          
+          // Aguardar carregamento dos accordions
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Detectar número de accordions (sempre 11 para Cuidados Paliativos FAQ)
+          const totalAccordions = 11;
+          console.log(`🎠 Accordions FAQ detectados: ${totalAccordions} (fixo para Cuidados Paliativos)`);
+          
+          const filenames = [
+            "12.1_Perguntas_frequentes_FAQ.png",
+            "12.2_Perguntas_frequentes_FAQ.png", 
+            "12.3_Perguntas_frequentes_FAQ.png",
+            "12.4_Perguntas_frequentes_FAQ.png",
+            "12.5_Perguntas_frequentes_FAQ.png",
+            "12.6_Perguntas_frequentes_FAQ.png",
+            "12.7_Perguntas_frequentes_FAQ.png",
+            "12.8_Perguntas_frequentes_FAQ.png",
+            "12.9_Perguntas_frequentes_FAQ.png",
+            "12.10_Perguntas_frequentes_FAQ.png",
+            "12.11_Perguntas_frequentes_FAQ.png"
+          ];
+          
+          for (let i = 0; i < totalAccordions; i++) {
+            console.log(`📸 Capturando FAQ accordion ${i + 1} de ${totalAccordions}...`);
+            
+            // Encontrar e clicar no accordion (método mais direto e robusto)
+            const accordionClicked = await page.evaluate((index) => {
+              const accordions = document.querySelectorAll('#faq .accordion.template.campo');
+              console.log(`🔍 Total de accordions FAQ encontrados: ${accordions.length}`);
+
+              if (index >= accordions.length) {
+                console.log(`❌ Índice ${index} maior que número de accordions disponíveis`);
+                return false;
+              }
+
+              const targetAccordion = accordions[index];
+              if (!targetAccordion) {
+                console.log(`❌ Accordion FAQ no índice ${index} não encontrado`);
+                return false;
+              }
+
+              // Fechar todos os accordions primeiro
+              console.log('🔒 Fechando todos os accordions FAQ primeiro...');
+              accordions.forEach(el => {
+                const panel = el.nextElementSibling;
+                if (panel && panel.style.display !== 'none') {
+                  el.click();
+                }
+              });
+
+              // Aguardar um pouco para o fechamento
+              setTimeout(() => {}, 500);
+
+              // Agora clicar no accordion alvo
+              console.log(`🎯 Clicando no accordion FAQ ${index + 1}...`);
+              targetAccordion.click();
+
+              // Verificar se abriu e tentar novamente se necessário
+              setTimeout(() => {
+                const panel = targetAccordion.nextElementSibling;
+                if (!panel || panel.style.display === 'none') {
+                  console.log('🔄 Accordion FAQ não abriu, tentando novamente...');
+                  targetAccordion.click();
+                  
+                  // Se ainda não abriu, tentar clicar diretamente no texto
+                  setTimeout(() => {
+                    const panel2 = targetAccordion.nextElementSibling;
+                    if (!panel2 || panel2.style.display === 'none') {
+                      console.log('🔁 Tentando clicar no texto do accordion FAQ');
+                      targetAccordion.click();
+                    }
+                  }, 200);
+                }
+              }, 300);
+
+              return true;
+            }, i);
+            
+            if (accordionClicked) {
+              // Aguardar abertura do accordion com mais tempo
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              
+              // Verificar se o accordion realmente abriu
+              const accordionOpened = await page.evaluate((index) => {
+                const accordions = document.querySelectorAll('#faq .accordion.template.campo');
+                if (index >= accordions.length) return false;
+                
+                const accordion = accordions[index];
+                const content = accordion.nextElementSibling;
+                if (content && content.style.display !== 'none') {
+                  console.log(`✅ Accordion FAQ ${index + 1} está aberto`);
+                  return true;
+                } else {
+                  console.log(`⚠️ Accordion FAQ ${index + 1} pode não ter aberto`);
+                  return false;
+                }
+              }, i);
+              
+              if (accordionOpened) {
+                // Aguardar um pouco mais para garantir que o conteúdo está totalmente carregado
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Capturar screenshot
+                const content = await page.$('.turma-wrapper-content');
+                if (content) {
+                  const filename = filenames[i];
+                  await content.screenshot({ path: path.join(outputFolder, filename) });
+                  console.log(`✅ Screenshot FAQ salvo: ${filename}`);
+                } else {
+                  console.warn(`⚠️ Conteúdo FAQ não encontrado para accordion ${i + 1}`);
+                }
+              } else {
+                console.warn(`⚠️ Accordion FAQ ${i + 1} não abriu corretamente, pulando...`);
+              }
+            } else {
+              console.warn(`⚠️ Não foi possível clicar no accordion FAQ ${i + 1}`);
+            }
+            
+            // Aguardar entre capturas
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          
+          console.log(`✅ Captura múltipla do FAQ concluída!`);
+        } catch (error) {
+          console.error(`⚠️ Erro ao capturar FAQ: ${error.message}`);
+        }
+      },
     },
   ];
 
@@ -863,8 +1128,8 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
           console.log(`⚠️ Erro na ação específica para ${section.internal}: ${actionError.message}`);
           // Continua mesmo com erro na ação específica
         }
-        // Se for Corpo Docente ou Processo Seletivo, pular a captura automática pois já foi feita pela action
-        if (section.internal === "Corpo Docente" || section.internal === "Processo Seletivo") {
+        // Se for Corpo Docente, Processo Seletivo, Programa e Metodologia ou FAQ, pular a captura automática pois já foi feita pela action
+        if (section.internal === "Corpo Docente" || section.internal === "Processo Seletivo" || section.internal === "Programa e Metodologia" || section.internal === "Perguntas frequentes (FAQ)") {
           console.log(`ℹ️ ${section.internal} já foi capturado pela action personalizada, pulando captura automática`);
           continue;
         }
