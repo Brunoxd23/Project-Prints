@@ -13,9 +13,8 @@
     <link rel="stylesheet" href="styles/toast.css" />
     <link rel="stylesheet" href="styles/modal.css" />
     <link rel="stylesheet" href="styles/update-selection-modal.css" />
-    <link rel="stylesheet" href="styles/search.css" />
-    <link rel="stylesheet" href="styles/loading.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.googleapi    <link rel="stylesheet" href="styles/loading.css" />
+s.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
@@ -53,7 +52,6 @@
       >
         <span
           class="logo-icon"
-          id="einstein-logo"
           style="
             display: flex;
             align-items: center;
@@ -61,17 +59,12 @@
             background: transparent;
             width: 200px;
             height: 48px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            padding: 4px;
           "
-          title="Clique para ir aos cursos"
         >
           <img
             src="./images/Canvas_Einstein_Color_Horizontal.png"
             alt="Logo Einstein"
-            style="width: 100%; height: auto; filter: brightness(0) invert(1); transition: all 0.3s ease;"
+            style="width: 100%; height: auto; filter: brightness(0) invert(1)"
           />
         </span>
         <span
@@ -93,20 +86,6 @@
       </div>
     </header>
 
-    <!-- Barra de Pesquisa para Cursos -->
-    <div id="search-courses-container" class="search-container" style="display: none;">
-      <div class="search-box">
-        <input 
-          type="text" 
-          id="search-courses-input" 
-          placeholder="🔍 Pesquisar cursos..." 
-          class="search-input"
-        />
-        <button id="clear-search-courses" class="clear-search-btn" style="display: none;">&times;</button>
-      </div>
-      <div id="search-results-info" class="search-results-info" style="display: none;"></div>
-    </div>
-
     <div
       id="home-view"
       style="
@@ -119,8 +98,7 @@
       <div id="cards-container" class="cards-container" style="display: flex">
         <!-- Card Especialização Híbrida -->
         <div class="card" id="card-hibrida">
-          <h2>Pós Graduação 2025-5</h2>
-          <p>Assistente Social</p>
+          <h2>Especialização Híbrida</h2>
         </div>
       </div>
       <!-- Container para os cursos da Especialização Híbrida -->
@@ -128,6 +106,9 @@
         id="cursos-hibrida-container"
         class="cards-container"
         style="display: none"
+      ></div>
+    </div>
+  style="display: none"
       ></div>
     </div>
 
@@ -139,9 +120,7 @@
           style="margin-bottom: 20px; display: none"
         ></button>
         <div style="margin: 10px 0">
-          <div id="folder-list" class="folder-list"></div>
-        </div>
-        <div class="output-section" id="folder-output"></div>
+          <div id="folder-list" class="foldediv class="output-section" id="folder-output"></div>
       </div>
     </div>
     <div
@@ -174,9 +153,7 @@
         "
         >&times;</span
       >
-      <img id="zoom-img" src="" style="max-width: 90vw; max-height: 90vh" />
-    </div>
-    
+      <img id="zoom-img" s    
     <!-- Modal de Seleção de Prints para Atualizar -->
     <div id="update-selection-modal" class="modal" style="display: none;">
       <div class="modal-content">
@@ -187,62 +164,6 @@
         <div class="modal-body">
           <p>Escolha quais prints deseja atualizar:</p>
           <div class="update-options">
-            <label class="update-option">
-              <input type="checkbox" id="update-sobre-curso">
-              <span class="checkmark"></span>
-              <div class="option-content">
-                <strong>Sobre o Curso</strong>
-                <small>Informações gerais sobre o curso</small>
-              </div>
-            </label>
-            <label class="update-option">
-              <input type="checkbox" id="update-modalidade-ensino">
-              <span class="checkmark"></span>
-              <div class="option-content">
-                <strong>Modalidade de Ensino</strong>
-                <small>Detalhes sobre a modalidade do curso</small>
-              </div>
-            </label>
-            <label class="update-option">
-              <input type="checkbox" id="update-selecionar-turma">
-              <span class="checkmark"></span>
-              <div class="option-content">
-                <strong>Selecionar uma Turma</strong>
-                <small>Opções de turmas disponíveis</small>
-              </div>
-            </label>
-            <label class="update-option">
-              <input type="checkbox" id="update-programa-metodologia">
-              <span class="checkmark"></span>
-              <div class="option-content">
-                <strong>Programa e Metodologia</strong>
-                <small>Estrutura do programa e metodologia de ensino</small>
-              </div>
-            </label>
-            <label class="update-option">
-              <input type="checkbox" id="update-objetivos-qualificacoes">
-              <span class="checkmark"></span>
-              <div class="option-content">
-                <strong>Objetivos e Qualificações</strong>
-                <small>Objetivos do curso e qualificações oferecidas</small>
-              </div>
-            </label>
-            <label class="update-option">
-              <input type="checkbox" id="update-corpo-docente">
-              <span class="checkmark"></span>
-              <div class="option-content">
-                <strong>Corpo Docente</strong>
-                <small>Informações sobre professores e coordenadores</small>
-              </div>
-            </label>
-            <label class="update-option">
-              <input type="checkbox" id="update-cronograma-aulas">
-              <span class="checkmark"></span>
-              <div class="option-content">
-                <strong>Cronograma de Aulas</strong>
-                <small>Calendário e cronograma das aulas</small>
-              </div>
-            </label>
             <label class="update-option">
               <input type="checkbox" id="update-local-horario" checked>
               <span class="checkmark"></span>
@@ -259,30 +180,6 @@
                 <small>Atualiza informações de investimento e formas de pagamento</small>
               </div>
             </label>
-            <label class="update-option">
-              <input type="checkbox" id="update-perfil-aluno">
-              <span class="checkmark"></span>
-              <div class="option-content">
-                <strong>Perfil do Aluno</strong>
-                <small>Características e perfil dos alunos</small>
-              </div>
-            </label>
-            <label class="update-option">
-              <input type="checkbox" id="update-processo-seletivo">
-              <span class="checkmark"></span>
-              <div class="option-content">
-                <strong>Processo Seletivo</strong>
-                <small>Informações sobre inscrição e processo seletivo</small>
-              </div>
-            </label>
-            <label class="update-option">
-              <input type="checkbox" id="update-perguntas-frequentes">
-              <span class="checkmark"></span>
-              <div class="option-content">
-                <strong>Perguntas Frequentes (FAQ)</strong>
-                <small>Perguntas e respostas mais comuns sobre o curso</small>
-              </div>
-            </label>
           </div>
         </div>
         <div class="modal-footer">
@@ -292,12 +189,11 @@
       </div>
     </div>
     
-    <div id="toast" class="toast"></div>
-    <script src="js/update-selection-modal.js"></script>
-    <script src="js/search.js"></script>
-    <script src="js/subcursos-search.js"></script>
+rc="" style="max-width: 90vw; max-height:     <script src="js/update-selection-modal.js"></script>
     <script type="module" src="index.js"></script>
     <script src="js/script-execution.js"></script>
+    <script src="js/script-confirmation.js"></script>
+script>
     <script src="js/script-confirmation.js"></script>
     <script>
       // Removido o evento de hover para manter o título sempre branco

@@ -915,7 +915,7 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
         }
       },
     },
-     {
+    {
       internal: "Perguntas frequentes (FAQ)",
       display: "Perguntas frequentes FAQ",
       selector: ".turma-wrapper-content",

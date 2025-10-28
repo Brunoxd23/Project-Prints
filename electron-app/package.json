@@ -1,0 +1,78 @@
+{
+  "name": "prints-einstein-app",
+  "version": "1.0.0",
+  "description": "Sistema de Captura de Prints - Einstein",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "dev": "electron . --dev"
+  },
+  "author": "Sistema Prints Einstein",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.3.11",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "axios": "^1.13.0",
+    "electron-store": "^8.1.0",
+    "express": "^4.21.2",
+    "puppeteer": "^21.11.0"
+  },
+  "build": {
+    "appId": "com.einstein.prints",
+    "productName": "Prints Einstein",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "npmRebuild": false,
+    "buildDependenciesFromSource": true,
+    "files": [
+      "**/*",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.env",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,thumbs.db,.gitignore,.gitattributes,.flowconfig,.yarn-metadata.json,.idea,appveyor.yml,.travis.yml,circle.yml,npm-debug.log,.nyc_output,.npmrc,.yarn-integrity,.yarn-metadata.json,.yarnrc,yarn.lock,yarn-error.log,package-lock.json,.eslintrc.js}"
+    ],
+    "extraResources": [
+      {
+        "from": "./routes",
+        "to": "routes",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "./utils",
+        "to": "utils",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Prints Einstein",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    }
+  }
+}
