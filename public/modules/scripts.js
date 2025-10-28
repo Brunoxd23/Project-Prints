@@ -28,7 +28,7 @@ export async function showPrints(pasta, folderOutput) {
     const res = await fetch(
       `/listar-prints?pasta=${encodeURIComponent(pasta)}`
     );
-    const prints = await res.json();
+    let prints = await res.json();
     let html = "";
     if (!Array.isArray(prints) || prints.length === 0) {
       html += "<span>Nenhum print encontrado.</span>";
@@ -37,6 +37,41 @@ export async function showPrints(pasta, folderOutput) {
         html;
       return;
     }
+    // Adiciona zeros à esquerda nos nomes dos prints
+    prints = prints.map((img) => {
+      const parts = img.split("/");
+      const filename = parts.pop();
+      const updatedFilename = filename.replace(/^(\d)_/, "0$1_");
+      return [...parts, updatedFilename].join("/");
+    });
+    // Ordena os prints para garantir a sequência correta (ordem numérica com suporte a decimais)
+    prints.sort((a, b) => {
+      const getSortKey = (name) => {
+        // Extrai o nome do arquivo da URL
+        const filename = name.split('/').pop();
+        
+        // Procura por padrões como "04.1_", "12.11_", etc.
+        const decimalMatch = filename.match(/^(\d+)\.(\d+)_/);
+        if (decimalMatch) {
+          const mainNum = parseInt(decimalMatch[1], 10);
+          const subNum = parseInt(decimalMatch[2], 10);
+          // Retorna uma string ordenável: mainNum com 2 dígitos + subNum com 2 dígitos
+          return `${mainNum.toString().padStart(2, "0")}.${subNum.toString().padStart(2, "0")}`;
+        }
+        
+        // Fallback para números simples como "01_", "02_", etc.
+        const simpleMatch = filename.match(/^(\d+)_/);
+        if (simpleMatch) {
+          const num = parseInt(simpleMatch[1], 10);
+          return `${num.toString().padStart(2, "0")}.00`;
+        }
+        
+        // Se não encontrar padrão numérico, retorna 0
+        return "00.00";
+      };
+      
+      return getSortKey(a).localeCompare(getSortKey(b));
+    });
     html += `<div class='prints-grid'>`;
     html += prints
       .map(

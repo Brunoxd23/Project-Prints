@@ -10,7 +10,11 @@
     <link rel="stylesheet" href="styles/prints.css" />
     <link rel="stylesheet" href="styles/back-button.css" />
     <link rel="stylesheet" href="styles/folder-view.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="styles/toast.css" />
+    <link rel="stylesheet" href="styles/modal.css" />
+    <link rel="stylesheet" href="styles/update-selection-modal.css" />
+    <link rel="preconnect" href="https://fonts.googleapi    <link rel="stylesheet" href="styles/loading.css" />
+s.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
@@ -18,6 +22,22 @@
     />
   </head>
   <body>
+    <!-- Modal de Confirmação -->
+    <div class="modal-overlay" id="confirmModal">
+      <div class="modal-container">
+        <h2 class="modal-title">Confirmação</h2>
+        <p class="modal-message">Deseja criar um novo semestre?</p>
+        <div class="modal-buttons">
+          <button class="modal-btn modal-btn-cancel" id="cancelButton">
+            Não
+          </button>
+          <button class="modal-btn modal-btn-confirm" id="confirmButton">
+            Sim
+          </button>
+        </div>
+      </div>
+    </div>
+
     <header
       class="logo-header"
       style="
@@ -88,6 +108,9 @@
         style="display: none"
       ></div>
     </div>
+  style="display: none"
+      ></div>
+    </div>
 
     <div id="folder-view" style="display: none">
       <div class="card folder-card">
@@ -97,9 +120,7 @@
           style="margin-bottom: 20px; display: none"
         ></button>
         <div style="margin: 10px 0">
-          <div id="folder-list" class="folder-list"></div>
-        </div>
-        <div class="output-section" id="folder-output"></div>
+          <div id="folder-list" class="foldediv class="output-section" id="folder-output"></div>
       </div>
     </div>
     <div
@@ -132,18 +153,50 @@
         "
         >&times;</span
       >
-      <img id="zoom-img" src="" style="max-width: 90vw; max-height: 90vh" />
+      <img id="zoom-img" s    
+    <!-- Modal de Seleção de Prints para Atualizar -->
+    <div id="update-selection-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Selecionar Prints para Atualizar</h3>
+          <span class="modal-close" onclick="closeUpdateSelectionModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+          <p>Escolha quais prints deseja atualizar:</p>
+          <div class="update-options">
+            <label class="update-option">
+              <input type="checkbox" id="update-local-horario" checked>
+              <span class="checkmark"></span>
+              <div class="option-content">
+                <strong>Local e Horário</strong>
+                <small>Atualiza informações de localização e horários das aulas</small>
+              </div>
+            </label>
+            <label class="update-option">
+              <input type="checkbox" id="update-valor-curso" checked>
+              <span class="checkmark"></span>
+              <div class="option-content">
+                <strong>Valor do Curso</strong>
+                <small>Atualiza informações de investimento e formas de pagamento</small>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeUpdateSelectionModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="confirmUpdateSelection()">Atualizar Selecionados</button>
+        </div>
+      </div>
     </div>
-    <div id="toast" class="toast"></div>
+    
+rc="" style="max-width: 90vw; max-height:     <script src="js/update-selection-modal.js"></script>
     <script type="module" src="index.js"></script>
+    <script src="js/script-execution.js"></script>
+    <script src="js/script-confirmation.js"></script>
+script>
+    <script src="js/script-confirmation.js"></script>
     <script>
-      const headerTitle = document.getElementById("header-title");
-      headerTitle.addEventListener("mouseenter", () => {
-        headerTitle.style.color = "#fff";
-      });
-      headerTitle.addEventListener("mouseleave", () => {
-        headerTitle.style.color = "#111";
-      });
+      // Removido o evento de hover para manter o título sempre branco
     </script>
   </body>
 </html>

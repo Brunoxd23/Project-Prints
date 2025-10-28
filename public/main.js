@@ -1,6 +1,181 @@
 // Funções migradas para spa.js, cards.js, scripts.js, utils.js
 // Inicialização e importação agora em index.js
 
+// Função para mostrar toast
+function showToast(message, type = "info") {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.className = `toast ${type} show`;
+  setTimeout(() => (toast.className = "toast"), 3000);
+}
+
+window.abrirViewCurso = async function (curso) {
+  document.getElementById("cursos-hibrida-container").style.display = "none";
+  document.getElementById("cards-container").style.display = "none";
+  const folderView = document.getElementById("folder-view");
+  const folderTitle = document.getElementById("folder-title");
+  const folderOutput = document.getElementById("folder-output");
+
+  // Armazena a pasta atual para uso posterior
+  window.currentPasta = curso.pasta;
+
+  folderView.style.display = "flex";
+  folderTitle.textContent = curso.nome;
+
+  // Remove qualquer botão existente
+  const oldBtn = document.querySelector(".run-script-btn");
+  if (oldBtn) {
+    oldBtn.remove();
+  }
+
+  // Cria um novo botão
+  const newBtn = document.createElement("button");
+  newBtn.className = "run-script-btn";
+  newBtn.textContent = "Executar Script";
+
+  // Adiciona o evento de clique com validação
+  newBtn.onclick = async function (e) {
+    e.preventDefault();
+
+    const confirmModal = document.getElementById("confirmModal");
+    if (!confirmModal) {
+      console.error("Modal não encontrado");
+      return;
+    }
+
+    confirmModal.classList.add("active");
+
+    const confirmed = await new Promise((resolve) => {
+      const confirmButton = document.getElementById("confirmButton");
+      const cancelButton = document.getElementById("cancelButton");
+
+      const handleConfirm = () => {
+        cleanup();
+        resolve(true);
+      };
+
+      const handleCancel = () => {
+        cleanup();
+        resolve(false);
+      };
+
+      const cleanup = () => {
+        confirmModal.classList.remove("active");
+        confirmButton.removeEventListener("click", handleConfirm);
+        cancelButton.removeEventListener("click", handleCancel);
+      };
+
+      confirmButton.addEventListener("click", handleConfirm);
+      cancelButton.addEventListener("click", handleCancel);
+    });
+
+    if (!confirmed) {
+      showToast("Operação cancelada", "info");
+      return;
+    }
+
+    newBtn.disabled = true;
+    newBtn.textContent = "Processando...";
+    showToast("Criando novo semestre...", "info");
+
+    try {
+      const response = await fetch("/run-script", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ pasta: curso.pasta }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao executar o script");
+      }
+
+      showToast("Semestre criado com sucesso!", "success");
+      newBtn.textContent = "Concluído";
+      newBtn.style.backgroundColor = "#4CAF50";
+
+      setTimeout(() => {
+        newBtn.disabled = false;
+        newBtn.textContent = "Executar Script";
+        newBtn.style.backgroundColor = "";
+      }, 2000);
+    } catch (error) {
+      console.error(error);
+      showToast("Erro ao criar semestre: " + error.message, "error");
+      newBtn.disabled = false;
+      newBtn.textContent = "Tentar Novamente";
+      newBtn.style.backgroundColor = "#f44336";
+    }
+  };
+
+  // Adiciona o novo botão ao DOM
+  folderView.querySelector(".card").appendChild(newBtn);
+  folderOutput.innerHTML = "";
+  loadPastas(curso.pasta);
+};
+ndex.js;
+
+// Função para mostrar toast
+function showToast(message, type = "info") {
+  // Cria container de toast se não existir
+  let container = document.querySelector(".toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "toast-container";
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.animation = "slideOut 0.3s ease-in-out forwards";
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Função para mostrar modal de confirmação
+function showConfirmationModal(title, message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+
+    const modal = document.createElement("div");
+    modal.className = "confirmation-modal";
+
+    modal.innerHTML = `
+      <h3 class="modal-title">${title}</h3>
+      <p>${message}</p>
+      <div class="modal-buttons">
+        <button class="modal-btn confirm">Sim</button>
+        <button class="modal-btn cancel">Não</button>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+
+    const confirmBtn = modal.querySelector(".confirm");
+    const cancelBtn = modal.querySelector(".cancel");
+
+    confirmBtn.onclick = () => {
+      overlay.remove();
+      modal.remove();
+      resolve(true);
+    };
+
+    cancelBtn.onclick = () => {
+      overlay.remove();
+      modal.remove();
+      resolve(false);
+    };
+  });
+}
+
 window.showCursosHibrida = function () {
   document.getElementById("cards-container").style.display = "none";
   const container = document.getElementById("cursos-hibrida-container");
@@ -158,15 +333,32 @@ window.abrirViewCurso = function (curso) {
       btn.textContent = "Executar Script";
       btn.onclick = async function (e) {
         e.stopPropagation();
+
+        // Criar e mostrar modal de confirmação
+        const confirmResult = await showConfirmationModal(
+          `Deseja criar um novo semestre para ${sub.nome}?`,
+          "Esta ação irá gerar novos prints para o curso."
+        );
+
+        if (!confirmResult) {
+          showToast("Operação cancelada", "info");
+          return;
+        }
+
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> Executando...';
-        // Chama rota específica
+
         try {
+          showToast("Iniciando criação do semestre...", "info");
           const res = await fetch(sub.rota, { method: "POST" });
+
           if (!res.ok) throw new Error("Erro ao executar script");
+
           btn.textContent = "Sucesso!";
           btn.style.background = "#00c6ff";
           btn.style.color = "#fff";
+          showToast("Semestre criado com sucesso!", "success");
+
           setTimeout(() => {
             btn.textContent = "Executar Script";
             btn.style.background = "";

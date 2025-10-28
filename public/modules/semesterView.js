@@ -7,6 +7,29 @@ import {
 import { showToast } from "./utils.js";
 
 export function createSemesterView(curso) {
+  console.log('🔍 DEBUG - createSemesterView chamado com curso:', curso);
+  console.log('🔍 DEBUG - curso.pasta:', curso.pasta);
+  console.log('🔍 DEBUG - curso.nome:', curso.nome);
+  
+  // Salvar estado atual - encontrar o curso principal
+  if (typeof window.saveCurrentState === 'function') {
+    // Encontrar o curso principal que contém este subcurso
+    let cursoPrincipal = null;
+    if (window.cursosHibrida) {
+      cursoPrincipal = window.cursosHibrida.find(c => 
+        c.subcursos && c.subcursos.some(s => s.pasta === curso.pasta)
+      );
+    }
+    
+    console.log('🔍 DEBUG - cursoPrincipal encontrado:', cursoPrincipal);
+    
+    window.saveCurrentState({
+      view: 'semesters',
+      curso: cursoPrincipal ? cursoPrincipal.nome : curso.nome, // Usar nome do curso principal
+      pasta: curso.pasta
+    });
+  }
+  
   const view = document.createElement("div");
   view.className = "semester-view";
 
@@ -66,14 +89,77 @@ export function createSemesterView(curso) {
   btnVoltar.className = "back-btn";
   btnVoltar.innerHTML = "&larr; Voltar para Subcursos";
   btnVoltar.onclick = () => {
-    // Remover a visualização de semestres
-    document.body.removeChild(view);
+    // Mostrar spinner ao voltar para subcursos
+    if (typeof window.showLoadingSpinner === "function") {
+      window.showLoadingSpinner("Voltando para subcursos...");
+    }
+    
+    // Atualizar estado para subcursos antes de voltar
+    if (typeof window.saveCurrentState === 'function') {
+      // Encontrar o curso principal que contém este subcurso
+      let cursoPrincipal = null;
+      if (window.cursosHibrida) {
+        cursoPrincipal = window.cursosHibrida.find(c => 
+          c.subcursos && c.subcursos.some(s => s.pasta === curso.pasta)
+        );
+      }
+      
+      window.saveCurrentState({
+        view: 'subcursos',
+        curso: cursoPrincipal ? cursoPrincipal.nome : curso.nome // Usar nome do curso principal
+      });
+    }
 
-    // Exibir a lista de subcursos
-    document.getElementById("cursos-hibrida-container").style.display = "flex";
+    // Aguardar um pouco para mostrar o spinner
+    setTimeout(() => {
+      console.log('🔄 Voltando para subcursos...');
+      
+      // Remover a visualização de semestres
+      document.body.removeChild(view);
 
-    // Esconder outras views se estiverem visíveis
-    document.getElementById("folder-view").style.display = "none";
+      // Encontrar o curso principal que contém este subcurso
+      let cursoPrincipal = null;
+      if (window.cursosHibrida) {
+        cursoPrincipal = window.cursosHibrida.find(c => 
+          c.subcursos && c.subcursos.some(s => s.pasta === curso.pasta)
+        );
+      }
+
+      console.log('🔍 Curso principal encontrado:', cursoPrincipal ? cursoPrincipal.nome : 'Não encontrado');
+
+      if (cursoPrincipal) {
+        // Esconder outras views se estiverem visíveis
+        document.getElementById("folder-view").style.display = "none";
+        document.getElementById("cards-container").style.display = "none";
+        
+        // Exibir a lista de cursos primeiro
+        document.getElementById("cursos-hibrida-container").style.display = "flex";
+        
+        // Renderizar os cursos primeiro, depois os subcursos
+        if (typeof window.renderCursos === 'function') {
+          console.log('✅ Renderizando cursos...');
+          window.renderCursos(window.cursosHibrida, document.getElementById("cursos-hibrida-container"), document.getElementById("cards-container"));
+          
+          // Aguardar renderização e então mostrar subcursos
+          setTimeout(() => {
+            if (typeof window.renderSubcursos === 'function') {
+              console.log('✅ Renderizando subcursos para:', cursoPrincipal.nome);
+              window.renderSubcursos(cursoPrincipal, document.getElementById("cursos-hibrida-container"));
+            }
+          }, 100);
+        }
+      } else {
+        console.log('❌ Curso principal não encontrado, usando fallback');
+        // Fallback: apenas mostrar cursos
+        document.getElementById("cursos-hibrida-container").style.display = "flex";
+        document.getElementById("folder-view").style.display = "none";
+      }
+
+      // Esconder spinner após renderizar
+      if (typeof window.hideLoadingSpinner === "function") {
+        window.hideLoadingSpinner();
+      }
+    }, 300); // Aguardar 300ms para mostrar o spinner
   };
 
   const title = document.createElement("h2");
@@ -110,13 +196,19 @@ export function createSemesterView(curso) {
       headerTitle.style.color = "#fff"; // Mantém branco por padrão
     });
   }
+
+  // A pesquisa de prints será inicializada quando os prints forem carregados
 }
 
 async function loadSemesters(curso, grid) {
   try {
+    console.log('🔍 DEBUG - loadSemesters chamado com curso:', curso);
+    console.log('🔍 DEBUG - curso.pasta:', curso.pasta);
+    
     const semesters = await listSemesters(curso.pasta);
+    console.log('🔍 DEBUG - semesters retornados:', semesters);
+    
     // Não criar mais semestres automaticamente, apenas mostrar os existentes
-
     renderSemesters(curso, semesters, grid);
   } catch (error) {
     console.error("Erro ao carregar semestres:", error);
@@ -125,10 +217,12 @@ async function loadSemesters(curso, grid) {
 }
 
 function renderSemesters(curso, semesters, grid) {
+  console.log('🔍 DEBUG - renderSemesters chamado com:', { curso, semesters, grid });
   grid.innerHTML = "";
 
   // Se não houver semestres, mostrar mensagem com botão
   if (!semesters || semesters.length === 0) {
+    console.log('❌ DEBUG - Nenhum semestre encontrado, mostrando mensagem');
     const noDataContainer = document.createElement("div");
     noDataContainer.className = "no-data-container";
 
@@ -146,6 +240,8 @@ function renderSemesters(curso, semesters, grid) {
     grid.appendChild(noDataContainer);
     return;
   }
+
+  console.log('✅ DEBUG - Semestres encontrados, renderizando:', semesters);
 
   semesters.forEach((semester, index) => {
     const card = document.createElement("div");
@@ -198,22 +294,21 @@ function renderSemesters(curso, semesters, grid) {
     const btnAtualizar = document.createElement("button");
     btnAtualizar.className = "update-prints-btn";
     btnAtualizar.textContent = "Atualizar";
-    btnAtualizar.onclick = async () => {
-      btnAtualizar.disabled = true;
-      btnAtualizar.innerHTML = '<span class="spinner"></span> Atualizando...';
+    btnAtualizar.setAttribute("data-curso", curso.pasta);
+    btnAtualizar.setAttribute("data-semester", semester);
+    btnAtualizar.onclick = () => {
+      console.log("Botão Atualizar clicado!", curso, semester);
+      console.log(
+        "Função showUpdateSelectionModal disponível:",
+        typeof window.showUpdateSelectionModal
+      );
 
-      try {
-        await fetch(`/update-prints/${curso.pasta}/${semester}`, {
-          method: "POST",
-        });
-        showToast("Prints atualizados com sucesso!");
-        btnAtualizar.textContent = "Atualizar";
-        btnAtualizar.disabled = false;
-      } catch (error) {
-        console.error("Erro ao atualizar prints:", error);
-        showToast("Erro ao atualizar prints", "error");
-        btnAtualizar.textContent = "Atualizar";
-        btnAtualizar.disabled = false;
+      if (typeof window.showUpdateSelectionModal === "function") {
+        // Abrir modal de seleção em vez de executar diretamente
+        window.showUpdateSelectionModal(curso, semester);
+      } else {
+        console.error("Função showUpdateSelectionModal não está disponível!");
+        showToast("Erro: Modal de seleção não carregado", "error");
       }
     };
 

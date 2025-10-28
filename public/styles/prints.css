@@ -113,37 +113,17 @@ body {
   transform: none;
 }
 
-/* Remove transition from buttons */
-.back-btn-inside,
+/* Botões padronizados */
 .outside-btn {
   transition: none;
 }
 
-.back-btn-inside:hover,
 .outside-btn:hover {
   background-color: #0072ff;
 }
 
 .download-text {
   margin-left: 8px;
-}
-
-/* Adjust 'Voltar' button styling */
-.back-btn-inside {
-  align-self: flex-start;
-  margin: 0 0 20px 0;
-  padding: 8px 16px;
-  font-size: 1rem;
-  background-color: #0072ff;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.back-btn-inside:hover {
-  background-color: #005bb5;
 }
 
 /* Style h2 elements to match semester page */

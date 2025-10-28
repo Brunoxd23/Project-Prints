@@ -1,0 +1,213 @@
+/* Modal de Seleção de Prints para Atualizar */
+#update-selection-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 10000 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#update-selection-modal .modal-content {
+  background: white !important;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  z-index: 10001;
+}
+
+#update-selection-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#update-selection-modal .modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+#update-selection-modal .modal-close {
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  font-weight: bold;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+#update-selection-modal .modal-close:hover {
+  color: #374151;
+}
+
+#update-selection-modal .modal-body {
+  padding: 24px;
+}
+
+#update-selection-modal .modal-body p {
+  margin: 0 0 20px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+#update-selection-modal .update-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#update-selection-modal .update-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: #f9fafb;
+}
+
+#update-selection-modal .update-option:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+#update-selection-modal .update-option input[type="checkbox"] {
+  display: none;
+}
+
+#update-selection-modal .checkmark {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  position: relative;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.2s ease;
+}
+
+#update-selection-modal .update-option input[type="checkbox"]:checked + .checkmark {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+#update-selection-modal .update-option input[type="checkbox"]:checked + .checkmark::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+#update-selection-modal .option-content {
+  flex: 1;
+}
+
+#update-selection-modal .option-content strong {
+  display: block;
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+#update-selection-modal .option-content small {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+#update-selection-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0 0 12px 12px;
+}
+
+#update-selection-modal .btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+#update-selection-modal .btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+#update-selection-modal .btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+#update-selection-modal .btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+#update-selection-modal .btn-primary:hover {
+  background: #2563eb;
+}
+
+#update-selection-modal .btn-primary:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Animação de entrada */
+#update-selection-modal.show {
+  animation: fadeIn 0.3s ease;
+}
+
+#update-selection-modal .modal-content {
+  animation: slideIn 0.3s ease;
+}
+
+/* Forçar visibilidade */
+#update-selection-modal[style*="flex"] {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

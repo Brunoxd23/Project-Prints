@@ -1,6 +1,112 @@
 import { getCurrentSemester } from "./semester.js";
 import { createSemesterView } from "./semesterView.js";
 
+// Função para mostrar modal de confirmação com input de semestre
+function showConfirmModal() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("confirmModal");
+    const confirmBtn = document.getElementById("confirmButton");
+    const cancelBtn = document.getElementById("cancelButton");
+
+    // Atualizar texto do modal para ser mais específico
+    const modalMessage = document.querySelector(".modal-message");
+    modalMessage.innerHTML = `
+      <p>Deseja criar um novo semestre com prints?</p>
+      <div style="margin-top: 20px;">
+        <label for="semesterInput" style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">
+          Digite o semestre (ex: 2025-1, 2025-81...):
+        </label>
+        <input 
+          type="text" 
+          id="semesterInput" 
+          placeholder="Ex: 2025-1" 
+          style="
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #ddd; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+          "
+          onfocus="this.style.borderColor='#0072ff'"
+          onblur="this.style.borderColor='#ddd'"
+        />
+        <div id="semesterError" style="color: #e74c3c; font-size: 14px; margin-top: 5px; display: none;">
+          Por favor, digite um semestre válido (ex: 2025-1, 2025-81, 2025-92)
+        </div>
+      </div>
+    `;
+
+    modal.classList.add("active");
+
+    // Focar no input automaticamente
+    setTimeout(() => {
+      const input = document.getElementById("semesterInput");
+      if (input) {
+        input.focus();
+      }
+    }, 100);
+
+    const handleConfirm = () => {
+      const input = document.getElementById("semesterInput");
+      const errorDiv = document.getElementById("semesterError");
+      const semester = input.value.trim();
+      
+      // Validar formato do semestre (ex: 2025-1, 2025-2, 2025-81, 2025-92)
+      const semesterRegex = /^\d{4}-\d+$/;
+      
+      if (!semester || !semesterRegex.test(semester)) {
+        errorDiv.style.display = "block";
+        errorDiv.textContent = "Por favor, digite um semestre válido (ex: 2025-1, 2025-81, 2025-92)";
+        input.style.borderColor = "#e74c3c";
+        return;
+      }
+      
+      modal.classList.remove("active");
+      resolve(semester);
+    };
+
+    const handleCancel = () => {
+      modal.classList.remove("active");
+      resolve(false);
+    };
+
+    confirmBtn.onclick = handleConfirm;
+    cancelBtn.onclick = handleCancel;
+
+    // Permitir Enter no input para confirmar
+    const handleKeyPress = (e) => {
+      if (e.key === "Enter") {
+        handleConfirm();
+      }
+    };
+
+    // Fechar modal ao clicar fora dele
+    modal.onclick = (e) => {
+      if (e.target === modal) handleCancel();
+    };
+
+    // Fechar modal com ESC
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        handleCancel();
+        document.removeEventListener("keydown", handleEsc);
+      }
+    };
+    
+    document.addEventListener("keydown", handleEsc);
+    
+    // Adicionar listener para Enter no input
+    setTimeout(() => {
+      const input = document.getElementById("semesterInput");
+      if (input) {
+        input.addEventListener("keydown", handleKeyPress);
+      }
+    }, 100);
+  });
+}
+
 export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
   cursosContainer.innerHTML = "";
   const wrapper = document.createElement("div");
@@ -14,8 +120,44 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
   btnVoltar.innerHTML = "&larr; Voltar";
   btnVoltar.style.marginBottom = "32px";
   btnVoltar.onclick = function () {
-    cursosContainer.style.display = "none";
-    cardsContainer.style.display = "flex";
+    // Mostrar spinner ao voltar para home
+    if (typeof window.showLoadingSpinner === 'function') {
+      window.showLoadingSpinner('Voltando para home...');
+    }
+    
+    // Aguardar um pouco para mostrar o spinner
+    setTimeout(() => {
+      // Limpar estado ao voltar para home
+      if (typeof window.saveCurrentState === 'function') {
+        localStorage.removeItem('printsAppState');
+      }
+      
+      cursosContainer.style.display = "none";
+      cardsContainer.style.display = "flex";
+      
+      // Esconder barra de pesquisa de prints se estiver visível
+      const printsSearchContainer = document.getElementById('search-prints-container');
+      if (printsSearchContainer) {
+        printsSearchContainer.style.display = 'none';
+      }
+      
+      // Esconder barra de pesquisa de subcursos se estiver visível
+      const subcursosSearchContainer = document.getElementById('search-subcursos-container');
+      if (subcursosSearchContainer) {
+        subcursosSearchContainer.style.display = 'none';
+      }
+      
+      // Esconder barra de pesquisa de cursos ao voltar para home
+      const coursesSearchContainer = document.getElementById('search-courses-container');
+      if (coursesSearchContainer) {
+        coursesSearchContainer.style.display = 'none';
+      }
+      
+      // Esconder spinner após renderizar
+      if (typeof window.hideLoadingSpinner === 'function') {
+        window.hideLoadingSpinner();
+      }
+    }, 300); // Aguardar 300ms para mostrar o spinner
   };
   wrapper.appendChild(btnVoltar);
 
@@ -41,6 +183,20 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
     cardContent.onclick = function () {
       // Se o curso tem subcursos, renderiza os cards de subcursos
       if (curso.subcursos && curso.subcursos.length > 0) {
+        // Salvar estado atual
+        if (typeof window.saveCurrentState === 'function') {
+          window.saveCurrentState({
+            view: 'subcursos',
+            curso: curso.nome
+          });
+        }
+        
+        // Esconder barra de pesquisa de cursos quando entrar nos subcursos
+        const coursesSearchContainer = document.getElementById('search-courses-container');
+        if (coursesSearchContainer) {
+          coursesSearchContainer.style.display = 'none';
+        }
+        
         renderSubcursos(curso, cursosContainer);
       } else {
         window.abrirViewCurso(curso);
@@ -52,24 +208,67 @@ export function renderCursos(cursosHibrida, cursosContainer, cardsContainer) {
   cursosContainer.appendChild(wrapper);
 }
 
-function renderSubcursos(curso, cursosContainer) {
+export function renderSubcursos(curso, cursosContainer) {
   cursosContainer.innerHTML = "";
   const wrapper = document.createElement("div");
   wrapper.style.display = "flex";
   wrapper.style.flexDirection = "column";
   wrapper.style.alignItems = "center";
   wrapper.id = "subcursos-wrapper";
+
+  // Criar barra de pesquisa para subcursos
+  const searchContainer = document.createElement("div");
+  searchContainer.className = "search-container";
+  searchContainer.id = "search-subcursos-container";
+  searchContainer.style.display = "block";
+
+  const searchBox = document.createElement("div");
+  searchBox.className = "search-box";
+
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.id = "search-subcursos-input";
+  searchInput.placeholder = "🔍 Pesquisar subcursos...";
+  searchInput.className = "search-input";
+
+  const clearSearchBtn = document.createElement("button");
+  clearSearchBtn.id = "clear-search-subcursos";
+  clearSearchBtn.className = "clear-search-btn";
+  clearSearchBtn.innerHTML = "&times;";
+  clearSearchBtn.style.display = "none";
+
+  const searchResultsInfo = document.createElement("div");
+  searchResultsInfo.id = "search-subcursos-results-info";
+  searchResultsInfo.className = "search-results-info";
+  searchResultsInfo.style.display = "none";
+
+  searchBox.appendChild(searchInput);
+  searchBox.appendChild(clearSearchBtn);
+  searchContainer.appendChild(searchBox);
+  searchContainer.appendChild(searchResultsInfo);
+
+  wrapper.appendChild(searchContainer);
   // Botão Voltar
   const btnVoltar = document.createElement("button");
   btnVoltar.className = "back-btn";
   btnVoltar.innerHTML = "&larr; Voltar";
   btnVoltar.style.marginBottom = "32px";
   btnVoltar.onclick = function () {
-    renderCursos(
-      window.cursosHibrida,
-      cursosContainer,
-      document.getElementById("cards-container")
-    );
+    // Mostrar spinner ao voltar
+    if (typeof window.showLoadingSpinner === 'function') {
+      window.showLoadingSpinner('Voltando para cursos...');
+    }
+    
+    // Atualizar estado para cursos antes de recarregar
+    if (typeof window.saveCurrentState === 'function') {
+      window.saveCurrentState({ view: 'cursos' });
+    }
+    
+    // Aguardar um pouco para mostrar o spinner e depois recarregar a página
+    setTimeout(() => {
+      // Recarregar a página completamente para garantir que tudo funcione
+      window.location.reload();
+    }, 800); // Aguardar 800ms para mostrar o spinner
   };
   wrapper.appendChild(btnVoltar);
   // Título
@@ -84,7 +283,7 @@ function renderSubcursos(curso, cursosContainer) {
   grid.style.justifyContent = "center";
   grid.style.gap = "32px";
   grid.style.marginTop = "32px";
-  curso.subcursos.forEach((sub) => {
+  curso.subcursos.forEach((sub, index) => {
     const card = document.createElement("div");
     card.className = "curso-card";
     // Removendo estilos inline para usar CSS
@@ -113,14 +312,50 @@ function renderSubcursos(curso, cursosContainer) {
 
     btn.onclick = async function (e) {
       e.stopPropagation();
+      
+      // Mostrar modal de confirmação
+      const confirmed = await showConfirmModal();
+      
+      if (!confirmed) {
+        // Usuário cancelou, mostrar toast informativo
+        const toast = document.getElementById("toast");
+        toast.textContent = "Operação cancelada";
+        toast.className = "toast info show";
+        setTimeout(() => (toast.className = "toast"), 3000);
+        return;
+      }
+      
+      // Usuário confirmou, executar script
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Executando...';
+      
       try {
-        const res = await fetch(sub.rota, { method: "POST" });
-        if (!res.ok) throw new Error("Erro ao executar script");
+        // Enviar semestre personalizado para o servidor
+        const res = await fetch(sub.rota, { 
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            semester: confirmed // confirmed agora contém o semestre digitado
+          })
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+          throw new Error(errorData.error || `Erro ${res.status}: ${res.statusText}`);
+        }
+        
         btn.textContent = "Sucesso!";
         btn.style.background = "#00c6ff";
         btn.style.color = "#fff";
+        
+        // Mostrar toast de sucesso
+        const toast = document.getElementById("toast");
+        toast.textContent = `Semestre ${confirmed} criado com sucesso!`;
+        toast.className = "toast success show";
+        setTimeout(() => (toast.className = "toast"), 3000);
+        
         setTimeout(() => {
           btn.textContent = "Executar Script";
           btn.style.background = "";
@@ -131,6 +366,13 @@ function renderSubcursos(curso, cursosContainer) {
         btn.textContent = "Erro";
         btn.style.background = "#ff4d4f";
         btn.style.color = "#fff";
+        
+        // Mostrar toast de erro com mensagem específica
+        const toast = document.getElementById("toast");
+        toast.textContent = err.message || "Erro ao executar script";
+        toast.className = "toast error show";
+        setTimeout(() => (toast.className = "toast"), 5000);
+        
         setTimeout(() => {
           btn.textContent = "Executar Script";
           btn.style.background = "";
@@ -144,4 +386,79 @@ function renderSubcursos(curso, cursosContainer) {
   });
   wrapper.appendChild(grid);
   cursosContainer.appendChild(wrapper);
+  
+  // Adicionar setinha indicativa de scroll
+  addScrollIndicator();
+}
+
+// Função para adicionar setinha indicativa de scroll
+function addScrollIndicator() {
+  // Remover setinha existente se houver
+  const existingIndicator = document.querySelector('.scroll-indicator');
+  if (existingIndicator) {
+    existingIndicator.remove();
+  }
+  
+  // Criar elemento da setinha
+  const indicator = document.createElement('div');
+  indicator.className = 'scroll-indicator';
+  
+  const arrow = document.createElement('div');
+  arrow.className = 'arrow';
+  
+  // Criar SVG da seta para baixo
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.innerHTML = '<path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>';
+  
+  arrow.appendChild(svg);
+  indicator.appendChild(arrow);
+  
+  // Adicionar ao body
+  document.body.appendChild(indicator);
+  
+  // Mostrar setinha após um pequeno delay
+  setTimeout(() => {
+    indicator.classList.add('show');
+  }, 500);
+  
+  // Esconder setinha quando o usuário rolar
+  let scrollTimeout;
+  window.addEventListener('scroll', () => {
+    indicator.classList.remove('show');
+    
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      // Verificar se ainda há conteúdo abaixo
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // Se não estiver no final da página, mostrar setinha novamente
+      if (scrollTop + windowHeight < documentHeight - 100) {
+        indicator.classList.add('show');
+      }
+    }, 1000);
+  });
+  
+  // Esconder setinha quando clicar nela
+  indicator.addEventListener('click', () => {
+    indicator.classList.remove('show');
+    // Scroll suave para baixo
+    window.scrollBy({
+      top: window.innerHeight * 0.8,
+      behavior: 'smooth'
+    });
+  });
+  
+  // Tornar clicável
+  indicator.style.pointerEvents = 'auto';
+  indicator.style.cursor = 'pointer';
+  
+  // Forçar animação para funcionar
+  setTimeout(() => {
+    arrow.style.animation = 'none';
+    arrow.offsetHeight; // Trigger reflow
+    arrow.style.animation = 'bounceArrow 1.5s ease-in-out infinite';
+  }, 100);
 }
