@@ -1039,12 +1039,13 @@ app.post("/update-all-prints/:pasta/:semester", async (req, res) => {
 
     // Determinar URL base baseada na pasta do curso
     let baseUrl;
-    if (pasta.includes("CP_Quinzenal")) {
+    // ATENÇÃO: "Prática Estendida" tem que ser testado ANTES do Quinzenal padrão!
+    if (pasta.includes("CP_Pratica_Estendida") || pasta.includes("CP_Quinzenal_Pratica")) {
       baseUrl =
-        "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10691&cidade=sp";
-    } else if (pasta.includes("CP_Pratica_Estendida")) {
+        "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10690&cidade=sp"; // Prática Estendida
+    } else if (pasta.includes("CP_Quinzenal")) {
       baseUrl =
-        "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10690&cidade=sp";
+        "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10691&cidade=sp"; // Quinzenal
     } else if (pasta.includes("CP_Semanal")) {
       baseUrl =
         "https://ensino.einstein.br/pos_cuidados_paliativos_p0081/p?sku=10693&cidade=sp";
