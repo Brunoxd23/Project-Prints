@@ -23,14 +23,43 @@
     return `${ano}-${sem}`;
   }
 
+  function showToast(msg, type = "success") {
+    const cont = $("#toastContainer");
+    const el = document.createElement("div");
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    cont.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("show"));
+    setTimeout(() => {
+      el.classList.remove("show");
+      setTimeout(() => cont.removeChild(el), 200);
+    }, 3500);
+  }
+
+  function showSpinner(visible, text = "Processando…") {
+    const inline = $("#inlineSpinner");
+    const txt = $("#spinnerText");
+    const bar = $("#globalProgress");
+    const barTxt = $("#progressText");
+    const statusRow = $("#statusRow");
+    const statusText = $("#statusText");
+    if (txt) txt.textContent = text;
+    if (barTxt) barTxt.textContent = visible ? text : "";
+    inline.style.display = visible ? "flex" : "none";
+    bar.style.display = visible ? "block" : "none";
+    if (statusText) statusText.textContent = text;
+    if (statusRow) statusRow.style.display = visible ? "flex" : "none";
+  }
+
   async function gerar() {
     const endpoint = $("#curso").value;
     const sem = currentSemester();
     if (!sem) {
-      showResult("Informe ano e semestre.");
+      showToast("Informe ano e semestre.", "error");
       return;
     }
-    showResult("Gerando prints… isto pode levar alguns minutos.");
+    showSpinner(true, "Gerando prints… isto pode levar alguns minutos");
+    $("#btnGerar").disabled = true;
     try {
       const res = await fetch(`/api${endpoint}`, {
         method: "POST",
@@ -41,10 +70,12 @@
       if (!res.ok) {
         throw new Error(data?.error || "Falha ao gerar prints");
       }
-      showResult(`OK! Prints gerados em ${sem}.`);
+      showToast(`OK! Prints gerados em ${sem}.`, "success");
     } catch (e) {
-      showResult("Erro: " + e.message);
+      showToast("Erro: " + e.message, "error");
     }
+    $("#btnGerar").disabled = false;
+    showSpinner(false);
   }
 
   function showResult(html) {
@@ -109,7 +140,8 @@
     }
 
     $("#dlgAtualizar").close();
-    showResult("Atualizando prints selecionados…");
+    showSpinner(true, "Atualizando prints selecionados…");
+    $("#btnConfirmAtualizar").disabled = true;
 
     try {
       const res = await fetch(
@@ -126,12 +158,15 @@
       if (!res.ok) {
         throw new Error(data?.error || "Falha ao atualizar prints");
       }
-      showResult(
-        `Atualização concluída (${data.updatedFiles?.length || 0} arquivos).`
+      showToast(
+        `Atualização concluída (${data.updatedFiles?.length || 0} arquivos).`,
+        "success"
       );
     } catch (e) {
-      showResult("Erro: " + e.message);
+      showToast("Erro: " + e.message, "error");
     }
+    $("#btnConfirmAtualizar").disabled = false;
+    showSpinner(false);
   }
 
   async function changeBase() {
