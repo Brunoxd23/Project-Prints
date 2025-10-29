@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prints – Simplificado</title>
+    <link rel="stylesheet" href="/styles/update-selection-modal.css" />
+    <link rel="stylesheet" href="/styles/buttons.css" />
+    <link rel="stylesheet" href="/styles/toast.css" />
+    <link rel="stylesheet" href="/styles/modal.css" />
+    <link rel="stylesheet" href="/styles/semester.css" />
+    <link rel="stylesheet" href="/styles/prints.css" />
+    <link rel="stylesheet" href="/styles/search.css" />
+    <style>
+      :root {
+        --bg: #0f1220;
+        --card: #171a2b;
+        --accent: #4f46e5;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, Arial;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        padding: 20px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      header h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .container {
+        max-width: 960px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      select,
+      input[type="text"],
+      input[type="number"] {
+        background: #0f1324;
+        color: var(--text);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 10px 12px;
+        outline: none;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        align-items: end;
+        flex-wrap: wrap;
+      }
+      .btn {
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .btn.secondary {
+        background: #262b45;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .section {
+        margin-top: 20px;
+      }
+      .tag {
+        background: #262b45;
+        color: #c7d2fe;
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 999px;
+      }
+      .inline {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      dialog {
+        border: none;
+        border-radius: 12px;
+        padding: 0;
+      }
+      .modal {
+        background: #0f1220;
+        color: var(--text);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        width: min(680px, 100vw - 32px);
+      }
+      .modal header {
+        padding: 16px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .modal .content {
+        padding: 18px;
+      }
+      .checks {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .check {
+        background: #0f1324;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .check input {
+        transform: scale(1.2);
+      }
+      .footer {
+        padding: 16px 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Gerador de Prints</h1>
+      <div class="inline">
+        <span class="tag" id="basePathTag">Pasta base: ...</span>
+        <button class="btn secondary" id="btnChangeBase">Alterar pasta…</button>
+      </div>
+    </header>
+    <div class="container">
+      <div class="card">
+        <div class="grid">
+          <div class="field">
+            <label class="label">Curso</label>
+            <select id="curso">
+              <optgroup label="Cuidados Paliativos">
+                <option value="/run-script-cuidados-quinzenal-pratica">
+                  Unidade Paulista | Quinzenal Prática Estendida
+                </option>
+                <option value="/run-script-cuidados-quinzenal">
+                  Unidade Paulista | Quinzenal
+                </option>
+                <option value="/run-script-cuidados-semanal">
+                  Unidade Paulista | Semanal
+                </option>
+                <option value="/run-script-cuidados-rj-mensal">
+                  Unidade Rio de Janeiro | Mensal
+                </option>
+                <option value="/run-script-cuidados-go-mensal">
+                  Unidade Goiânia | Mensal
+                </option>
+              </optgroup>
+              <optgroup label="Outros Cursos">
+                <option value="/run-script-dependencia-quimica">
+                  Dependência Química | Mensal
+                </option>
+                <option value="/run-script-infraestrutura-mensal">
+                  Infraestrutura e Facilities em Saúde | Mensal
+                </option>
+                <option value="/run-script-psiquiatria-mensal">
+                  Psiquiatria Multiprofissional | Mensal
+                </option>
+                <option value="/run-script-bases-integrativa-mensal">
+                  Bases da Saúde Integrativa e Bem-Estar | Mensal
+                </option>
+                <option value="/run-script-sustentabilidade-quinzenal">
+                  Sustentabilidade e Inovação em ESG | Quinzenal
+                </option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label">Ano</label>
+            <input
+              type="number"
+              id="ano"
+              min="2020"
+              max="2100"
+              placeholder="2025"
+            />
+          </div>
+          <div class="field">
+            <label class="label">Semestre</label>
+            <input
+              type="number"
+              id="semestre"
+              min="1"
+              max="12"
+              placeholder="2"
+            />
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="btnGerar">Gerar prints e salvar</button>
+          <button class="btn secondary" id="btnAtualizar">
+            Atualizar prints…
+          </button>
+        </div>
+        <p class="muted">
+          Dica: o semestre é no formato YYYY-N (ex: 2025-2). Você pode usar N
+          livre (ex: 2025-6) para rótulos especiais.
+        </p>
+      </div>
+
+      <div class="section" id="resultado" style="display: none">
+        <div class="card" id="resultadoCard"></div>
+      </div>
+    </div>
+
+    <dialog id="dlgAtualizar">
+      <div class="modal">
+        <header>
+          <strong>Atualizar prints existentes</strong>
+        </header>
+        <div class="content">
+          <div class="grid">
+            <div class="field">
+              <label class="label">Selecione a pasta (curso)</label>
+              <select id="pastaSelect">
+                <option value="CP_Quinzenal_Pratica">
+                  CP - Quinzenal Prática Estendida
+                </option>
+                <option value="CP_Quinzenal">CP - Quinzenal</option>
+                <option value="CP_Semanal">CP - Semanal</option>
+                <option value="CP_RJ_Mensal">CP - RJ Mensal</option>
+                <option value="CP_GO_Mensal">CP - GO Mensal</option>
+                <option value="DQ_Mensal">Dependência Química - Mensal</option>
+                <option value="IFS_Mensal">
+                  Infraestrutura e Facilities - Mensal
+                </option>
+                <option value="GIF_Mensal">
+                  Infraestrutura e Facilities (Paulista II) - Mensal
+                </option>
+                <option value="PM_Mensal">
+                  Psiquiatria Multiprofissional - Mensal
+                </option>
+                <option value="BSI_Mensal">
+                  Bases da Saúde Integrativa - Mensal
+                </option>
+                <option value="SI_Mensal">Sustentabilidade ESG - Mensal</option>
+                <option value="SLI_Quinzenal">
+                  Sustentabilidade ESG - Quinzenal
+                </option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="label">Semestre</label>
+              <select id="semesterSelect"></select>
+            </div>
+          </div>
+          <div class="section">
+            <div class="checks">
+              <label class="check"
+                ><input type="checkbox" id="chkSobre" disabled />
+                <span>01 Sobre o Curso</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkModalidade" />
+                <span>02 Modalidade de Ensino</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkTurma" disabled />
+                <span>03 Selecionar uma Turma</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkPrograma" />
+                <span>04 Programa e Metodologia</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkObjetivos" />
+                <span>05 Objetivos e Qualificações</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkCorpo" />
+                <span>06 Corpo Docente</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkCronograma" />
+                <span>07 Cronograma de Aulas</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkLocal" />
+                <span>08 Local e Horário</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkValor" />
+                <span>09 Valor do Curso</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkPerfil" />
+                <span>10 Perfil do Aluno</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkProcesso" />
+                <span>11 Processo Seletivo</span></label
+              >
+              <label class="check"
+                ><input type="checkbox" id="chkFAQ" />
+                <span>12 Perguntas Frequentes</span></label
+              >
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <button class="btn secondary" id="btnCloseDlg">Cancelar</button>
+          <button class="btn" id="btnConfirmAtualizar">Atualizar</button>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="/js/simple.js"></script>
+  </body>
+</html>

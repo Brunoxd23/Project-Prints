@@ -8,11 +8,12 @@ const {
   createSemesterFolder,
   listAvailableSemesters,
 } = require("../utils/semester");
+const { getBasePath } = require("../utils/config");
 
 // Rota para listar semestres disponíveis
 router.get("/semesters/:curso", async (req, res) => {
   const { curso } = req.params;
-  const basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação", curso);
+  const basePath = path.join(getBasePath(), curso);
 
   try {
     const semesters = await listAvailableSemesters(basePath);
@@ -25,7 +26,7 @@ router.get("/semesters/:curso", async (req, res) => {
 // Rota para verificar existência da pasta do semestre
 router.get("/check-semester/:curso/:semester", async (req, res) => {
   const { curso, semester } = req.params;
-  const basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação", curso);
+  const basePath = path.join(getBasePath(), curso);
 
   try {
     const exists = await checkSemesterFolder(basePath, semester);
@@ -38,7 +39,7 @@ router.get("/check-semester/:curso/:semester", async (req, res) => {
 // Rota para criar pasta do próximo semestre
 router.post("/create-semester/:curso", async (req, res) => {
   const { curso } = req.params;
-  const basePath = path.join("C:", "Users", "drt62324", "Documents", "Pós Graduação", curso);
+  const basePath = path.join(getBasePath(), curso);
   const currentSemester = getCurrentSemester();
   const nextSemester = getNextSemester(currentSemester);
 
