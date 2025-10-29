@@ -37,15 +37,11 @@
   }
 
   function showSpinner(visible, text = "Processando…") {
-    const inline = $("#inlineSpinner");
-    const txt = $("#spinnerText");
     const bar = $("#globalProgress");
     const barTxt = $("#progressText");
     const statusRow = $("#statusRow");
     const statusText = $("#statusText");
-    if (txt) txt.textContent = text;
     if (barTxt) barTxt.textContent = visible ? text : "";
-    inline.style.display = visible ? "flex" : "none";
     bar.style.display = visible ? "block" : "none";
     if (statusText) statusText.textContent = text;
     if (statusRow) statusRow.style.display = visible ? "flex" : "none";

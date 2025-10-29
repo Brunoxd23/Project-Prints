@@ -143,7 +143,8 @@
       .progress span { position: absolute; right: 8px; top: -18px; font-size: 11px; color: #4f46e5; }
       @keyframes indet { 0%{left:-35%} 60%{left:65%} 100%{left:100%} }
       /* Status row */
-      .status { margin: 24px 0 6px; display:flex; align-items:center; gap:10px; justify-content:center; color:#000000; font-size:14px; font-weight: 600; font-family: 'Poppins', sans-serif; }
+      .status { margin: 24px 0 6px; display:flex; align-items:center; gap:18px; justify-content:center; color:#0b2544; font-size:20px; font-weight: 700; font-family: 'Poppins', sans-serif; letter-spacing:1.1px;}
+      .status .spin { width:32px; height:32px; border-width:5px; border-top-color:#12b6e5; border-left-color:#0b2544; border-radius:50%; box-shadow:0 0 16px #12b6e557; background:rgba(255,255,255,0.6);}
       /* Toast */
       .toast-container {
         position: fixed;
@@ -306,7 +307,6 @@
           <button class="btn secondary" id="btnAtualizar">
             Atualizar prints…
           </button>
-          <div class="inline-spinner" id="inlineSpinner"><div class="spin"></div><span id="spinnerText">Processando…</span></div>
         </div>
         <p class="muted">
           Dica: o semestre é no formato YYYY-N (ex: 2025-2). Você pode usar N
