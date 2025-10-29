@@ -926,12 +926,104 @@ app.post("/update-all-prints/:pasta/:semester", async (req, res) => {
     perguntasFrequentes = false,
   } = req.body;
 
-  const folderName = `${pasta}_${semester}`;
-  const outputFolder = path.join(getBasePath(), folderName);
+  // Resolver pasta real do semestre (estrutura por curso/subcurso)
+  const mapRoute = (routePath) => {
+    const routeMap = {
+      CP_Quinzenal_Pratica: {
+        course: "Cuidados Paliativos",
+        subcourse: "Unidade Paulista | Quinzenal Prática Estendida",
+      },
+      CP_Pratica_Estendida: {
+        course: "Cuidados Paliativos",
+        subcourse: "Unidade Paulista | Quinzenal Prática Estendida",
+      },
+      CP_Quinzenal: {
+        course: "Cuidados Paliativos",
+        subcourse: "Unidade Paulista | Quinzenal",
+      },
+      CP_Semanal: {
+        course: "Cuidados Paliativos",
+        subcourse: "Unidade Paulista | Semanal",
+      },
+      CP_RJ_Mensal: {
+        course: "Cuidados Paliativos",
+        subcourse: "Unidade Rio de Janeiro | Mensal",
+      },
+      CP_GO_Mensal: {
+        course: "Cuidados Paliativos",
+        subcourse: "Unidade Goiânia | Mensal",
+      },
+      DQ_Mensal: {
+        course: "Dependência Química",
+        subcourse: "Unidade Paulista | Mensal",
+      },
+      BSI_Mensal: {
+        course: "Bases da Saúde Integrativa e Bem-Estar",
+        subcourse: "Unidade Paulista | Mensal",
+      },
+      IFS_Mensal: {
+        course: "Gestão de Infraestrutura e Facilities em Saúde",
+        subcourse: "Unidade Paulista | Mensal",
+      },
+      GIF_Mensal: {
+        course: "Gestão de Infraestrutura e Facilities em Saúde",
+        subcourse: "Unidade Paulista II | Mensal",
+      },
+      PM_Mensal: {
+        course: "Psiquiatria Multiprofissional",
+        subcourse: "Unidade Paulista | Mensal",
+      },
+      SI_Mensal: {
+        course: "Sustentabilidade: Liderança e Inovação em ESG",
+        subcourse: "Unidade Paulista | Mensal",
+      },
+      SLI_Quinzenal: {
+        course: "Sustentabilidade: Liderança e Inovação em ESG",
+        subcourse: "Unidade Paulista II | Quinzenal",
+      },
+    };
+    return routeMap[routePath] || {
+      course: "Cuidados Paliativos",
+      subcourse: "Unidade Paulista | Quinzenal",
+    };
+  };
+
+  const courseFolderMap = {
+    "Cuidados Paliativos": "Pós-graduação em Cuidados Paliativos",
+    "Bases da Saúde Integrativa e Bem-Estar":
+      "Pós-graduação em Bases da Saúde Integrativa e Bem-Estar",
+    "Dependência Química": "Pós-graduação em Dependência Química",
+    "Gestão de Infraestrutura e Facilities em Saúde":
+      "Pós-graduação em Gestão de Infraestrutura e Facilities em Saúde",
+    "Psiquiatria Multiprofissional":
+      "Pós-graduação em Psiquiatria Multiprofissional",
+    "Sustentabilidade: Liderança e Inovação em ESG":
+      "Pós-graduação em Sustentabilidade - Liderança e Inovação em ESG",
+  };
+
+  const subcourseFolderMap = {
+    "Unidade Paulista | Quinzenal Prática Estendida": "Prática Estendida",
+    "Unidade Paulista | Quinzenal": "Quinzenal",
+    "Unidade Paulista II | Quinzenal": "Quinzenal",
+    "Unidade Rio de Janeiro | Mensal": "RJ-Mensal",
+    "Unidade Goiânia | Mensal": "GO-Mensal",
+    "Unidade Paulista | Semanal": "Semanal",
+    "Unidade Paulista | Mensal": "Mensal",
+    "Unidade Paulista II | Mensal": "Mensal",
+  };
+
+  const mapping = mapRoute(pasta);
+  const basePath = getBasePath();
+  const courseDir = path.join(basePath, courseFolderMap[mapping.course] || mapping.course);
+  const outputFolder = path.join(
+    courseDir,
+    `${subcourseFolderMap[mapping.subcourse] || mapping.subcourse} ${semester}`
+  );
 
   console.log(
     `Iniciando atualização completa de prints para ${pasta}/${semester}`
   );
+  console.log(`🗂️ Pasta resolvida: ${outputFolder}`);
   console.log(`Opções selecionadas:`, req.body);
 
   // Verificar se a pasta existe
@@ -1113,11 +1205,32 @@ app.post("/update-all-prints/:pasta/:semester", async (req, res) => {
         const selector = getSelector(sectionName);
         console.log(`🎯 Usando seletor: ${selector} para ${sectionName}`);
 
-        // Para "Sobre o Curso", não precisa clicar em botão - é conteúdo estático
+        // Para "Sobre o Curso", expandir links "...mais" antes de capturar
         if (sectionName === "Sobre o Curso") {
           console.log(
-            `ℹ️ ${sectionName} é conteúdo estático, não precisa clicar em botão`
+            `ℹ️ ${sectionName} é conteúdo estático; verificando se há links "...mais" para expandir`
           );
+          try {
+            const expanded = await page.evaluate(() => {
+              let clicked = false;
+              const candidates = Array.from(document.querySelectorAll('a, button, span'));
+              candidates.forEach((el) => {
+                const t = (el.textContent || '').trim().toLowerCase();
+                if (t === '...mais' || t === 'mais' || t.includes('leia mais')) {
+                  try { el.click(); clicked = true; } catch (e) {}
+                }
+              });
+              return clicked;
+            });
+            if (expanded) {
+              console.log('✅ "...mais" clicado; aguardando conteúdo expandir');
+              await new Promise((r) => setTimeout(r, 1200));
+            } else {
+              console.log('ℹ️ Nenhum link "...mais" encontrado');
+            }
+          } catch (e) {
+            console.log('⚠️ Falha ao tentar expandir "...mais":', e.message);
+          }
         } else if (sectionName === "Modalidade de Ensino") {
           console.log(`🎯 Executando ação específica para ${sectionName}...`);
 
@@ -2232,6 +2345,9 @@ app.post("/update-all-prints/:pasta/:semester", async (req, res) => {
         capturedFiles.push(filename);
       }
     }
+
+    // Nome legível da pasta para retorno
+    const folderName = path.basename(outputFolder);
 
     console.log(
       `Retornando resposta com ${capturedFiles.length} arquivos atualizados`

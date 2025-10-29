@@ -171,20 +171,35 @@ async function executeUpdatePrints(curso, semester, updateData) {
   try {
     console.log(`Fazendo requisição para: /update-all-prints/${curso.pasta}/${semester}`);
     console.log('Dados enviados:', updateData);
-    
-    // Fazer requisição para o backend com os dados de seleção
-    const response = await fetch(`/update-all-prints/${curso.pasta}/${semester}`, {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updateData)
-    });
 
-    console.log('Resposta recebida:', response.status, response.statusText);
+    // Tentar servidor principal (3000) e, em caso de falha, servidor interno (3001)
+    const urls = [
+      `http://localhost:3000/update-all-prints/${curso.pasta}/${semester}`,
+      `http://localhost:3001/update-all-prints/${curso.pasta}/${semester}`,
+      // fallback relativo (quando servido pelo mesmo host)
+      `/update-all-prints/${curso.pasta}/${semester}`
+    ];
 
-    if (!response.ok) {
-      throw new Error(`Erro ${response.status}: ${response.statusText}`);
+    let response = null;
+    let lastError = null;
+    for (const url of urls) {
+      try {
+        console.log(`Tentando URL: ${url}`);
+        response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData)
+        });
+        if (response && response.ok) break;
+        lastError = new Error(`HTTP ${response?.status} em ${url}`);
+      } catch (e) {
+        lastError = e;
+        continue;
+      }
+    }
+
+    if (!response || !response.ok) {
+      throw lastError || new Error('Falha ao chamar endpoint de atualização');
     }
 
     const result = await response.json();

@@ -24,12 +24,12 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
 
       for (const selector of cookieSelectors) {
         try {
-          const button = await page.$(selector);
-          if (button) {
-            await button.click();
-            console.log(`✅ Cookie banner fechado usando seletor: ${selector}`);
-            await new Promise((r) => setTimeout(r, 2000));
-            return;
+        const button = await page.$(selector);
+        if (button) {
+          await button.click();
+          console.log(`✅ Cookie banner fechado usando seletor: ${selector}`);
+          await new Promise((r) => setTimeout(r, 2000));
+          return;
           }
         } catch (e) {
           // Continua tentando outros seletores
@@ -269,8 +269,8 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
                 return {
                   exists: true,
                   visible:
-                    style.display !== "none" &&
-                    style.visibility !== "hidden" &&
+                style.display !== "none" &&
+                style.visibility !== "hidden" &&
                     style.opacity !== "0",
                   width: rect.width,
                   height: rect.height,
@@ -1136,18 +1136,18 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
 
       // Clica no botão da seção com tratamento de erro melhorado
       try {
-        const [navigation] = await Promise.all([
-          page
-            .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
-            .catch(() => null),
-          page.evaluate((text) => {
-            const btns = Array.from(document.querySelectorAll("button"));
-            const target = btns.find((btn) =>
-              btn.textContent.trim().includes(text)
-            );
-            if (target) target.click();
-          }, section.internal),
-        ]);
+      const [navigation] = await Promise.all([
+        page
+          .waitForNavigation({ waitUntil: "networkidle2", timeout: 30000 })
+          .catch(() => null),
+        page.evaluate((text) => {
+          const btns = Array.from(document.querySelectorAll("button"));
+          const target = btns.find((btn) =>
+            btn.textContent.trim().includes(text)
+          );
+          if (target) target.click();
+        }, section.internal),
+      ]);
       } catch (navError) {
         console.log(
           `⚠️ Erro de navegação para ${section.internal}, continuando...`
@@ -1156,11 +1156,11 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
 
       // Espera o conteúdo aparecer com timeout maior
       try {
-        await page.waitForSelector(section.selector, {
-          visible: true,
+      await page.waitForSelector(section.selector, {
+        visible: true,
           timeout: 15000,
-        });
-        await new Promise((r) => setTimeout(r, 1000));
+      });
+      await new Promise((r) => setTimeout(r, 1000));
       } catch (selectorError) {
         console.log(
           `⚠️ Seletor ${section.selector} não encontrado para ${section.internal}`
@@ -1170,7 +1170,7 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
 
       if (section.action) {
         try {
-          await section.action(page);
+        await section.action(page);
         } catch (actionError) {
           console.log(
             `⚠️ Erro na ação específica para ${section.internal}: ${actionError.message}`
@@ -1209,8 +1209,8 @@ async function captureExpandedTextAndModalities(page, outputFolder) {
             .replace(/_$/, "") + ".png";
 
         try {
-          await content.screenshot({ path: path.join(outputFolder, filename) });
-          console.log(`✅ Screenshot saved: ${filename}`);
+        await content.screenshot({ path: path.join(outputFolder, filename) });
+        console.log(`✅ Screenshot saved: ${filename}`);
         } catch (screenshotError) {
           console.error(
             `❌ Erro ao salvar screenshot para ${section.internal}: ${screenshotError.message}`
@@ -1291,11 +1291,11 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
       semesterFolder = customSemester;
       console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
     } else {
-      // Get current semester (2025-2)
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1; // 0-11 to 1-12
-      const semester = month <= 6 ? "1" : "2";
+    // Get current semester (2025-2)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 0-11 to 1-12
+    const semester = month <= 6 ? "1" : "2";
       semesterFolder = `${year}-${semester}`;
       console.log(`📅 Usando semestre automático: ${semesterFolder}`);
     }
@@ -1417,8 +1417,8 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
       );
       return res.status(400).json({
         error: `Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace(
-          "-",
-          "/"
+              "-",
+              "/"
         )} já possui prints. Escolha outro semestre ou atualize os prints existentes.`,
       });
     }
@@ -1426,7 +1426,7 @@ router.post("/run-script-cuidados-quinzenal-pratica", async (req, res) => {
     const outputFolder = semesterFolderPath;
     if (!fs.existsSync(outputFolder)) {
       try {
-        fs.mkdirSync(outputFolder, { recursive: true });
+      fs.mkdirSync(outputFolder, { recursive: true });
       } catch (err) {
         const code = err && err.code ? err.code : "UNKNOWN";
         const blocked = code === "EPERM" || code === "EACCES";
@@ -2427,11 +2427,11 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
       semesterFolder = customSemester;
       console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
     } else {
-      // Get current semester (2025-2)
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1; // 0-11 to 1-12
-      const semester = month <= 6 ? "1" : "2";
+    // Get current semester (2025-2)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 0-11 to 1-12
+    const semester = month <= 6 ? "1" : "2";
       semesterFolder = `${year}-${semester}`;
       console.log(`📅 Usando semestre automático: ${semesterFolder}`);
     }
@@ -2553,8 +2553,8 @@ router.post("/run-script-cuidados-quinzenal", async (req, res) => {
       );
       return res.status(400).json({
         error: `Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace(
-          "-",
-          "/"
+              "-",
+              "/"
         )} já possui prints. Escolha outro semestre ou atualize os prints existentes.`,
       });
     }
@@ -3552,11 +3552,11 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
       semesterFolder = customSemester;
       console.log(`📅 Usando semestre personalizado: ${semesterFolder}`);
     } else {
-      // Get current semester (2025-2)
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1; // 0-11 to 1-12
-      const semester = month <= 6 ? "1" : "2";
+    // Get current semester (2025-2)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 0-11 to 1-12
+    const semester = month <= 6 ? "1" : "2";
       semesterFolder = `${year}-${semester}`;
       console.log(`📅 Usando semestre automático: ${semesterFolder}`);
     }
@@ -3678,8 +3678,8 @@ router.post("/run-script-cuidados-semanal", async (req, res) => {
       );
       return res.status(400).json({
         error: `Semestre ${courseInfo.subcourseFolder} ${semesterFolder.replace(
-          "-",
-          "/"
+              "-",
+              "/"
         )} já possui prints. Escolha outro semestre ou atualize os prints existentes.`,
       });
     }
