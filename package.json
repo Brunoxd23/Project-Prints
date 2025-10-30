@@ -1,6 +1,6 @@
 {
   "name": "project-prints",
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "Automação para capturar prints (Puppeteer) com UI simplificada e instalador Windows.",
   "main": "electron/main.js",
   "scripts": {
