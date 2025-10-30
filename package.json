@@ -30,7 +30,7 @@
       "node_modules/puppeteer/.local-chromium/**"
     ],
     "win": {
-      "icon": "electron/build/icon.ico",
+      "icon": "electron/build/Einstein.ico",
       "target": [
         {
           "target": "nsis",
@@ -41,6 +41,7 @@
       ]
     },
     "nsis": {
+      "installerIcon": "electron/build/einstein.ico",
       "oneClick": true,
       "perMachine": false,
       "allowElevation": true,

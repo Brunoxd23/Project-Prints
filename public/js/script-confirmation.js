@@ -71,6 +71,6 @@ async function runScriptWithConfirmation(pasta) {
     const button = document.querySelector(".run-script-btn");
     button.disabled = false;
     button.innerHTML = "Tentar Novamente";
-    button.style.backgroundColor = "#f44336";
+    button.style.backgroundColor = "#f44335";
   }
 }
